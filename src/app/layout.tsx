@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 const defaultTitle = "ORIVONA | AI Destekli Organizasyon Platformu";
 const defaultDescription =
-  "Düğün, nişan ve kurumsal etkinlikler için AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon sistemi.";
+  "Premium etkinlik deneyimleri için AI destekli modern organizasyon platformu.";
 
 const ogTitle = "ORIVONA — AI Destekli Organizasyon Platformu";
 const ogDescription =

@@ -7,7 +7,7 @@ const organization = {
   url: SITE_URL,
   logo: `${SITE_URL}/orivona-logo.png`,
   description:
-    "Düğün, nişan ve kurumsal etkinlikler için AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon sistemi.",
+    "Premium etkinlik deneyimleri için AI destekli modern organizasyon platformu.",
 } as const;
 
 const website = {
