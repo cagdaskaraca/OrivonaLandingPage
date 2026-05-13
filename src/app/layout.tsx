@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+import { Suspense } from "react";
+import { GoogleAnalyticsRouteListener } from "@/src/components/GoogleAnalyticsRouteListener";
+import { StructuredData } from "@/src/components/StructuredData";
+import { GA_MEASUREMENT_ID } from "@/src/lib/analytics";
+import { SITE_URL } from "@/src/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,12 +20,31 @@ const geistMono = Geist_Mono({
 
 const siteTitle = "ORIVONA — AI Destekli Organizasyon Platformu";
 const siteDescription =
-  "Düğün, nişan ve kurumsal etkinlikler için ORIVONA: AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon. Teklif alın, rezervasyon yapın, tedarikçi pazarını tek panelden yönetin.";
+  "ORIVONA; düğün, nişan, doğum günü ve kurumsal etkinlikler için doğrulanmış hizmet sağlayıcıları keşfetmenizi, teklif almanızı ve organizasyon sürecinizi tek platformdan yönetmenizi sağlayan AI destekli organizasyon marketplace platformudur.";
+
+// Google Search Console: when you have a real verification token from Google, add to `metadata` below:
+//   verification: { google: "paste_token_here" }
+// Do not use a placeholder or invented value in production.
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   applicationName: "ORIVONA",
   title: siteTitle,
   description: siteDescription,
+  keywords: [
+    "organizasyon platformu",
+    "düğün planlama",
+    "nişan organizasyonu",
+    "doğum günü organizasyonu",
+    "etkinlik yönetimi",
+    "organizasyon marketplace",
+    "ORIVONA",
+  ],
+  authors: [{ name: "ORIVONA", url: SITE_URL }],
+  creator: "ORIVONA",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: [{ url: "/orivona-logo.ico", type: "image/x-icon" }],
     shortcut: "/orivona-logo.ico",
@@ -27,14 +52,30 @@ export const metadata: Metadata = {
   openGraph: {
     title: siteTitle,
     description: siteDescription,
+    url: SITE_URL,
+    siteName: "ORIVONA",
     type: "website",
     locale: "tr_TR",
-    siteName: "ORIVONA",
+    images: [
+      {
+        url: "/orivona-logo.png",
+        alt: "ORIVONA",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
+    images: ["/orivona-logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
   },
 };
 
@@ -48,7 +89,25 @@ export default function RootLayout({
       lang="tr"
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <StructuredData />
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+        <Suspense fallback={null}>
+          <GoogleAnalyticsRouteListener />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
