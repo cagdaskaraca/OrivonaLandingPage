@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
@@ -18,58 +18,75 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteTitle = "ORIVONA — AI Destekli Organizasyon Platformu";
-const siteDescription =
-  "ORIVONA; düğün, nişan, doğum günü ve kurumsal etkinlikler için doğrulanmış hizmet sağlayıcıları keşfetmenizi, teklif almanızı ve organizasyon sürecinizi tek platformdan yönetmenizi sağlayan AI destekli organizasyon marketplace platformudur.";
+const defaultTitle = "ORIVONA | AI Destekli Organizasyon Platformu";
+const defaultDescription =
+  "Düğün, nişan ve kurumsal etkinlikler için AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon sistemi.";
+
+const ogTitle = "ORIVONA — AI Destekli Organizasyon Platformu";
+const ogDescription =
+  "Düğün, nişan ve kurumsal etkinlikler için AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon.";
+
+const ogImageAbsolute = `${SITE_URL}/orivona-logo.png`;
 
 // Google Search Console: when you have a real verification token from Google, add to `metadata` below:
 //   verification: { google: "paste_token_here" }
 // Do not use a placeholder or invented value in production.
 
+export const viewport: Viewport = {
+  themeColor: "#0B0614",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: "ORIVONA",
-  title: siteTitle,
-  description: siteDescription,
+  title: defaultTitle,
+  description: defaultDescription,
   keywords: [
     "organizasyon platformu",
     "düğün planlama",
     "nişan organizasyonu",
-    "doğum günü organizasyonu",
+    "kurumsal etkinlik",
     "etkinlik yönetimi",
     "organizasyon marketplace",
     "ORIVONA",
   ],
   authors: [{ name: "ORIVONA", url: SITE_URL }],
   creator: "ORIVONA",
+  publisher: "ORIVONA",
   alternates: {
     canonical: "/",
   },
   icons: {
-    icon: [{ url: "/orivona-logo.ico", type: "image/x-icon" }],
+    icon: [
+      { url: "/orivona-logo.png", type: "image/png" },
+      { url: "/orivona-logo.ico", sizes: "48x48", type: "image/x-icon" },
+    ],
     shortcut: "/orivona-logo.ico",
+    apple: "/orivona-logo.png",
   },
   openGraph: {
-    title: siteTitle,
-    description: siteDescription,
+    title: ogTitle,
+    description: ogDescription,
     url: SITE_URL,
     siteName: "ORIVONA",
     type: "website",
     locale: "tr_TR",
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "ORIVONA",
+        url: ogImageAbsolute,
+        secureUrl: ogImageAbsolute,
+        width: 320,
+        height: 96,
+        alt: ogTitle,
+        type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: siteTitle,
-    description: siteDescription,
-    images: ["/og-image.png"],
+    title: ogTitle,
+    description: ogDescription,
+    images: [ogImageAbsolute],
   },
   robots: {
     index: true,
