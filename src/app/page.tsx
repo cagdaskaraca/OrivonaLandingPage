@@ -322,10 +322,55 @@ export default function Home() {
               </a>
             </div>
           </div>
+
+          <div className="relative mx-auto mt-14 max-w-5xl px-0 sm:mt-16">
+            <div
+              className="pointer-events-none absolute -inset-6 rounded-[2rem] bg-gradient-to-b from-violet-500/25 via-fuchsia-500/10 to-transparent blur-3xl sm:-inset-10"
+              aria-hidden
+            />
+            <div
+              className={`relative overflow-hidden rounded-3xl border border-violet-200/15 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-2 shadow-[0_24px_80px_-24px_rgba(88,28,135,0.55)] backdrop-blur-xl sm:rounded-[1.75rem] sm:p-3`}
+            >
+              <Image
+                src="/hero-dashboard-preview.png"
+                alt="ORIVONA kontrol paneli önizlemesi"
+                width={1920}
+                height={1080}
+                priority
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1024px"
+                className="h-auto w-full rounded-2xl object-cover object-top sm:rounded-[1.25rem]"
+              />
+            </div>
+          </div>
         </section>
 
-        <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-2 sm:px-6 sm:pb-28">
-          <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section
+          id="guven"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                Güven ve doğrulama
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                Şeffaf, kontrollü ve güvenilir süreç
+              </h2>
+            </div>
+            <div
+              className={`${glassCard} relative mx-auto mt-10 max-w-4xl overflow-hidden border-violet-200/12 p-2 sm:p-3`}
+            >
+              <Image
+                src="/trust-verification.png"
+                alt="ORIVONA doğrulama ve güven katmanları"
+                width={1600}
+                height={900}
+                loading="lazy"
+                sizes="(max-width: 768px) 100vw, 896px"
+                className="h-auto w-full rounded-xl object-cover"
+              />
+            </div>
+            <div className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {trustItems.map((item) => (
               <div
                 key={item.title}
@@ -340,6 +385,7 @@ export default function Home() {
                 </p>
               </div>
             ))}
+            </div>
           </div>
         </section>
 
@@ -375,6 +421,43 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="ai-asistan"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+              <div className="text-center lg:text-left">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                  ORIVONA Intelligence
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  AI organizasyon asistanı
+                </h2>
+                <p className="mt-5 text-base leading-relaxed text-zinc-400 sm:text-lg">
+                  Bütçe, takvim ve tedarikçi eşleştirmelerinde akıllı öneriler;
+                  teklifleri karşılaştırın, riskleri azaltın, süreci tek akışta
+                  yönetin.
+                </p>
+              </div>
+              <div
+                className={`${glassCard} relative overflow-hidden border-violet-200/12 p-2 shadow-[0_20px_60px_-20px_rgba(109,40,217,0.4)] sm:p-3`}
+              >
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-violet-600/10 via-transparent to-fuchsia-500/10" />
+                <Image
+                  src="/ai-assistant.png"
+                  alt="ORIVONA AI asistan arayüzü"
+                  width={1600}
+                  height={1000}
+                  loading="lazy"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="relative h-auto w-full rounded-xl object-cover"
+                />
+              </div>
             </div>
           </div>
         </section>
@@ -417,7 +500,89 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="relative border-t border-violet-200/[0.06] py-20 sm:py-28">
+        <section
+          id="mobil-uygulama"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mx-auto mb-14 max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                iOS · Android
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                Her yerde ORIVONA
+              </h2>
+              <p className="mt-4 text-zinc-400">
+                Katmanlı önizleme: panel, bildirimler ve rezervasyon akışı tek
+                dokunuşta yanınızda.
+              </p>
+            </div>
+
+            <div className="relative mx-auto flex min-h-[380px] max-w-4xl items-end justify-center pb-6 pt-2 sm:min-h-[440px] sm:pb-10">
+              <div
+                className="pointer-events-none absolute left-1/2 top-1/2 h-[min(70vw,22rem)] w-[min(95vw,36rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/15 blur-3xl"
+                aria-hidden
+              />
+
+              <div
+                className="orivona-phone-float-alt absolute bottom-4 left-0 z-0 w-[42%] max-w-[210px] -rotate-[10deg] opacity-[0.92] transition-transform duration-500 hover:z-30 hover:scale-[1.03] sm:bottom-6 sm:left-[2%] sm:max-w-[230px]"
+              >
+                <div className="rounded-[1.85rem] border border-zinc-600/90 bg-gradient-to-b from-zinc-800 to-zinc-950 p-[5px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.85)] ring-1 ring-white/10">
+                  <div className="overflow-hidden rounded-[1.55rem] bg-black">
+                    <Image
+                      src="/mobile-app-preview2.png"
+                      alt="ORIVONA mobil uygulama ekranı"
+                      width={390}
+                      height={844}
+                      loading="lazy"
+                      sizes="(max-width: 640px) 42vw, 230px"
+                      className="h-auto w-full object-cover object-top"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="orivona-phone-float relative z-20 w-[58%] max-w-[280px] transition-transform duration-500 hover:scale-[1.03] sm:max-w-[300px]">
+                <div className="rounded-[2rem] border border-zinc-500/90 bg-gradient-to-b from-zinc-700 to-zinc-950 p-[6px] shadow-[0_28px_70px_-14px_rgba(109,40,217,0.45)] ring-2 ring-violet-400/20">
+                  <div className="overflow-hidden rounded-[1.65rem] bg-black">
+                    <Image
+                      src="/mobile-app-preview.png"
+                      alt="ORIVONA ana mobil deneyim"
+                      width={390}
+                      height={844}
+                      loading="lazy"
+                      sizes="(max-width: 640px) 58vw, 300px"
+                      className="h-auto w-full object-cover object-top"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className="orivona-phone-float-alt absolute bottom-4 right-0 z-0 w-[42%] max-w-[210px] rotate-[10deg] opacity-[0.92] transition-transform duration-500 hover:z-30 hover:scale-[1.03] sm:bottom-6 sm:right-[2%] sm:max-w-[230px]"
+              >
+                <div className="rounded-[1.85rem] border border-zinc-600/90 bg-gradient-to-b from-zinc-800 to-zinc-950 p-[5px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.85)] ring-1 ring-white/10">
+                  <div className="overflow-hidden rounded-[1.55rem] bg-black">
+                    <Image
+                      src="/mobile-app-preview3.png"
+                      alt="ORIVONA mobil özellik önizlemesi"
+                      width={390}
+                      height={844}
+                      loading="lazy"
+                      sizes="(max-width: 640px) 42vw, 230px"
+                      className="h-auto w-full object-cover object-top"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="kategoriler"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -427,7 +592,20 @@ export default function Home() {
                 Etkinlik türü ve hizmet segmentine göre keşfedin.
               </p>
             </div>
-            <div className="mt-12 flex flex-wrap justify-center gap-2.5 sm:gap-3">
+            <div
+              className={`${glassCard} relative mx-auto mt-10 max-w-5xl overflow-hidden border-violet-200/12 p-2 sm:mt-12 sm:p-3`}
+            >
+              <Image
+                src="/event-categories.png"
+                alt="ORIVONA etkinlik kategorileri"
+                width={1600}
+                height={900}
+                loading="lazy"
+                sizes="(max-width: 768px) 100vw, 1024px"
+                className="h-auto w-full rounded-xl object-cover"
+              />
+            </div>
+            <div className="mt-10 flex flex-wrap justify-center gap-2.5 sm:mt-12 sm:gap-3">
               {categories.map((c) => (
                 <span
                   key={c}
@@ -442,37 +620,87 @@ export default function Home() {
 
         <section
           id="isletmeler"
-          className="relative scroll-mt-28 py-20 sm:py-28"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div
-              className={`${glassCard} relative overflow-hidden px-6 py-12 sm:px-12 sm:py-16`}
-            >
+            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
               <div
-                className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-violet-500/25 to-fuchsia-600/10 blur-3xl"
-                aria-hidden
-              />
-              <div className="relative max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300/90">
-                  İşletmeler için
-                </p>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  İşletmenizi ORIVONA’da görünür hale getirin.
-                </h2>
-                <p className="mt-5 text-base leading-relaxed text-zinc-400 sm:text-lg">
-                  Organizasyon firmaları, DJ’ler, fotoğrafçılar, çiçekçiler,
-                  pastacılar, catering firmaları, nakliye ekipleri ve mekanlar
-                  erken partner olarak başvurarak ORIVONA üzerinden yeni
-                  müşterilere ulaşabilir, teklif verebilir ve rezervasyonlarını
-                  yönetebilir.
-                </p>
-                <a
-                  href={MAIL_PARTNERS_EARLY}
-                  className="mt-8 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-8 py-3.5 text-sm font-semibold text-[#0a0612] shadow-[0_12px_36px_-8px_rgba(167,139,250,0.5)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_16px_44px_-8px_rgba(192,132,252,0.55)]"
-                >
-                  Erken Partner Başvurusu
-                </a>
+                className={`${glassCard} relative order-2 overflow-hidden px-6 py-12 sm:px-10 sm:py-14 lg:order-1`}
+              >
+                <div
+                  className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-violet-500/25 to-fuchsia-600/10 blur-3xl"
+                  aria-hidden
+                />
+                <div className="relative max-w-xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300/90">
+                    İşletmeler için
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                    İşletmenizi ORIVONA’da görünür hale getirin.
+                  </h2>
+                  <p className="mt-5 text-base leading-relaxed text-zinc-400 sm:text-lg">
+                    Organizasyon firmaları, DJ’ler, fotoğrafçılar, çiçekçiler,
+                    pastacılar, catering firmaları, nakliye ekipleri ve mekanlar
+                    erken partner olarak başvurarak ORIVONA üzerinden yeni
+                    müşterilere ulaşabilir, teklif verebilir ve rezervasyonlarını
+                    yönetebilir.
+                  </p>
+                  <a
+                    href={MAIL_PARTNERS_EARLY}
+                    className="mt-8 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-8 py-3.5 text-sm font-semibold text-[#0a0612] shadow-[0_12px_36px_-8px_rgba(167,139,250,0.5)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_16px_44px_-8px_rgba(192,132,252,0.55)]"
+                  >
+                    Erken Partner Başvurusu
+                  </a>
+                </div>
               </div>
+              <div
+                className={`${glassCard} relative order-1 overflow-hidden border-violet-200/12 p-2 sm:p-3 lg:order-2`}
+              >
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-bl from-violet-600/10 via-transparent to-transparent" />
+                <Image
+                  src="/business-partners.png"
+                  alt="ORIVONA iş ortakları ve işletme ağı"
+                  width={1600}
+                  height={1000}
+                  loading="lazy"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="relative h-auto w-full rounded-xl object-cover"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="musteri-hikayeleri"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                Sosyal kanıt
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                Mutlu müşteriler, güçlü sonuçlar
+              </h2>
+              <p className="mt-4 text-zinc-400">
+                Gerçek organizasyon deneyimleri ve memnuniyet odağında büyüyen
+                topluluk.
+              </p>
+            </div>
+            <div
+              className={`${glassCard} relative mx-auto mt-10 max-w-5xl overflow-hidden border-violet-200/12 p-2 sm:mt-14 sm:p-3`}
+            >
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-violet-900/20 via-transparent to-transparent" />
+              <Image
+                src="/happy-customers.png"
+                alt="ORIVONA ile mutlu müşteriler ve başarı hikayeleri"
+                width={1600}
+                height={900}
+                loading="lazy"
+                sizes="(max-width: 768px) 100vw, 1024px"
+                className="relative h-auto w-full rounded-xl object-cover"
+              />
             </div>
           </div>
         </section>

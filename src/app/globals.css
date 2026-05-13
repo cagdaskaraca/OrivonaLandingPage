@@ -21,3 +21,39 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+@keyframes orivona-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes orivona-float-alt {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.orivona-phone-float {
+  animation: orivona-float 6s ease-in-out infinite;
+}
+
+.orivona-phone-float-alt {
+  animation: orivona-float-alt 5.5s ease-in-out infinite;
+  animation-delay: -1.75s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orivona-phone-float,
+  .orivona-phone-float-alt {
+    animation: none;
+  }
+}

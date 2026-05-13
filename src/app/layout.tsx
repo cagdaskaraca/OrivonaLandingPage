@@ -58,7 +58,9 @@ export const metadata: Metadata = {
     locale: "tr_TR",
     images: [
       {
-        url: "/orivona-logo.png",
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
         alt: "ORIVONA",
       },
     ],
@@ -67,7 +69,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
-    images: ["/orivona-logo.png"],
+    images: ["/og-image.png"],
   },
   robots: {
     index: true,
