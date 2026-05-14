@@ -259,9 +259,7 @@ export default function Home() {
             <span className="flex min-h-[3.25rem] shrink-0 items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:min-h-[3.75rem] sm:px-3.5 sm:py-2.5">
               <OrivonaLogo variant="nav" />
             </span>
-            <span className="hidden text-xs font-semibold tracking-[0.22em] text-zinc-200 sm:inline">
-              ORIVONA
-            </span>
+            
           </SmoothScrollToTop>
 
           <div className="hidden items-center gap-8 text-sm text-zinc-300 md:flex">
