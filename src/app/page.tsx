@@ -7,6 +7,10 @@ import { DashboardPreviewSection } from "@/src/components/landing/DashboardPrevi
 import { MobileShowcaseSection } from "@/src/components/landing/MobileShowcaseSection";
 import { MouseGlowLayer } from "@/src/components/landing/MouseGlowLayer";
 import { ScrollReveal } from "@/src/components/landing/ScrollReveal";
+import {
+  SmoothScrollToSection,
+  SmoothScrollToTop,
+} from "@/src/components/SmoothLandingNav";
 
 function OrivonaLogo({
   variant = "nav",
@@ -251,65 +255,74 @@ export default function Home() {
 
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4">
-          <a
-            href="#"
-            className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90"
-          >
+          <SmoothScrollToTop className="flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90">
             <span className="flex min-h-[3.25rem] shrink-0 items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:min-h-[3.75rem] sm:px-3.5 sm:py-2.5">
               <OrivonaLogo variant="nav" />
             </span>
             <span className="hidden text-xs font-semibold tracking-[0.22em] text-zinc-200 sm:inline">
-              
+              ORIVONA
             </span>
-          </a>
+          </SmoothScrollToTop>
 
           <div className="hidden items-center gap-8 text-sm text-zinc-300 md:flex">
-            <a
-              href="#ozellikler"
+            <SmoothScrollToSection
+              sectionId="guven"
               className="transition-colors hover:text-white"
             >
               Özellikler
-            </a>
-            <a
-              href="#nasil-calisir"
+            </SmoothScrollToSection>
+            <SmoothScrollToSection
+              sectionId="nasil-calisir"
               className="transition-colors hover:text-white"
             >
               Nasıl Çalışır
-            </a>
-            <a
-              href="#isletmeler"
+            </SmoothScrollToSection>
+            <SmoothScrollToSection
+              sectionId="isletmeler"
               className="transition-colors hover:text-white"
             >
               İşletmeler
-            </a>
-            <a
-              href="#iletisim"
+            </SmoothScrollToSection>
+            <SmoothScrollToSection
+              sectionId="iletisim"
               className="transition-colors hover:text-white"
             >
               İletişim
-            </a>
+            </SmoothScrollToSection>
           </div>
 
-          <a
-            href="#erken-erisim"
+          <SmoothScrollToSection
+            sectionId="erken-erisim"
             className="shrink-0 rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-3.5 py-2 text-xs font-semibold text-[#0a0612] shadow-[0_8px_28px_-6px_rgba(167,139,250,0.55)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-6px_rgba(192,132,252,0.55)] sm:px-4 sm:py-2.5 sm:text-sm"
           >
             Erken Erişim
-          </a>
+          </SmoothScrollToSection>
         </nav>
         <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/10 px-4 py-3 text-xs font-medium text-zinc-400 md:hidden">
-          <a href="#ozellikler" className="hover:text-violet-200">
+          <SmoothScrollToSection
+            sectionId="guven"
+            className="hover:text-violet-200"
+          >
             Özellikler
-          </a>
-          <a href="#nasil-calisir" className="hover:text-violet-200">
+          </SmoothScrollToSection>
+          <SmoothScrollToSection
+            sectionId="nasil-calisir"
+            className="hover:text-violet-200"
+          >
             Nasıl Çalışır
-          </a>
-          <a href="#isletmeler" className="hover:text-violet-200">
+          </SmoothScrollToSection>
+          <SmoothScrollToSection
+            sectionId="isletmeler"
+            className="hover:text-violet-200"
+          >
             İşletmeler
-          </a>
-          <a href="#iletisim" className="hover:text-violet-200">
+          </SmoothScrollToSection>
+          <SmoothScrollToSection
+            sectionId="iletisim"
+            className="hover:text-violet-200"
+          >
             İletişim
-          </a>
+          </SmoothScrollToSection>
         </div>
       </header>
 
@@ -345,12 +358,12 @@ export default function Home() {
               süreci ORIVONA ile kolayca yönet.
             </p>
             <div className="mt-10 flex w-full max-w-xl flex-col items-stretch justify-center gap-3 sm:mx-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
-              <a
-                href="#erken-erisim"
+              <SmoothScrollToSection
+                sectionId="erken-erisim"
                 className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0a0612] shadow-[0_14px_44px_-12px_rgba(255,255,255,0.28)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_18px_52px_-12px_rgba(237,233,254,0.35)]"
               >
                 Erken Erişime Katıl
-              </a>
+              </SmoothScrollToSection>
               <a
                 href={MAIL_PARTNERS_BUSINESS}
                 className="inline-flex items-center justify-center rounded-full border border-violet-300/25 bg-violet-500/10 px-7 py-3.5 text-sm font-semibold text-violet-50 backdrop-blur-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-violet-500/18"
@@ -891,29 +904,44 @@ export default function Home() {
             <p className="text-sm font-semibold text-white">Bağlantılar</p>
             <ul className="mt-4 space-y-2.5 text-sm text-zinc-400">
               <li>
-                <a href="#ozellikler" className="hover:text-violet-200">
+                <SmoothScrollToSection
+                  sectionId="guven"
+                  className="hover:text-violet-200"
+                >
                   Özellikler
-                </a>
+                </SmoothScrollToSection>
               </li>
               <li>
-                <a href="#nasil-calisir" className="hover:text-violet-200">
+                <SmoothScrollToSection
+                  sectionId="nasil-calisir"
+                  className="hover:text-violet-200"
+                >
                   Nasıl Çalışır
-                </a>
+                </SmoothScrollToSection>
               </li>
               <li>
-                <a href="#isletmeler" className="hover:text-violet-200">
+                <SmoothScrollToSection
+                  sectionId="isletmeler"
+                  className="hover:text-violet-200"
+                >
                   İşletmeler
-                </a>
+                </SmoothScrollToSection>
               </li>
               <li>
-                <a href="#erken-erisim" className="hover:text-violet-200">
+                <SmoothScrollToSection
+                  sectionId="erken-erisim"
+                  className="hover:text-violet-200"
+                >
                   Erken Erişim
-                </a>
+                </SmoothScrollToSection>
               </li>
               <li>
-                <a href="#iletisim" className="hover:text-violet-200">
+                <SmoothScrollToSection
+                  sectionId="iletisim"
+                  className="hover:text-violet-200"
+                >
                   İletişim
-                </a>
+                </SmoothScrollToSection>
               </li>
             </ul>
           </div>
