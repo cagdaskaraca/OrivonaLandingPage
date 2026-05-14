@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import { EarlyAccessForm } from "@/src/components/EarlyAccessForm";
+import { AiPlanningDemo } from "@/src/components/landing/AiPlanningDemo";
+import { AnimatedMetrics } from "@/src/components/landing/AnimatedMetrics";
+import { DashboardPreviewSection } from "@/src/components/landing/DashboardPreviewSection";
+import { MobileShowcaseSection } from "@/src/components/landing/MobileShowcaseSection";
+import { MouseGlowLayer } from "@/src/components/landing/MouseGlowLayer";
+import { ScrollReveal } from "@/src/components/landing/ScrollReveal";
 
 function OrivonaLogo({
   variant = "nav",
@@ -160,6 +166,38 @@ const categories = [
   "Düğün Arabası",
 ] as const;
 
+const trustFuturistic = [
+  {
+    title: "Verified Vendor",
+    body: "Çok aşamalı işletme ve belge doğrulaması.",
+  },
+  {
+    title: "AI Protected",
+    body: "Risk analizi ve korumalı rezervasyon akışı.",
+  },
+  {
+    title: "Trust Score 96/100",
+    body: "Kalite, yanıt süresi ve memnuniyet sinyalleriyle hesaplanır.",
+  },
+  {
+    title: "Real Delivery Photos",
+    body: "Portföy ve teslim fotoğraflarıyla kanıtlanan kalite.",
+  },
+  {
+    title: "Fraud Detection",
+    body: "Anomali ve tutarsızlık tespiti için model destekli kontroller.",
+  },
+] as const;
+
+const roadmapFeatures = [
+  "AI Budget Planning",
+  "AI Fraud Detection",
+  "Live Offer System",
+  "Mobile App",
+  "Smart Vendor Matching",
+  "AI Theme Generator",
+] as const;
+
 function FeatureIcon({ children }: { children: ReactNode }) {
   return (
     <svg
@@ -184,7 +222,7 @@ const MAIL_PARTNERS_EARLY =
   encodeURIComponent("ORIVONA Erken Partner Başvurusu");
 
 const glassCard =
-  "rounded-2xl border border-violet-200/[0.07] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 shadow-[0_12px_48px_-18px_rgba(24,12,48,0.75)] backdrop-blur-xl";
+  "rounded-2xl border border-violet-200/[0.07] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 shadow-[0_12px_48px_-18px_rgba(24,12,48,0.75)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-violet-400/22 hover:shadow-[0_22px_56px_-18px_rgba(109,40,217,0.38)]";
 
 export default function Home() {
   return (
@@ -205,6 +243,11 @@ export default function Home() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(167,139,250,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(167,139,250,0.03)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]"
         aria-hidden
       />
+      <div
+        className="pointer-events-none absolute -right-[25%] top-[18%] -z-0 h-[min(100vw,28rem)] w-[min(100vw,28rem)] rounded-full bg-gradient-to-br from-fuchsia-600/25 via-violet-600/12 to-transparent blur-3xl orivona-ambient-shift"
+        aria-hidden
+      />
+      <MouseGlowLayer />
 
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6 sm:py-4">
@@ -270,7 +313,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="pt-32 md:pt-28">
+      <main className="relative z-[2] pt-32 md:pt-28">
         <section className="relative mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-6 sm:pb-16 sm:pt-8 md:pt-10">
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-8 flex flex-col items-center gap-3">
@@ -332,8 +375,8 @@ export default function Home() {
               className={`relative overflow-hidden rounded-3xl border border-violet-200/15 bg-gradient-to-br from-white/[0.08] to-white/[0.02] p-2 shadow-[0_24px_80px_-24px_rgba(88,28,135,0.55)] backdrop-blur-xl sm:rounded-[1.75rem] sm:p-3`}
             >
               <Image
-                src="/hero-dashboard-preview.png"
-                alt="ORIVONA kontrol paneli önizlemesi"
+                src="/ai-dashboard-preview.png"
+                alt="ORIVONA AI kontrol paneli önizlemesi"
                 width={1920}
                 height={1080}
                 priority
@@ -341,6 +384,56 @@ export default function Home() {
                 className="h-auto w-full rounded-2xl object-cover object-top sm:rounded-[1.25rem]"
               />
             </div>
+          </div>
+        </section>
+
+        <section
+          id="ai-deneyim"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                  ORIVONA Intelligence
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  AI planlama deneyimi
+                </h2>
+                <p className="mt-4 text-zinc-400">
+                  Senaryonuzu iletin; model önerileri anında şekillensin — canlı
+                  veri değil, ürün vizyonunu yansıtan bir simülasyon.
+                </p>
+              </div>
+              <div className="mt-14">
+                <AiPlanningDemo />
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        <section
+          id="panel-yakinda"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="mx-auto max-w-3xl text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                  Yakında
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Organizasyon komuta merkezi
+                </h2>
+                <p className="mt-4 text-zinc-400">
+                  Teklifler, ödemeler, görevler ve partner ağı tek cam
+                  panelde — kurumsal SaaS kalitesinde kontrol.
+                </p>
+              </div>
+              <div className="mt-14">
+                <DashboardPreviewSection />
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
@@ -361,8 +454,8 @@ export default function Home() {
               className={`${glassCard} relative mx-auto mt-10 max-w-4xl overflow-hidden border-violet-200/12 p-2 sm:p-3`}
             >
               <Image
-                src="/trust-verification.png"
-                alt="ORIVONA doğrulama ve güven katmanları"
+                src="/ai-trust-system.png"
+                alt="ORIVONA AI güven ve doğrulama sistemi"
                 width={1600}
                 height={900}
                 loading="lazy"
@@ -370,11 +463,27 @@ export default function Home() {
                 className="h-auto w-full rounded-xl object-cover"
               />
             </div>
+            <div className="mx-auto mt-10 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {trustFuturistic.map((t) => (
+                <div
+                  key={t.title}
+                  className="rounded-2xl border border-cyan-500/15 bg-gradient-to-b from-cyan-500/10 via-violet-950/30 to-black/40 p-4 text-left shadow-[0_0_32px_-12px_rgba(34,211,238,0.15)] backdrop-blur-md transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-violet-400/30 hover:shadow-[0_16px_48px_-12px_rgba(139,92,246,0.35)]"
+                >
+                  <div className="mb-2 h-px w-full bg-gradient-to-r from-cyan-400/50 via-violet-400/40 to-transparent" />
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-cyan-100/95">
+                    {t.title}
+                  </h3>
+                  <p className="mt-2 text-[11px] leading-relaxed text-zinc-400 sm:text-xs">
+                    {t.body}
+                  </p>
+                </div>
+              ))}
+            </div>
             <div className="mx-auto mt-12 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {trustItems.map((item) => (
               <div
                 key={item.title}
-                className={`${glassCard} text-left transition-transform hover:-translate-y-0.5`}
+                className={`${glassCard} text-left`}
               >
                 <div className="mb-3 h-1 w-10 rounded-full bg-gradient-to-r from-violet-300 to-fuchsia-400 shadow-[0_0_16px_rgba(167,139,250,0.45)]" />
                 <h3 className="text-sm font-semibold text-white">
@@ -386,6 +495,31 @@ export default function Home() {
               </div>
             ))}
             </div>
+          </div>
+        </section>
+
+        <section
+          id="metrikler"
+          className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <ScrollReveal>
+              <div className="mx-auto max-w-2xl text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
+                  Büyüme sinyalleri
+                </p>
+                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                  Erken erişim momentumu
+                </h2>
+                <p className="mt-4 text-zinc-400">
+                  Lansman öncesi talep ve partner ilgisi — göstergeler
+                  temsili değerlerdir.
+                </p>
+              </div>
+              <div className="mt-12">
+                <AnimatedMetrics />
+              </div>
+            </ScrollReveal>
           </div>
         </section>
 
@@ -426,39 +560,43 @@ export default function Home() {
         </section>
 
         <section
-          id="ai-asistan"
+          id="yol-haritasi"
           className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-              <div className="text-center lg:text-left">
+            <ScrollReveal>
+              <div className="mx-auto max-w-2xl text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
-                  ORIVONA Intelligence
+                  Coming soon
                 </p>
                 <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  AI organizasyon asistanı
+                  Ürün yol haritası
                 </h2>
-                <p className="mt-5 text-base leading-relaxed text-zinc-400 sm:text-lg">
-                  Bütçe, takvim ve tedarikçi eşleştirmelerinde akıllı öneriler;
-                  teklifleri karşılaştırın, riskleri azaltın, süreci tek akışta
-                  yönetin.
+                <p className="mt-4 text-zinc-400">
+                  Bir sonraki nesil özellikler — güvenli, ölçülebilir ve AI
+                  destekli.
                 </p>
               </div>
-              <div
-                className={`${glassCard} relative overflow-hidden border-violet-200/12 p-2 shadow-[0_20px_60px_-20px_rgba(109,40,217,0.4)] sm:p-3`}
-              >
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-violet-600/10 via-transparent to-fuchsia-500/10" />
-                <Image
-                  src="/ai-assistant.png"
-                  alt="ORIVONA AI asistan arayüzü"
-                  width={1600}
-                  height={1000}
-                  loading="lazy"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="relative h-auto w-full rounded-xl object-cover"
-                />
+              <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {roadmapFeatures.map((title) => (
+                  <div
+                    key={title}
+                    className={`${glassCard} border-violet-300/10 text-left`}
+                  >
+                    <div className="mb-3 inline-flex rounded-full border border-violet-400/25 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-violet-200">
+                      Yakında
+                    </div>
+                    <h3 className="text-base font-semibold text-white">
+                      {title}
+                    </h3>
+                    <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                      Geliştirme aşamasında — erken erişim ile önceliklendirme
+                      fırsatı.
+                    </p>
+                  </div>
+                ))}
               </div>
-            </div>
+            </ScrollReveal>
           </div>
         </section>
 
@@ -480,16 +618,21 @@ export default function Home() {
                 className="pointer-events-none absolute left-[6%] right-[6%] top-[22px] z-0 hidden h-px bg-gradient-to-r from-violet-500/35 via-fuchsia-500/25 to-violet-500/35 md:block"
                 aria-hidden
               />
-              <ol className="relative z-10 grid gap-8 md:grid-cols-4 md:gap-6">
+              <ol className="relative z-10 grid gap-8 md:grid-cols-4 md:items-stretch md:gap-6">
                 {steps.map((label, i) => (
-                  <li key={label} className="relative flex gap-4 md:block">
-                    <div className="flex shrink-0 flex-col items-center md:mb-6 md:flex-row md:justify-center">
+                  <li
+                    key={label}
+                    className="relative flex gap-4 md:flex md:h-full md:flex-col md:gap-6"
+                  >
+                    <div className="flex shrink-0 flex-col items-center md:flex md:shrink-0 md:justify-center">
                       <span className="flex h-11 w-11 items-center justify-center rounded-full border border-violet-400/35 bg-gradient-to-br from-violet-500/30 to-fuchsia-500/20 text-sm font-semibold text-violet-100 shadow-[0_0_24px_-4px_rgba(167,139,250,0.5)]">
                         {i + 1}
                       </span>
                     </div>
-                    <div className={`${glassCard} flex-1 md:text-center`}>
-                      <p className="text-sm font-medium leading-snug text-white md:text-base">
+                    <div
+                      className={`${glassCard} flex min-h-0 flex-1 flex-col justify-center py-7 md:min-h-[6.25rem] md:py-8 md:text-center`}
+                    >
+                      <p className="text-sm font-medium leading-snug text-white md:text-base md:leading-snug">
                         {label}
                       </p>
                     </div>
@@ -505,77 +648,19 @@ export default function Home() {
           className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
         >
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="mx-auto mb-12 max-w-2xl text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
-                iOS · Android
+                Yakında mobil uygulama
               </p>
               <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                 Her yerde ORIVONA
               </h2>
               <p className="mt-4 text-zinc-400">
-                Katmanlı önizleme: panel, bildirimler ve rezervasyon akışı tek
-                dokunuşta yanınızda.
+                Bildirimler, rezervasyonlar ve AI özetleri cebinizde — mağaza
+                yayını yakında.
               </p>
             </div>
-
-            <div className="relative mx-auto flex min-h-[380px] max-w-4xl items-end justify-center pb-6 pt-2 sm:min-h-[440px] sm:pb-10">
-              <div
-                className="pointer-events-none absolute left-1/2 top-1/2 h-[min(70vw,22rem)] w-[min(95vw,36rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/15 blur-3xl"
-                aria-hidden
-              />
-
-              <div
-                className="orivona-phone-float-alt absolute bottom-4 left-0 z-0 w-[42%] max-w-[210px] -rotate-[10deg] opacity-[0.92] transition-transform duration-500 hover:z-30 hover:scale-[1.03] sm:bottom-6 sm:left-[2%] sm:max-w-[230px]"
-              >
-                <div className="rounded-[1.85rem] border border-zinc-600/90 bg-gradient-to-b from-zinc-800 to-zinc-950 p-[5px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.85)] ring-1 ring-white/10">
-                  <div className="overflow-hidden rounded-[1.55rem] bg-black">
-                    <Image
-                      src="/mobile-app-preview2.png"
-                      alt="ORIVONA mobil uygulama ekranı"
-                      width={390}
-                      height={844}
-                      loading="lazy"
-                      sizes="(max-width: 640px) 42vw, 230px"
-                      className="h-auto w-full object-cover object-top"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="orivona-phone-float relative z-20 w-[58%] max-w-[280px] transition-transform duration-500 hover:scale-[1.03] sm:max-w-[300px]">
-                <div className="rounded-[2rem] border border-zinc-500/90 bg-gradient-to-b from-zinc-700 to-zinc-950 p-[6px] shadow-[0_28px_70px_-14px_rgba(109,40,217,0.45)] ring-2 ring-violet-400/20">
-                  <div className="overflow-hidden rounded-[1.65rem] bg-black">
-                    <Image
-                      src="/mobile-app-preview.png"
-                      alt="ORIVONA ana mobil deneyim"
-                      width={390}
-                      height={844}
-                      loading="lazy"
-                      sizes="(max-width: 640px) 58vw, 300px"
-                      className="h-auto w-full object-cover object-top"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="orivona-phone-float-alt absolute bottom-4 right-0 z-0 w-[42%] max-w-[210px] rotate-[10deg] opacity-[0.92] transition-transform duration-500 hover:z-30 hover:scale-[1.03] sm:bottom-6 sm:right-[2%] sm:max-w-[230px]"
-              >
-                <div className="rounded-[1.85rem] border border-zinc-600/90 bg-gradient-to-b from-zinc-800 to-zinc-950 p-[5px] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.85)] ring-1 ring-white/10">
-                  <div className="overflow-hidden rounded-[1.55rem] bg-black">
-                    <Image
-                      src="/mobile-app-preview3.png"
-                      alt="ORIVONA mobil özellik önizlemesi"
-                      width={390}
-                      height={844}
-                      loading="lazy"
-                      sizes="(max-width: 640px) 42vw, 230px"
-                      className="h-auto w-full object-cover object-top"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <MobileShowcaseSection />
           </div>
         </section>
 
@@ -786,7 +871,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="relative mt-auto border-t border-violet-200/[0.06] bg-black/25 py-14 backdrop-blur-md">
+      <footer className="relative z-[2] mt-auto border-t border-violet-200/[0.06] bg-black/25 py-14 backdrop-blur-md">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
           <div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

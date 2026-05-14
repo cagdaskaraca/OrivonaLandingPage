@@ -64,10 +64,62 @@ export function EarlyAccessForm({ className }: { className: string }) {
     <div className={className}>
       {status === "success" && (
         <div
-          className="mb-5 rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-center text-sm leading-relaxed text-emerald-100/95"
+          className="relative mb-6 overflow-hidden rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-500/[0.12] via-violet-950/40 to-black/60 p-8 text-center shadow-[0_0_48px_-12px_rgba(52,211,153,0.35)] backdrop-blur-xl"
           role="status"
         >
-          Başvurunuz alındı. ORIVONA erken erişim listesine eklendiniz.
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(167,250,200,0.12),transparent_55%)]" />
+          <div className="relative mx-auto flex max-w-md flex-col items-center">
+            <div className="relative flex h-16 w-16 items-center justify-center">
+              <span
+                className="absolute inset-0 rounded-full border-2 border-emerald-400/50 motion-safe:animate-[orivona-success-ring_1.4s_ease-out_infinite]"
+                aria-hidden
+              />
+              <span className="relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-[0_0_28px_rgba(52,211,153,0.55)]">
+                <svg
+                  className="h-7 w-7 motion-safe:animate-[orivona-pop-in_0.5s_ease-out_both]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </span>
+            </div>
+            <p className="mt-5 text-base font-semibold text-white">
+              Başvurunuz alındı
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-emerald-100/90">
+              ORIVONA erken erişim listesine eklendiniz. Davet ve güncellemeler
+              için geliştirmeleri takip edin.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <a
+                href="https://www.instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-full border border-white/15 bg-white/[0.06] px-5 py-2 text-xs font-semibold text-zinc-200 transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white/[0.1]"
+              >
+                Instagram
+              </a>
+              <a
+                href="https://www.linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-full border border-white/15 bg-white/[0.06] px-5 py-2 text-xs font-semibold text-zinc-200 transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white/[0.1]"
+              >
+                LinkedIn
+              </a>
+            </div>
+            <p className="mt-4 text-[11px] text-zinc-500">
+              Resmi hesaplar lansman ile güncellenecektir.
+            </p>
+          </div>
         </div>
       )}
       {status === "error" && (
