@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const ogImageUrl = `${SITE_URL}/orivona-logo.png`;
+const ogImageUrl = `${SITE_URL}/og-image.png`;
 
 // Google Search Console: when you have a real verification token from Google, add to `metadata` below:
 //   verification: { google: "paste_token_here" }
@@ -51,17 +51,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/orivona-logo.ico", sizes: "48x48", type: "image/x-icon" },
-      { url: "/orivona-logo.ico", sizes: "any" },
+      { url: "/favicon.ico", sizes: "any", type: "image/x-icon" },
+      { url: "/favicon.png", type: "image/png" },
     ],
-    shortcut: "/orivona-logo.ico",
-    apple: [
-      {
-        url: "/orivona-logo.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: SITE_SEO_TITLE,

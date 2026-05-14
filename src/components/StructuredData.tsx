@@ -1,12 +1,14 @@
 import { SITE_SEO_DESCRIPTION } from "@/src/lib/seo";
 import { SITE_URL } from "@/src/lib/site";
 
+const logoUrl = `${SITE_URL}/favicon.png`;
+
 const organization = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "ORIVONA",
   url: SITE_URL,
-  logo: `${SITE_URL}/orivona-logo.png`,
+  logo: logoUrl,
   description: SITE_SEO_DESCRIPTION,
 } as const;
 
@@ -20,7 +22,7 @@ const website = {
     "@type": "Organization",
     name: "ORIVONA",
     url: SITE_URL,
-    logo: `${SITE_URL}/orivona-logo.png`,
+    logo: logoUrl,
   },
 } as const;
 
