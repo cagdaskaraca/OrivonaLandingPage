@@ -1,3 +1,4 @@
+import { SITE_SEO_DESCRIPTION } from "@/src/lib/seo";
 import { SITE_URL } from "@/src/lib/site";
 
 const organization = {
@@ -6,8 +7,7 @@ const organization = {
   name: "ORIVONA",
   url: SITE_URL,
   logo: `${SITE_URL}/orivona-logo.png`,
-  description:
-    "Premium etkinlik deneyimleri için AI destekli modern organizasyon platformu.",
+  description: SITE_SEO_DESCRIPTION,
 } as const;
 
 const website = {
@@ -15,10 +15,12 @@ const website = {
   "@type": "WebSite",
   name: "ORIVONA",
   url: SITE_URL,
+  description: SITE_SEO_DESCRIPTION,
   publisher: {
     "@type": "Organization",
     name: "ORIVONA",
     url: SITE_URL,
+    logo: `${SITE_URL}/orivona-logo.png`,
   },
 } as const;
 

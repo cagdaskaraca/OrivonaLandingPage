@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { GoogleAnalyticsRouteListener } from "@/src/components/GoogleAnalyticsRouteListener";
 import { StructuredData } from "@/src/components/StructuredData";
 import { GA_MEASUREMENT_ID } from "@/src/lib/analytics";
+import { SITE_SEO_DESCRIPTION, SITE_SEO_TITLE } from "@/src/lib/seo";
 import { SITE_URL } from "@/src/lib/site";
 import "./globals.css";
 
@@ -18,15 +19,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const defaultTitle = "ORIVONA | AI Destekli Organizasyon Platformu";
-const defaultDescription =
-  "Premium etkinlik deneyimleri için AI destekli modern organizasyon platformu.";
-
-const ogTitle = "ORIVONA — AI Destekli Organizasyon Platformu";
-const ogDescription =
-  "Düğün, nişan ve kurumsal etkinlikler için AI destekli organizasyon planlaması, doğrulanmış hizmet sağlayıcıları ve güvenli rezervasyon.";
-
-const ogImageAbsolute = `${SITE_URL}/orivona-logo.png`;
+const ogImageUrl = `${SITE_URL}/orivona-logo.png`;
 
 // Google Search Console: when you have a real verification token from Google, add to `metadata` below:
 //   verification: { google: "paste_token_here" }
@@ -39,8 +32,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: "ORIVONA",
-  title: defaultTitle,
-  description: defaultDescription,
+  title: SITE_SEO_TITLE,
+  description: SITE_SEO_DESCRIPTION,
   keywords: [
     "organizasyon platformu",
     "düğün planlama",
@@ -58,35 +51,39 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/orivona-logo.png", type: "image/png" },
       { url: "/orivona-logo.ico", sizes: "48x48", type: "image/x-icon" },
+      { url: "/orivona-logo.ico", sizes: "any" },
     ],
     shortcut: "/orivona-logo.ico",
-    apple: "/orivona-logo.png",
+    apple: [
+      {
+        url: "/orivona-logo.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   },
   openGraph: {
-    title: ogTitle,
-    description: ogDescription,
+    title: SITE_SEO_TITLE,
+    description: SITE_SEO_DESCRIPTION,
     url: SITE_URL,
     siteName: "ORIVONA",
     type: "website",
     locale: "tr_TR",
     images: [
       {
-        url: ogImageAbsolute,
-        secureUrl: ogImageAbsolute,
-        width: 320,
-        height: 96,
-        alt: ogTitle,
+        url: ogImageUrl,
+        secureUrl: ogImageUrl,
         type: "image/png",
+        alt: SITE_SEO_TITLE,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: ogTitle,
-    description: ogDescription,
-    images: [ogImageAbsolute],
+    title: SITE_SEO_TITLE,
+    description: SITE_SEO_DESCRIPTION,
+    images: [ogImageUrl],
   },
   robots: {
     index: true,
