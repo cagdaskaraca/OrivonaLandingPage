@@ -6,7 +6,7 @@ import { GoogleAnalyticsRouteListener } from "@/src/components/GoogleAnalyticsRo
 import { StructuredData } from "@/src/components/StructuredData";
 import { GA_MEASUREMENT_ID } from "@/src/lib/analytics";
 import { SITE_SEO_DESCRIPTION, SITE_SEO_TITLE } from "@/src/lib/seo";
-import { SITE_URL } from "@/src/lib/site";
+import { SITE_CANONICAL_URL, SITE_URL } from "@/src/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   creator: "ORIVONA",
   publisher: "ORIVONA",
   alternates: {
-    canonical: "/",
+    canonical: SITE_CANONICAL_URL,
   },
   icons: {
     icon: [
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_SEO_TITLE,
     description: SITE_SEO_DESCRIPTION,
-    url: SITE_URL,
+    url: SITE_CANONICAL_URL,
     siteName: "ORIVONA",
     type: "website",
     locale: "tr_TR",
