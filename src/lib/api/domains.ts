@@ -850,6 +850,7 @@ function nestedMessageText(o: Record<string, unknown>): string | undefined {
     );
   }
   return (
+    recordStr(o, "lastMessagePreview", "LastMessagePreview") ??
     recordStr(o, "lastMessageText", "LastMessageText") ??
     recordStr(o, "lastMessageContent", "LastMessageContent")
   );
@@ -891,7 +892,10 @@ function normalizeConversation(raw: unknown): Conversation {
     serviceTitle:
       recordStr(o, "serviceTitle", "ServiceTitle") ??
       recordStr(o, "title", "Title"),
-    lastMessage: nestedMessageText(o),
+    otherPartyName: recordStr(o, "otherPartyName", "OtherPartyName"),
+    lastMessage:
+      recordStr(o, "lastMessagePreview", "LastMessagePreview") ??
+      nestedMessageText(o),
     lastMessageAt,
     unreadCount:
       recordNum(o, "unreadCount", "UnreadCount") ??
@@ -1000,6 +1004,7 @@ function normalizeChatMessage(raw: unknown): ChatMessage {
       recordStr(o, "body", "Body") ??
       recordStr(o, "text", "Text"),
     ...senderFields,
+    otherPartyName: recordStr(o, "otherPartyName", "OtherPartyName"),
     senderRole: recordStr(o, "senderRole", "SenderRole"),
     isFromMe: recordBool(o, "isFromMe", "IsFromMe"),
     createdAt:

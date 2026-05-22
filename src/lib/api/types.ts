@@ -498,6 +498,8 @@ export type AppNotification = {
 
 export type Conversation = {
   id?: string | number;
+  /** API-provided display name for the other participant in this thread. */
+  otherPartyName?: string;
   vendorId?: string | number;
   vendorName?: string;
   vendorBusinessName?: string;
@@ -524,6 +526,7 @@ export type ChatMessage = {
   userId?: string | number;
   senderName?: string;
   senderFullName?: string;
+  otherPartyName?: string;
   senderEmail?: string;
   senderBusinessName?: string;
   customerName?: string;

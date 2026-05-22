@@ -59,12 +59,51 @@ export type CustomerIdentity = {
   email?: string;
 };
 
+/**
+ * Unmasked other-party label from API (conversation-first priority).
+ */
+export function resolveOtherPartyRawName(
+  conversation?: Conversation | null,
+  message?: ChatMessage,
+): string | undefined {
+  const raw = firstNonEmpty(
+    conversation?.otherPartyName,
+    message?.otherPartyName,
+    conversation?.customerFullName,
+    conversation?.customerName,
+    conversation?.vendorBusinessName,
+    conversation?.vendorName,
+    conversation?.businessName,
+    message?.customerFullName,
+    message?.customerName,
+    message?.vendorBusinessName,
+    message?.vendorName,
+    message?.businessName,
+    message?.senderFullName,
+    message?.senderName,
+  );
+  if (!raw || isGenericCustomerLabel(raw)) return undefined;
+  return raw;
+}
+
+function maskOtherPartyForVendor(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.includes("@")) {
+    const masked = maskEmail(trimmed);
+    if (masked) return masked;
+  }
+  const masked = maskFullName(trimmed);
+  return masked || trimmed;
+}
+
 /** Raw customer identity from conversation and/or message (unmasked). */
 export function resolveCustomerIdentity(
   conversation?: Conversation | null,
   message?: ChatMessage,
 ): CustomerIdentity {
+  const fromOther = resolveOtherPartyRawName(conversation, message);
   const name = firstNonEmpty(
+    fromOther,
     message?.senderFullName,
     message?.senderName,
     message?.customerFullName,
@@ -121,11 +160,13 @@ export function resolveCustomerFullName(
   return name ?? email;
 }
 
-/** Customer view: vendor business name, else service title. */
+/** Customer view: otherPartyName as-is, then vendor fields. */
 export function getCustomerViewOtherPartyLabel(
   conversation?: Conversation | null,
   message?: ChatMessage,
 ): string {
+  const raw = resolveOtherPartyRawName(conversation, message);
+  if (raw) return raw;
   return (
     resolveVendorBusinessName(conversation, message) ??
     conversation?.serviceTitle?.trim() ??
@@ -133,11 +174,13 @@ export function getCustomerViewOtherPartyLabel(
   );
 }
 
-/** Vendor view: masked customer name or email prefix. */
+/** Vendor view: masked otherPartyName / customer identity. */
 export function getVendorViewOtherPartyLabel(
   conversation?: Conversation | null,
   message?: ChatMessage,
 ): string {
+  const raw = resolveOtherPartyRawName(conversation, message);
+  if (raw) return maskOtherPartyForVendor(raw);
   return (
     maskCustomerDisplay(resolveCustomerIdentity(conversation, message)) ??
     "Müşteri"
@@ -198,6 +241,12 @@ function collectParticipantPreviewKeys(
   };
 
   add(getConversationParticipantName(conversation, viewerRole));
+  add(conversation.otherPartyName);
+  add(resolveOtherPartyRawName(conversation));
+  if (viewerRole === "Vendor") {
+    const raw = resolveOtherPartyRawName(conversation);
+    if (raw) add(maskOtherPartyForVendor(raw));
+  }
   add(resolveVendorBusinessName(conversation));
   add(conversation.vendorName);
   add(conversation.vendorBusinessName);
