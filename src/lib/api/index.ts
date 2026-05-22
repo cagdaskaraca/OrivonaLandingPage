@@ -74,14 +74,27 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
     return typeof v === "number" ? v : undefined;
   };
   const vendor = o.vendor;
+  const vendorObj =
+    vendor && typeof vendor === "object"
+      ? (vendor as Record<string, unknown>)
+      : undefined;
   const vendorName =
     str("vendorName", "VendorName") ??
-    (vendor &&
-    typeof vendor === "object" &&
-    "name" in vendor &&
-    typeof (vendor as { name: unknown }).name === "string"
-      ? (vendor as { name: string }).name
+    (vendorObj && typeof vendorObj.name === "string"
+      ? vendorObj.name
       : undefined);
+  const vendorPremium =
+    o.isVendorPremium === true ||
+    o.IsVendorPremium === true ||
+    o.vendorIsPremium === true ||
+    o.VendorIsPremium === true ||
+    (vendorObj?.isPremium === true || vendorObj?.IsPremium === true);
+
+  const rawBadges = Array.isArray(o.badges)
+    ? (o.badges as unknown[]).map(String)
+    : Array.isArray(o.Badges)
+      ? (o.Badges as unknown[]).map(String)
+      : undefined;
 
   return {
     id: (o.id ?? o.Id) as string | number | undefined,
@@ -126,16 +139,21 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
     reviewCount: num("reviewCount", "ReviewCount"),
     isFeatured: o.isFeatured === true || o.IsFeatured === true,
     isFavorite: o.isFavorite === true || o.IsFavorite === true,
+    isVendorPremium:
+      vendorPremium ||
+      (rawBadges?.some((b) => b.toLowerCase().includes("premium")) ?? false),
+    createdAt:
+      typeof o.createdAt === "string"
+        ? o.createdAt
+        : typeof o.CreatedAt === "string"
+          ? o.CreatedAt
+          : undefined,
     vendorServiceId:
       (o.vendorServiceId ?? o.VendorServiceId ?? o.id ?? o.Id) as
         | string
         | number
         | undefined,
-    badges: Array.isArray(o.badges)
-      ? (o.badges as unknown[]).map(String)
-      : Array.isArray(o.Badges)
-        ? (o.Badges as unknown[]).map(String)
-        : undefined,
+    badges: rawBadges,
     images: extractServiceGalleryImages(o),
   };
 }

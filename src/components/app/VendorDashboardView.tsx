@@ -7,6 +7,8 @@ import {
   VendorReservationsPanel,
   VendorSummaryCards,
 } from "@/src/components/app/dashboard/VendorExtras";
+import { VendorAvailabilityPanel } from "@/src/components/availability/VendorAvailabilityPanel";
+import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { VendorOfferRequestsPanel } from "@/src/components/offers/VendorOfferRequestsPanel";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
@@ -253,6 +255,8 @@ function DashboardContent() {
       ) : null}
 
       <VendorSummaryCards />
+      <VendorAvailabilityPanel />
+      <MessagingPanel viewerRole="Vendor" />
       <VendorOfferRequestsPanel />
       <VendorReservationsPanel />
 

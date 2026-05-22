@@ -1,5 +1,6 @@
 import {
   apiDeleteRaw,
+  apiGetPublicRaw,
   apiGetRaw,
   apiPostRaw,
   apiPutRaw,
@@ -18,8 +19,18 @@ import type {
   AiEventPlanResult,
   ApiEnvelope,
   AcceptCustomerOfferPayload,
+  AppNotification,
+  ChatMessage,
+  Conversation,
+  CreateConversationPayload,
   CreateOfferRequestPayload,
+  CreateVendorAvailabilityPayload,
+  CreateServiceReviewPayload,
+  SendChatMessagePayload,
   CreateReservationPayload,
+  VendorAvailability,
+  ServiceReview,
+  ServiceReviewsData,
   DashboardSummary,
   FavoriteItem,
   OfferRequest,
@@ -54,6 +65,11 @@ function toList(data: unknown): unknown[] {
       "vendors",
       "services",
       "images",
+      "notifications",
+      "conversations",
+      "messages",
+      "availability",
+      "reviews",
     ]) {
       if (Array.isArray(obj[key])) return obj[key] as unknown[];
     }
@@ -599,4 +615,354 @@ export async function unfeatureAdminService(id: string | number): Promise<void> 
     {},
   );
   assertSuccess(body);
+}
+
+function normalizeNotification(raw: unknown): AppNotification {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const readAt = recordStr(o, "readAt", "ReadAt");
+  const isReadExplicit = recordBool(o, "isRead", "IsRead");
+  const isRead =
+    isReadExplicit === true ||
+    (isReadExplicit !== false && Boolean(readAt?.trim()));
+
+  return {
+    id: recordId(o),
+    title: recordStr(o, "title", "Title"),
+    message:
+      recordStr(o, "message", "Message") ??
+      recordStr(o, "body", "Body") ??
+      recordStr(o, "content", "Content"),
+    createdAt:
+      recordStr(o, "createdAt", "CreatedAt") ??
+      recordStr(o, "sentAt", "SentAt"),
+    isRead,
+    readAt,
+  };
+}
+
+export async function fetchNotifications(): Promise<AppNotification[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/notifications");
+  assertSuccess(body);
+  return toList(body.data).map(normalizeNotification);
+}
+
+export async function markNotificationRead(
+  id: string | number,
+): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>(`/notifications/${id}/read`, {});
+  assertSuccess(body);
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>("/notifications/read-all", {});
+  assertSuccess(body);
+}
+
+function nestedMessageText(o: Record<string, unknown>): string | undefined {
+  const last = o.lastMessage ?? o.LastMessage;
+  if (typeof last === "string") return last;
+  if (last && typeof last === "object") {
+    const m = last as Record<string, unknown>;
+    return (
+      recordStr(m, "content", "Content") ??
+      recordStr(m, "message", "Message") ??
+      recordStr(m, "body", "Body")
+    );
+  }
+  return (
+    recordStr(o, "lastMessageText", "LastMessageText") ??
+    recordStr(o, "lastMessageContent", "LastMessageContent")
+  );
+}
+
+function normalizeConversation(raw: unknown): Conversation {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const last = o.lastMessage ?? o.LastMessage;
+  let lastMessageAt =
+    recordStr(o, "lastMessageAt", "LastMessageAt") ??
+    recordStr(o, "updatedAt", "UpdatedAt");
+  if (last && typeof last === "object") {
+    const m = last as Record<string, unknown>;
+    lastMessageAt =
+      recordStr(m, "createdAt", "CreatedAt") ?? lastMessageAt;
+  }
+
+  return {
+    id: recordId(o),
+    vendorId: recordId(o, "vendorId", "VendorId"),
+    vendorName: recordStr(o, "vendorName", "VendorName"),
+    customerId: recordId(o, "customerId", "CustomerId"),
+    customerName:
+      recordStr(o, "customerName", "CustomerName") ??
+      recordStr(o, "customerFullName", "CustomerFullName"),
+    vendorServiceId:
+      recordId(o, "vendorServiceId", "VendorServiceId") ??
+      recordId(o, "serviceId", "ServiceId"),
+    serviceTitle:
+      recordStr(o, "serviceTitle", "ServiceTitle") ??
+      recordStr(o, "title", "Title"),
+    lastMessage: nestedMessageText(o),
+    lastMessageAt,
+    unreadCount:
+      recordNum(o, "unreadCount", "UnreadCount") ??
+      recordNum(o, "unreadMessagesCount", "UnreadMessagesCount"),
+    updatedAt: recordStr(o, "updatedAt", "UpdatedAt"),
+    createdAt: recordStr(o, "createdAt", "CreatedAt"),
+  };
+}
+
+function normalizeChatMessage(raw: unknown): ChatMessage {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  return {
+    id: recordId(o),
+    conversationId:
+      recordId(o, "conversationId", "ConversationId") ??
+      recordId(o, "conversationID", "ConversationID"),
+    content:
+      recordStr(o, "content", "Content") ??
+      recordStr(o, "message", "Message") ??
+      recordStr(o, "body", "Body") ??
+      recordStr(o, "text", "Text"),
+    senderId: recordId(o, "senderId", "SenderId"),
+    senderName: recordStr(o, "senderName", "SenderName"),
+    senderRole: recordStr(o, "senderRole", "SenderRole"),
+    isFromMe: recordBool(o, "isFromMe", "IsFromMe"),
+    createdAt:
+      recordStr(o, "createdAt", "CreatedAt") ??
+      recordStr(o, "sentAt", "SentAt"),
+  };
+}
+
+function extractConversation(envelope: ApiEnvelope): Conversation {
+  assertSuccess(envelope);
+  const payload = envelope.data;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    return normalizeConversation(payload);
+  }
+  throw new Error("Geçersiz konuşma yanıtı.");
+}
+
+export async function fetchConversations(): Promise<Conversation[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/conversations");
+  assertSuccess(body);
+  return toList(body.data).map(normalizeConversation);
+}
+
+export async function fetchConversationMessages(
+  conversationId: string | number,
+): Promise<ChatMessage[]> {
+  const body = await apiGetRaw<ApiEnvelope>(
+    `/conversations/${conversationId}/messages`,
+  );
+  assertSuccess(body);
+  return toList(body.data).map(normalizeChatMessage);
+}
+
+export async function createConversation(
+  payload: CreateConversationPayload,
+): Promise<Conversation> {
+  const body: Record<string, unknown> = {
+    vendorServiceId: payload.vendorServiceId,
+  };
+  if (payload.vendorId != null) body.vendorId = payload.vendorId;
+  const message = payload.message?.trim();
+  if (message) {
+    body.message = message;
+    body.content = message;
+  }
+  const res = await apiPostRaw<ApiEnvelope>("/conversations", body);
+  return extractConversation(res);
+}
+
+export async function sendConversationMessage(
+  conversationId: string | number,
+  payload: SendChatMessagePayload,
+): Promise<ChatMessage> {
+  const text = payload.message.trim();
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/conversations/${conversationId}/messages`,
+    { message: text, content: text },
+  );
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeChatMessage(data);
+  }
+  return { conversationId, content: text, createdAt: new Date().toISOString() };
+}
+
+function normalizeAvailabilityDate(raw?: string): string | undefined {
+  if (!raw?.trim()) return undefined;
+  const slice = raw.trim().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(slice) ? slice : undefined;
+}
+
+function normalizeVendorAvailability(raw: unknown): VendorAvailability {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const dateRaw =
+    recordStr(o, "date", "Date") ??
+    recordStr(o, "availabilityDate", "AvailabilityDate") ??
+    recordStr(o, "eventDate", "EventDate");
+  const availableExplicit = recordBool(o, "isAvailable", "IsAvailable");
+  const unavailable = recordBool(o, "isUnavailable", "IsUnavailable");
+  let isAvailable = availableExplicit;
+  if (isAvailable === undefined && unavailable === true) isAvailable = false;
+  if (isAvailable === undefined && unavailable === false) isAvailable = true;
+
+  return {
+    id: recordId(o),
+    date: normalizeAvailabilityDate(dateRaw),
+    isAvailable,
+    notes: recordStr(o, "notes", "Notes") ?? recordStr(o, "note", "Note"),
+    vendorServiceId:
+      recordId(o, "vendorServiceId", "VendorServiceId") ??
+      recordId(o, "serviceId", "ServiceId"),
+  };
+}
+
+export async function fetchVendorAvailability(): Promise<VendorAvailability[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/vendor/availability");
+  assertSuccess(body);
+  return toList(body.data)
+    .map(normalizeVendorAvailability)
+    .filter((a) => a.date)
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+}
+
+export async function createVendorAvailability(
+  payload: CreateVendorAvailabilityPayload,
+): Promise<VendorAvailability> {
+  const body = await apiPostRaw<ApiEnvelope>("/vendor/availability", {
+    date: payload.date,
+    isAvailable: payload.isAvailable,
+    notes: payload.notes?.trim() ?? "",
+    ...(payload.vendorServiceId != null
+      ? { vendorServiceId: payload.vendorServiceId }
+      : {}),
+  });
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeVendorAvailability(data);
+  }
+  return normalizeVendorAvailability(payload);
+}
+
+export async function deleteVendorAvailability(
+  id: string | number,
+): Promise<void> {
+  const body = await apiDeleteRaw<ApiEnvelope>(`/vendor/availability/${id}`);
+  assertSuccess(body);
+}
+
+export async function fetchServiceAvailability(
+  serviceId: string | number,
+): Promise<VendorAvailability[]> {
+  const body = await apiGetPublicRaw<ApiEnvelope>(
+    `/services/${serviceId}/availability`,
+  );
+  assertSuccess(body);
+  return toList(body.data)
+    .map(normalizeVendorAvailability)
+    .filter((a) => a.date)
+    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+}
+
+function normalizeServiceReview(raw: unknown): ServiceReview {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const rating =
+    recordNum(o, "rating", "Rating") ??
+    recordNum(o, "stars", "Stars") ??
+    recordNum(o, "score", "Score");
+  return {
+    id: recordId(o),
+    rating: rating != null ? Math.min(5, Math.max(1, Math.round(rating))) : undefined,
+    comment:
+      recordStr(o, "comment", "Comment") ??
+      recordStr(o, "content", "Content") ??
+      recordStr(o, "text", "Text"),
+    customerName:
+      recordStr(o, "customerName", "CustomerName") ??
+      recordStr(o, "authorName", "AuthorName") ??
+      recordStr(o, "userName", "UserName"),
+    authorName: recordStr(o, "authorName", "AuthorName"),
+    createdAt:
+      recordStr(o, "createdAt", "CreatedAt") ??
+      recordStr(o, "reviewedAt", "ReviewedAt"),
+  };
+}
+
+function extractServiceReviews(body: ApiEnvelope): ServiceReviewsData {
+  assertSuccess(body);
+  const payload = body.data;
+  let reviews: ServiceReview[] = [];
+  let averageRating: number | undefined;
+  let reviewCount: number | undefined;
+
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const o = payload as Record<string, unknown>;
+    reviews = toList(o.reviews ?? o.Reviews ?? o.items ?? o.Items).map(
+      normalizeServiceReview,
+    );
+    averageRating =
+      recordNum(o, "averageRating", "AverageRating") ??
+      recordNum(o, "avgRating", "AvgRating") ??
+      recordNum(o, "rating", "Rating");
+    reviewCount =
+      recordNum(o, "reviewCount", "ReviewCount") ??
+      recordNum(o, "totalReviews", "TotalReviews") ??
+      recordNum(o, "count", "Count");
+  } else {
+    reviews = toList(payload).map(normalizeServiceReview);
+  }
+
+  reviews = reviews
+    .filter((r) => r.rating != null || r.comment?.trim())
+    .sort((a, b) => {
+      const ta = new Date(a.createdAt ?? 0).getTime();
+      const tb = new Date(b.createdAt ?? 0).getTime();
+      return tb - ta;
+    });
+
+  if (averageRating == null && reviews.length > 0) {
+    const sum = reviews.reduce((s, r) => s + (r.rating ?? 0), 0);
+    const rated = reviews.filter((r) => r.rating != null).length;
+    if (rated > 0) averageRating = sum / rated;
+  }
+  if (reviewCount == null) reviewCount = reviews.length;
+
+  return { reviews, averageRating, reviewCount };
+}
+
+export async function fetchServiceReviews(
+  serviceId: string | number,
+): Promise<ServiceReviewsData> {
+  const body = await apiGetPublicRaw<ApiEnvelope>(
+    `/services/${serviceId}/reviews`,
+  );
+  return extractServiceReviews(body);
+}
+
+export async function submitServiceReview(
+  serviceId: string | number,
+  payload: CreateServiceReviewPayload,
+): Promise<ServiceReview> {
+  const rating = Math.min(5, Math.max(1, Math.round(payload.rating)));
+  const body = await apiPostRaw<ApiEnvelope>(`/services/${serviceId}/reviews`, {
+    rating,
+    stars: rating,
+    comment: payload.comment.trim(),
+    content: payload.comment.trim(),
+  });
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeServiceReview(data);
+  }
+  return { rating, comment: payload.comment.trim() };
 }

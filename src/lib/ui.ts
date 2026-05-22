@@ -21,5 +21,9 @@ export const cardHover =
 export const badgeClass =
   "inline-flex rounded-full border border-violet-400/25 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100";
 
+/** Marketplace featured service card glow (gold + purple). */
+export const marketplaceFeaturedGlow =
+  "ring-1 ring-amber-300/35 border-amber-200/20 shadow-[0_0_36px_-6px_rgba(251,191,36,0.45),0_0_56px_-12px_rgba(139,92,246,0.4)]";
+
 export const skeletonClass =
   "animate-pulse rounded-xl bg-white/[0.06]";

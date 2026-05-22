@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
+import { ServiceAvailabilityPanel } from "@/src/components/availability/ServiceAvailabilityPanel";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
+import { StartConversationModal } from "@/src/components/messaging/StartConversationModal";
 import { ServiceCoverImage } from "@/src/components/marketplace/ServiceCoverImage";
+import { ServiceReviewsSection } from "@/src/components/reviews/ServiceReviewsSection";
+import { StarRating, formatRatingDisplay } from "@/src/components/reviews/StarRating";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -18,6 +22,11 @@ import {
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
 import { getServiceGalleryUrls } from "@/src/lib/serviceImage";
+import {
+  featuredBadgeClass,
+  isPremiumVendor,
+  premiumBadgeClass,
+} from "@/src/lib/marketplacePremium";
 import {
   badgeClass,
   btnPrimary,
@@ -44,9 +53,12 @@ export function ServiceDetailView() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favLoading, setFavLoading] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
+  const [messageOpen, setMessageOpen] = useState(false);
 
   const canFavorite = isAuthenticated && role === "Customer";
   const canOffer = isAuthenticated && role === "Customer";
+  const canMessage = isAuthenticated && role === "Customer";
+  const canReview = isAuthenticated && role === "Customer";
 
   const load = useCallback(async () => {
     if (!id) {
@@ -184,13 +196,18 @@ export function ServiceDetailView() {
                 />
                 <div className="absolute left-4 top-4 z-10 flex flex-wrap gap-2">
                   {service.isFeatured ? (
-                    <span className={badgeClass}>Öne Çıkan</span>
+                    <span className={featuredBadgeClass}>Öne Çıkan</span>
                   ) : null}
-                  {(service.badges ?? []).map((b) => (
-                    <span key={b} className={badgeClass}>
-                      {b}
-                    </span>
-                  ))}
+                  {isPremiumVendor(service) ? (
+                    <span className={premiumBadgeClass}>Premium</span>
+                  ) : null}
+                  {(service.badges ?? [])
+                    .filter((b) => !b.toLowerCase().includes("premium"))
+                    .map((b) => (
+                      <span key={b} className={badgeClass}>
+                        {b}
+                      </span>
+                    ))}
                 </div>
               </div>
               {galleryUrls.length > 1 ? (
@@ -241,6 +258,15 @@ export function ServiceDetailView() {
                 <p className="mt-6 text-sm text-zinc-500">Açıklama eklenmemiş.</p>
               )}
             </div>
+
+            {id ? (
+              <ServiceReviewsSection
+                serviceId={id}
+                canSubmit={canReview}
+                fallbackRating={rating}
+                fallbackReviewCount={service.reviewCount}
+              />
+            ) : null}
           </div>
 
           <aside className={`${glassCard} h-fit space-y-4`}>
@@ -252,21 +278,45 @@ export function ServiceDetailView() {
                 </p>
               </div>
             )}
-            {rating != null && (
-              <p className="text-sm text-zinc-300">
-                ★ <strong className="text-white">{rating}</strong>
-                {service.reviewCount != null
-                  ? ` · ${service.reviewCount} değerlendirme`
-                  : ""}
-              </p>
-            )}
+            {rating != null || service.reviewCount != null ? (
+              <div className="flex items-center gap-3">
+                {rating != null ? (
+                  <StarRating value={rating} size="sm" />
+                ) : null}
+                <p className="text-sm text-zinc-300">
+                  {rating != null ? (
+                    <strong className="text-white">
+                      {formatRatingDisplay(rating)}
+                    </strong>
+                  ) : null}
+                  {service.reviewCount != null
+                    ? `${rating != null ? " · " : ""}${service.reviewCount} değerlendirme`
+                    : ""}
+                </p>
+              </div>
+            ) : null}
             {capacity ? (
               <p className="text-sm text-zinc-300">
                 Kapasite: <strong className="text-white">{capacity}</strong>
               </p>
             ) : null}
 
+            {id ? <ServiceAvailabilityPanel serviceId={id} /> : null}
+
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
+              {canMessage ? (
+                <button
+                  type="button"
+                  className={btnSecondary}
+                  onClick={() => setMessageOpen(true)}
+                >
+                  Mesaj Gönder
+                </button>
+              ) : !isAuthenticated ? (
+                <Link href="/login" className={`${btnSecondary} text-center`}>
+                  Mesaj için giriş yapın
+                </Link>
+              ) : null}
               {canOffer ? (
                 <button
                   type="button"
@@ -275,11 +325,11 @@ export function ServiceDetailView() {
                 >
                   Teklif İste
                 </button>
-              ) : (
+              ) : !isAuthenticated ? (
                 <Link href="/login" className={`${btnPrimary} text-center`}>
                   Teklif için giriş yapın
                 </Link>
-              )}
+              ) : null}
               {canFavorite ? (
                 <button
                   type="button"
@@ -308,6 +358,14 @@ export function ServiceDetailView() {
         open={offerOpen}
         onClose={() => setOfferOpen(false)}
         onSuccess={(msg) => toast.success(msg)}
+      />
+      <StartConversationModal
+        item={service}
+        open={messageOpen}
+        onClose={() => setMessageOpen(false)}
+        onSuccess={() =>
+          toast.success("Konuşma başlatıldı. Mesajlar panelinizde.")
+        }
       />
     </DemoShell>
   );

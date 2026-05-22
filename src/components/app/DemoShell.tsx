@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AuthNavLinks } from "@/src/components/nav/AuthNavLinks";
+import { NotificationBell } from "@/src/components/nav/NotificationBell";
 
 type DemoShellProps = {
   title: string;
@@ -37,13 +38,14 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
               ORIVONA
             </span>
           </Link>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-zinc-400 sm:text-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-zinc-400 sm:gap-x-4 sm:text-sm">
             <Link href="/marketplace" className="hover:text-violet-200">
               Marketplace
             </Link>
             <Link href="/ai-planner" className="hover:text-violet-200">
               AI Planlayıcı
             </Link>
+            <NotificationBell variant="demo" />
             <AuthNavLinks variant="demo" />
           </div>
         </nav>

@@ -83,6 +83,8 @@ export type MarketplaceItem = {
   coverImageUrl?: string;
   isFeatured?: boolean;
   isFavorite?: boolean;
+  isVendorPremium?: boolean;
+  createdAt?: string;
   badges?: string[];
   images?: ServiceGalleryImage[];
 };
@@ -453,4 +455,84 @@ export type AdminSummary = {
   totalEventRequests?: number;
   pendingVendorApprovals?: number;
   [key: string]: number | string | undefined;
+};
+
+export type AppNotification = {
+  id?: string | number;
+  title?: string;
+  message?: string;
+  createdAt?: string;
+  isRead?: boolean;
+  readAt?: string;
+};
+
+export type Conversation = {
+  id?: string | number;
+  vendorId?: string | number;
+  vendorName?: string;
+  customerId?: string | number;
+  customerName?: string;
+  vendorServiceId?: string | number;
+  serviceTitle?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount?: number;
+  updatedAt?: string;
+  createdAt?: string;
+};
+
+export type ChatMessage = {
+  id?: string | number;
+  conversationId?: string | number;
+  content?: string;
+  senderId?: string | number;
+  senderName?: string;
+  senderRole?: string;
+  isFromMe?: boolean;
+  createdAt?: string;
+};
+
+export type CreateConversationPayload = {
+  vendorServiceId: string | number;
+  vendorId?: string | number;
+  message?: string;
+};
+
+export type SendChatMessagePayload = {
+  message: string;
+};
+
+export type VendorAvailability = {
+  id?: string | number;
+  date?: string;
+  isAvailable?: boolean;
+  notes?: string;
+  vendorServiceId?: string | number;
+};
+
+export type CreateVendorAvailabilityPayload = {
+  date: string;
+  isAvailable: boolean;
+  notes?: string;
+  vendorServiceId?: string | number;
+};
+
+export type ServiceReview = {
+  id?: string | number;
+  rating?: number;
+  comment?: string;
+  customerName?: string;
+  authorName?: string;
+  createdAt?: string;
+};
+
+export type ServiceReviewsData = {
+  reviews: ServiceReview[];
+  averageRating?: number;
+  reviewCount?: number;
+};
+
+export type CreateServiceReviewPayload = {
+  rating: number;
+  comment: string;
 };

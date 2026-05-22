@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { CustomerOverview } from "@/src/components/app/dashboard/CustomerOverview";
 import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import { DemoShell } from "@/src/components/app/DemoShell";
@@ -81,6 +83,8 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 }
 
 function DashboardContent() {
+  const searchParams = useSearchParams();
+  const conversationId = searchParams.get("conversation");
   const { user, logout } = useAuth();
   const [reservationsKey, setReservationsKey] = useState(0);
   const [requests, setRequests] = useState<EventRequest[]>([]);
@@ -227,6 +231,11 @@ function DashboardContent() {
       </div>
 
       <CustomerOverview key={reservationsKey} />
+
+      <MessagingPanel
+        viewerRole="Customer"
+        initialConversationId={conversationId}
+      />
 
       <CustomerOfferRequestsPanel
         onAfterAccept={() => setReservationsKey((k) => k + 1)}

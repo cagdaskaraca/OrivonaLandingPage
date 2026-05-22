@@ -9,6 +9,12 @@ import {
   isLocalMarketplaceImage,
 } from "@/src/lib/serviceImage";
 import type { MarketplaceItem } from "@/src/lib/api/types";
+import {
+  featuredBadgeClass,
+  featuredCardClasses,
+  isPremiumVendor,
+  premiumBadgeClass,
+} from "@/src/lib/marketplacePremium";
 import { badgeClass, btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
 
 type MarketplaceServiceCardProps = {
@@ -17,7 +23,9 @@ type MarketplaceServiceCardProps = {
   favoriteLoading?: boolean;
   onFavoriteToggle?: () => void;
   onOfferRequest?: () => void;
+  onMessageSend?: () => void;
   showOfferButton?: boolean;
+  showMessageButton?: boolean;
 };
 
 export function MarketplaceServiceCard({
@@ -26,7 +34,9 @@ export function MarketplaceServiceCard({
   favoriteLoading,
   onFavoriteToggle,
   onOfferRequest,
+  onMessageSend,
   showOfferButton = true,
+  showMessageButton = false,
 }: MarketplaceServiceCardProps) {
   const title = item.serviceTitle ?? item.title ?? "Hizmet";
   const vendor = item.vendorName ?? "İşletme";
@@ -64,10 +74,22 @@ export function MarketplaceServiceCard({
     !isLocalMarketplaceImage(imageSrc) &&
     (imageSrc.startsWith("http://") || imageSrc.startsWith("https://"));
 
+  const featured = item.isFeatured === true;
+  const premium = isPremiumVendor(item);
+  const extraBadges = (item.badges ?? []).filter(
+    (b) => !b.toLowerCase().includes("premium") && b !== "Öne Çıkan",
+  );
+
   return (
     <article
-      className={`${glassCard} ${cardHover} group flex flex-col overflow-hidden p-0`}
+      className={`${glassCard} ${cardHover} ${featuredCardClasses(featured)} group relative flex flex-col overflow-hidden p-0`}
     >
+      {featured ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-amber-400/[0.07] via-transparent to-violet-500/[0.08]"
+          aria-hidden
+        />
+      ) : null}
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl bg-[#0a0612]">
         {detailHref ? (
           <Link href={detailHref} className="absolute inset-0 z-0">
@@ -87,11 +109,12 @@ export function MarketplaceServiceCard({
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06040c]/75 via-[#06040c]/10 to-[#06040c]/25"
           aria-hidden
         />
-        <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap gap-1">
-          {item.isFeatured ? (
-            <span className={badgeClass}>Öne Çıkan</span>
+        <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+          {featured ? (
+            <span className={featuredBadgeClass}>Öne Çıkan</span>
           ) : null}
-          {(item.badges ?? []).slice(0, 2).map((b) => (
+          {premium ? <span className={premiumBadgeClass}>Premium</span> : null}
+          {extraBadges.slice(0, featured && premium ? 1 : 2).map((b) => (
             <span key={b} className={badgeClass}>
               {b}
             </span>
@@ -113,21 +136,36 @@ export function MarketplaceServiceCard({
           </button>
         ) : null}
       </div>
-      <div className="relative flex flex-1 flex-col gap-3 p-5">
+      <div className="relative z-[2] flex flex-1 flex-col gap-3 p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
             {categoryName ?? "Kategori"}
           </p>
           {detailHref ? (
             <Link href={detailHref}>
-              <h3 className="mt-1 text-lg font-semibold text-white transition hover:text-violet-100">
+              <h3
+                className={`mt-1 text-lg font-semibold transition hover:text-violet-100 ${
+                  featured ? "text-amber-50" : "text-white"
+                }`}
+              >
                 {title}
               </h3>
             </Link>
           ) : (
-            <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
+            <h3
+              className={`mt-1 text-lg font-semibold ${
+                featured ? "text-amber-50" : "text-white"
+              }`}
+            >
+              {title}
+            </h3>
           )}
-          <p className="mt-1 text-sm text-zinc-400">{vendor}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+            <span>{vendor}</span>
+            {premium && !featured ? (
+              <span className={premiumBadgeClass}>Premium</span>
+            ) : null}
+          </p>
         </div>
         {(item.city || item.district) && (
           <p className="text-xs text-zinc-500">
@@ -162,15 +200,24 @@ export function MarketplaceServiceCard({
               Detayları gör
             </Link>
           ) : null}
+          {showMessageButton && onMessageSend ? (
+            <button type="button" className={btnSecondary} onClick={onMessageSend}>
+              Mesaj Gönder
+            </button>
+          ) : showMessageButton ? (
+            <span className={`${btnSecondary} pointer-events-none text-center opacity-60`}>
+              Mesaj için giriş yapın
+            </span>
+          ) : null}
           {showOfferButton && onOfferRequest ? (
             <button type="button" className={btnPrimary} onClick={onOfferRequest}>
               Teklif İste
             </button>
-          ) : (
-            <span className={`${btnSecondary} pointer-events-none opacity-60`}>
+          ) : showOfferButton ? (
+            <span className={`${btnSecondary} pointer-events-none text-center opacity-60`}>
               Giriş yaparak teklif isteyin
             </span>
-          )}
+          ) : null}
         </div>
       </div>
     </article>

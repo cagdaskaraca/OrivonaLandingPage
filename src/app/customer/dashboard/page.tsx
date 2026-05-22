@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { CustomerDashboardView } from "@/src/components/app/CustomerDashboardView";
 
 export const metadata = {
@@ -5,5 +6,15 @@ export const metadata = {
 };
 
 export default function CustomerDashboardPage() {
-  return <CustomerDashboardView />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#06040c] text-sm text-zinc-400">
+          Yükleniyor…
+        </div>
+      }
+    >
+      <CustomerDashboardView />
+    </Suspense>
+  );
 }

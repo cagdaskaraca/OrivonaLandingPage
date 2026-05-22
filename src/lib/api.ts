@@ -62,5 +62,18 @@ export {
   fetchAdminServices,
   featureAdminService,
   unfeatureAdminService,
+  fetchNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  fetchConversations,
+  fetchConversationMessages,
+  createConversation,
+  sendConversationMessage,
+  fetchVendorAvailability,
+  createVendorAvailability,
+  deleteVendorAvailability,
+  fetchServiceAvailability,
+  fetchServiceReviews,
+  submitServiceReview,
 } from "@/src/lib/api/index";
 export type { AiRecommendationsHttpResponse } from "@/src/lib/api/index";

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
+import { StartConversationModal } from "@/src/components/messaging/StartConversationModal";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { SkeletonGrid } from "@/src/components/ui/SkeletonGrid";
 import { useAuth } from "@/src/contexts/AuthContext";
@@ -22,6 +23,10 @@ import type {
   MarketplaceFilters,
   MarketplaceItem,
 } from "@/src/lib/api/types";
+import {
+  MARKETPLACE_SORT_OPTIONS,
+  sortMarketplaceItems,
+} from "@/src/lib/marketplacePremium";
 import { btnPrimary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const emptyFilters: MarketplaceFilters = {
@@ -36,13 +41,6 @@ const emptyFilters: MarketplaceFilters = {
   sortBy: "",
 };
 
-const SORT_OPTIONS = [
-  { value: "", label: "Sıralama yok" },
-  { value: "price_asc", label: "Fiyat (artan)" },
-  { value: "price_desc", label: "Fiyat (azalan)" },
-  { value: "rating_desc", label: "Puan" },
-];
-
 export function MarketplaceView() {
   const { isAuthenticated, role } = useAuth();
   const toast = useToast();
@@ -55,9 +53,11 @@ export function MarketplaceView() {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [offerItem, setOfferItem] = useState<MarketplaceItem | null>(null);
+  const [messageItem, setMessageItem] = useState<MarketplaceItem | null>(null);
 
   const canFavorite = isAuthenticated && role === "Customer";
   const canOffer = isAuthenticated && role === "Customer";
+  const canMessage = isAuthenticated && role === "Customer";
 
   useEffect(() => {
     fetchCategories()
@@ -98,9 +98,9 @@ export function MarketplaceView() {
       setError(null);
       setSearched(true);
       try {
-        const { response, items } = await fetchMarketplace(next);
+        const { response, items: raw } = await fetchMarketplace(next);
         console.log("Marketplace response", response.data);
-        setItems(items);
+        setItems(sortMarketplaceItems(raw, next.sortBy ?? ""));
       } catch (e) {
         if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
         setItems([]);
@@ -229,7 +229,7 @@ export function MarketplaceView() {
             />
           </label>
         ))}
-        <label className="block text-sm">
+        <label className="block text-sm sm:col-span-2 lg:col-span-1">
           <span className="mb-1.5 block text-xs text-zinc-400">Sıralama</span>
           <select
             className={selectClass}
@@ -238,7 +238,7 @@ export function MarketplaceView() {
               setFilters((f) => ({ ...f, sortBy: e.target.value }))
             }
           >
-            {SORT_OPTIONS.map((o) => (
+            {MARKETPLACE_SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
@@ -281,8 +281,12 @@ export function MarketplaceView() {
                 canFavorite ? () => toggleFavorite(item) : undefined
               }
               showOfferButton={canOffer}
+              showMessageButton={canMessage}
               onOfferRequest={
                 canOffer ? () => setOfferItem(item) : undefined
+              }
+              onMessageSend={
+                canMessage ? () => setMessageItem(item) : undefined
               }
             />
           ))}
@@ -300,6 +304,14 @@ export function MarketplaceView() {
         open={offerItem != null}
         onClose={() => setOfferItem(null)}
         onSuccess={(msg) => toast.success(msg)}
+      />
+      <StartConversationModal
+        item={messageItem}
+        open={messageItem != null}
+        onClose={() => setMessageItem(null)}
+        onSuccess={() =>
+          toast.success("Konuşma başlatıldı. Mesajlar panelinizde.")
+        }
       />
     </DemoShell>
   );
