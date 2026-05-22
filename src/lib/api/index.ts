@@ -514,6 +514,7 @@ export function normalizeCategory(raw: unknown): Category {
     id: (o.id ?? o.Id) as string | number | undefined,
     name: str("name", "Name") ?? str("title", "Title"),
     slug: str("slug", "Slug"),
+    description: str("description", "Description"),
   };
 }
 

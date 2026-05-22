@@ -1,13 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminCategoryManagement } from "@/src/components/admin/AdminCategoryManagement";
 import { AdminServiceTable } from "@/src/components/admin/AdminServiceTable";
 import { AdminSummaryCards } from "@/src/components/admin/AdminSummaryCards";
+import { AdminUserManagement } from "@/src/components/admin/AdminUserManagement";
+import { AdminVendorRejectModal } from "@/src/components/admin/AdminVendorRejectModal";
 import { AdminVendorTable } from "@/src/components/admin/AdminVendorTable";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
+  activateAdminVendor,
   approveAdminVendor,
+  deactivateAdminVendor,
   featureAdminService,
   fetchAdminDashboardSummary,
   fetchAdminServices,
@@ -31,43 +36,67 @@ function DashboardContent() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [services, setServices] = useState<AdminService[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+  const [vendorsLoading, setVendorsLoading] = useState(true);
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [vendorsError, setVendorsError] = useState<string | null>(null);
   const [actionVendorId, setActionVendorId] = useState<string | number | null>(
     null,
   );
   const [actionServiceId, setActionServiceId] = useState<string | number | null>(
     null,
   );
+  const [rejectTarget, setRejectTarget] = useState<AdminVendor | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadSummaryAndServices = useCallback(async () => {
+    setSummaryLoading(true);
+    setServicesLoading(true);
     try {
-      const [s, v, svc] = await Promise.all([
+      const [s, svc] = await Promise.all([
         fetchAdminDashboardSummary(),
-        fetchAdminVendors(),
         fetchAdminServices(),
       ]);
       setSummary(s);
-      setVendors(v);
       setServices(svc);
     } catch (e) {
-      if (e instanceof ApiError) console.log("Admin dashboard failed", e.body);
-      toast.error(formatApiErrorMessage(e, "Admin verisi yüklenemedi."));
+      if (e instanceof ApiError) console.log("Admin summary/services failed", e.body);
+      toast.error(formatApiErrorMessage(e, "Özet veya hizmet verisi yüklenemedi."));
     } finally {
-      setLoading(false);
+      setSummaryLoading(false);
+      setServicesLoading(false);
     }
   }, [toast]);
 
+  const loadVendors = useCallback(async () => {
+    setVendorsLoading(true);
+    setVendorsError(null);
+    try {
+      setVendors(await fetchAdminVendors());
+    } catch (e) {
+      if (e instanceof ApiError) console.log("Admin vendors failed", e.body);
+      setVendorsError(formatApiErrorMessage(e, "İşletmeler yüklenemedi."));
+      setVendors([]);
+    } finally {
+      setVendorsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    load();
-  }, [load]);
+    loadSummaryAndServices();
+    loadVendors();
+  }, [loadSummaryAndServices, loadVendors]);
+
+  function refreshAll() {
+    void loadSummaryAndServices();
+    void loadVendors();
+  }
 
   async function handleApprove(id: string | number) {
     setActionVendorId(id);
     try {
       await approveAdminVendor(id);
       toast.success("İşletme onaylandı.");
-      await load();
+      await loadVendors();
     } catch (e) {
       toast.error(formatApiErrorMessage(e, "Onaylanamadı."));
     } finally {
@@ -75,14 +104,43 @@ function DashboardContent() {
     }
   }
 
-  async function handleReject(id: string | number) {
+  async function handleConfirmReject(reason: string) {
+    const id = rejectTarget?.id;
+    if (id == null) return;
     setActionVendorId(id);
     try {
-      await rejectAdminVendor(id);
+      await rejectAdminVendor(id, reason);
       toast.success("İşletme reddedildi.");
-      await load();
+      setRejectTarget(null);
+      await loadVendors();
     } catch (e) {
       toast.error(formatApiErrorMessage(e, "Reddedilemedi."));
+    } finally {
+      setActionVendorId(null);
+    }
+  }
+
+  async function handleActivateVendor(id: string | number) {
+    setActionVendorId(id);
+    try {
+      await activateAdminVendor(id);
+      toast.success("İşletme aktifleştirildi.");
+      await loadVendors();
+    } catch (e) {
+      toast.error(formatApiErrorMessage(e, "Aktifleştirilemedi."));
+    } finally {
+      setActionVendorId(null);
+    }
+  }
+
+  async function handleDeactivateVendor(id: string | number) {
+    setActionVendorId(id);
+    try {
+      await deactivateAdminVendor(id);
+      toast.success("İşletme pasifleştirildi.");
+      await loadVendors();
+    } catch (e) {
+      toast.error(formatApiErrorMessage(e, "Pasifleştirilemedi."));
     } finally {
       setActionVendorId(null);
     }
@@ -100,7 +158,7 @@ function DashboardContent() {
         await featureAdminService(id);
         toast.success("Hizmet öne çıkarıldı.");
       }
-      await load();
+      await loadSummaryAndServices();
     } catch (e) {
       toast.error(formatApiErrorMessage(e, "İşlem başarısız."));
     } finally {
@@ -112,19 +170,21 @@ function DashboardContent() {
     (v) => v.isApproved !== true && (v.status ?? "").toLowerCase() !== "rejected",
   ).length;
 
+  const refreshing = summaryLoading || vendorsLoading || servicesLoading;
+
   return (
     <DemoShell
       title="Yönetici Paneli"
-      subtitle="Platform özeti, işletme onayları ve hizmet yönetimi."
+      subtitle="Kategori, işletme, kullanıcı ve hizmet yönetimi."
     >
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <button
           type="button"
           className={btnSecondary}
-          onClick={load}
-          disabled={loading}
+          onClick={refreshAll}
+          disabled={refreshing}
         >
-          {loading ? "Yenileniyor…" : "Yenile"}
+          {refreshing ? "Yenileniyor…" : "Yenile"}
         </button>
         <button
           type="button"
@@ -145,25 +205,55 @@ function DashboardContent() {
 
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-semibold text-white">Platform özeti</h2>
-        <AdminSummaryCards summary={summary} loading={loading} />
+        <AdminSummaryCards summary={summary} loading={summaryLoading} />
+      </section>
+
+      <section className={`${glassCard} mb-8`}>
+        <h2 className="text-lg font-semibold text-white">Kategori yönetimi</h2>
+        <AdminCategoryManagement
+          onToastSuccess={toast.success}
+          onToastError={toast.error}
+        />
       </section>
 
       <section className={`${glassCard} mb-8`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-white">İşletmeler</h2>
+            <h2 className="text-lg font-semibold text-white">İşletme yönetimi</h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Tüm kayıtlı işletmeler. Onay bekleyenler üstte listelenir.
+              Onay, red ve hesap durumu. Onay bekleyenler üstte listelenir.
               {pendingCount > 0 ? ` ${pendingCount} onay bekliyor.` : ""}
             </p>
           </div>
         </div>
         <AdminVendorTable
           vendors={vendors}
-          loading={loading}
+          loading={vendorsLoading}
+          error={vendorsError}
+          onRetry={loadVendors}
           actionVendorId={actionVendorId}
           onApprove={handleApprove}
-          onReject={handleReject}
+          onRejectRequest={setRejectTarget}
+          onActivate={handleActivateVendor}
+          onDeactivate={handleDeactivateVendor}
+        />
+        <AdminVendorRejectModal
+          open={rejectTarget != null}
+          businessName={rejectTarget?.businessName}
+          loading={rejectTarget?.id != null && actionVendorId === rejectTarget.id}
+          onClose={() => setRejectTarget(null)}
+          onConfirm={handleConfirmReject}
+        />
+      </section>
+
+      <section className={`${glassCard} mb-8`}>
+        <h2 className="text-lg font-semibold text-white">Kullanıcı yönetimi</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Müşteri, işletme ve yönetici hesaplarının durumu.
+        </p>
+        <AdminUserManagement
+          onToastSuccess={toast.success}
+          onToastError={toast.error}
         />
       </section>
 
@@ -178,7 +268,7 @@ function DashboardContent() {
         </div>
         <AdminServiceTable
           services={services}
-          loading={loading}
+          loading={servicesLoading}
           actionServiceId={actionServiceId}
           onToggleFeature={handleToggleFeature}
         />

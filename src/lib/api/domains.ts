@@ -13,7 +13,10 @@ import {
   recordStr,
 } from "@/src/lib/normalize";
 import type {
+  AdminCategory,
+  AdminCategoryPayload,
   AdminService,
+  AdminUser,
   AdminVendor,
   AiEventPlanRequest,
   AiEventPlanResult,
@@ -70,6 +73,8 @@ function toList(data: unknown): unknown[] {
       "messages",
       "availability",
       "reviews",
+      "categories",
+      "users",
     ]) {
       if (Array.isArray(obj[key])) return obj[key] as unknown[];
     }
@@ -545,15 +550,64 @@ function normalizeAdminVendor(raw: unknown): AdminVendor {
   return {
     id: recordId(o),
     businessName: recordStr(o, "businessName", "BusinessName"),
+    ownerName:
+      recordStr(o, "ownerName", "OwnerName") ??
+      recordStr(o, "fullName", "FullName") ??
+      recordStr(o, "contactName", "ContactName"),
     email: recordStr(o, "email", "Email"),
     city: recordStr(o, "city", "City"),
     district: recordStr(o, "district", "District"),
     isApproved: recordBool(o, "isApproved", "IsApproved"),
+    isUserActive:
+      recordBool(o, "isUserActive", "IsUserActive") ??
+      recordBool(o, "isActive", "IsActive"),
+    rejectionReason:
+      recordStr(o, "rejectionReason", "RejectionReason") ??
+      recordStr(o, "rejectReason", "RejectReason"),
     status:
       recordStr(o, "status", "Status") ??
       recordStr(o, "approvalStatus", "ApprovalStatus"),
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
   };
+}
+
+function normalizeAdminCategory(raw: unknown): AdminCategory {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  return {
+    id: recordId(o),
+    name: recordStr(o, "name", "Name") ?? recordStr(o, "title", "Title"),
+    slug: recordStr(o, "slug", "Slug"),
+    description: recordStr(o, "description", "Description"),
+    isActive: recordBool(o, "isActive", "IsActive") ?? true,
+    serviceCount:
+      recordNum(o, "serviceCount", "ServiceCount") ??
+      recordNum(o, "servicesCount", "ServicesCount"),
+  };
+}
+
+function normalizeAdminUser(raw: unknown): AdminUser {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  return {
+    id: recordId(o),
+    fullName:
+      recordStr(o, "fullName", "FullName") ?? recordStr(o, "name", "Name"),
+    email: recordStr(o, "email", "Email"),
+    role: recordStr(o, "role", "Role"),
+    isActive: recordBool(o, "isActive", "IsActive") ?? true,
+  };
+}
+
+function buildAdminCategoryBody(payload: AdminCategoryPayload) {
+  const body: Record<string, unknown> = {
+    name: payload.name.trim(),
+    description: payload.description?.trim() ?? "",
+    isActive: payload.isActive,
+  };
+  const slug = payload.slug?.trim();
+  if (slug) body.slug = slug;
+  return body;
 }
 
 function normalizeAdminService(raw: unknown): AdminService {
@@ -590,8 +644,98 @@ export async function approveAdminVendor(id: string | number): Promise<void> {
   assertSuccess(body);
 }
 
-export async function rejectAdminVendor(id: string | number): Promise<void> {
-  const body = await apiPostRaw<ApiEnvelope>(`/admin/vendors/${id}/reject`, {});
+export async function rejectAdminVendor(
+  id: string | number,
+  reason?: string,
+): Promise<void> {
+  const payload: Record<string, unknown> = {};
+  const trimmed = reason?.trim();
+  if (trimmed) payload.reason = trimmed;
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/admin/vendors/${id}/reject`,
+    payload,
+  );
+  assertSuccess(body);
+}
+
+export async function activateAdminVendor(id: string | number): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/admin/vendors/${id}/activate`,
+    {},
+  );
+  assertSuccess(body);
+}
+
+export async function deactivateAdminVendor(id: string | number): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/admin/vendors/${id}/deactivate`,
+    {},
+  );
+  assertSuccess(body);
+}
+
+export async function fetchAdminCategories(): Promise<AdminCategory[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/admin/categories");
+  assertSuccess(body);
+  return toList(body.data)
+    .map(normalizeAdminCategory)
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "tr"));
+}
+
+export async function createAdminCategory(
+  payload: AdminCategoryPayload,
+): Promise<AdminCategory> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    "/admin/categories",
+    buildAdminCategoryBody(payload),
+  );
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeAdminCategory(data);
+  }
+  return normalizeAdminCategory(payload);
+}
+
+export async function updateAdminCategory(
+  id: string | number,
+  payload: AdminCategoryPayload,
+): Promise<AdminCategory> {
+  const body = await apiPutRaw<ApiEnvelope>(
+    `/admin/categories/${id}`,
+    buildAdminCategoryBody(payload),
+  );
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeAdminCategory(data);
+  }
+  return normalizeAdminCategory({ ...payload, id });
+}
+
+export async function deleteAdminCategory(id: string | number): Promise<void> {
+  const body = await apiDeleteRaw<ApiEnvelope>(`/admin/categories/${id}`);
+  assertSuccess(body);
+}
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/admin/users");
+  assertSuccess(body);
+  return toList(body.data)
+    .map(normalizeAdminUser)
+    .sort((a, b) => (a.fullName ?? a.email ?? "").localeCompare(
+      b.fullName ?? b.email ?? "",
+      "tr",
+    ));
+}
+
+export async function activateAdminUser(id: string | number): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>(`/admin/users/${id}/activate`, {});
+  assertSuccess(body);
+}
+
+export async function deactivateAdminUser(id: string | number): Promise<void> {
+  const body = await apiPostRaw<ApiEnvelope>(`/admin/users/${id}/deactivate`, {});
   assertSuccess(body);
 }
 
@@ -732,8 +876,39 @@ function normalizeChatMessage(raw: unknown): ChatMessage {
     isFromMe: recordBool(o, "isFromMe", "IsFromMe"),
     createdAt:
       recordStr(o, "createdAt", "CreatedAt") ??
-      recordStr(o, "sentAt", "SentAt"),
+      recordStr(o, "sentAt", "SentAt") ??
+      recordStr(o, "timestamp", "Timestamp"),
   };
+}
+
+/** Unwraps messages from envelope.data, envelope.data.data, or .items. */
+function extractMessageListRaw(payload: unknown): unknown[] {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || typeof payload !== "object") return [];
+
+  const o = payload as Record<string, unknown>;
+  const nested = o.data ?? o.Data;
+  if (Array.isArray(nested)) return nested;
+  if (nested && typeof nested === "object") {
+    const inner = nested as Record<string, unknown>;
+    if (Array.isArray(inner.items)) return inner.items as unknown[];
+    if (Array.isArray(inner.Items)) return inner.Items as unknown[];
+    if (Array.isArray(inner.messages)) return inner.messages as unknown[];
+    if (Array.isArray(inner.Messages)) return inner.Messages as unknown[];
+    if (Array.isArray(inner.data)) return inner.data as unknown[];
+    if (Array.isArray(inner.Data)) return inner.Data as unknown[];
+  }
+
+  return toList(payload);
+}
+
+function extractConversationMessages(envelope: ApiEnvelope): ChatMessage[] {
+  assertSuccess(envelope);
+  console.log("Messages response", { data: envelope.data });
+  const raw = extractMessageListRaw(envelope.data);
+  return raw
+    .map(normalizeChatMessage)
+    .filter((m) => Boolean(m.content?.trim()) || m.id != null);
 }
 
 function extractConversation(envelope: ApiEnvelope): Conversation {
@@ -757,8 +932,7 @@ export async function fetchConversationMessages(
   const body = await apiGetRaw<ApiEnvelope>(
     `/conversations/${conversationId}/messages`,
   );
-  assertSuccess(body);
-  return toList(body.data).map(normalizeChatMessage);
+  return extractConversationMessages(body);
 }
 
 export async function createConversation(
@@ -788,10 +962,36 @@ export async function sendConversationMessage(
   );
   assertSuccess(body);
   const data = body.data;
-  if (data && typeof data === "object" && !Array.isArray(data)) {
-    return normalizeChatMessage(data);
+  let msg: ChatMessage = {
+    conversationId,
+    content: text,
+    createdAt: new Date().toISOString(),
+    isFromMe: true,
+  };
+  if (data && typeof data === "object") {
+    if (Array.isArray(data) && data[0]) {
+      msg = { ...normalizeChatMessage(data[0]), isFromMe: true };
+    } else if (!Array.isArray(data)) {
+      const o = data as Record<string, unknown>;
+      const inner = o.data ?? o.Data ?? o.message ?? o.Message;
+      if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+        msg = {
+          ...normalizeChatMessage(inner),
+          content:
+            normalizeChatMessage(inner).content?.trim() || text,
+          isFromMe: true,
+        };
+      } else {
+        msg = {
+          ...normalizeChatMessage(data),
+          content: normalizeChatMessage(data).content?.trim() || text,
+          isFromMe: true,
+        };
+      }
+    }
   }
-  return { conversationId, content: text, createdAt: new Date().toISOString() };
+  if (!msg.content?.trim()) msg.content = text;
+  return msg;
 }
 
 function normalizeAvailabilityDate(raw?: string): string | undefined {

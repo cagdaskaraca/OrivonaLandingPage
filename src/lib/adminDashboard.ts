@@ -1,4 +1,5 @@
 import type { DashboardSummary } from "@/src/lib/api/types";
+import { normalizeRole } from "@/src/lib/auth";
 import { formatDashboardValue } from "@/src/lib/dashboardLabels";
 
 /** Admin summary metrics in display order (supports PascalCase API keys). */
@@ -80,4 +81,61 @@ export function vendorCanModerate(vendor: {
   if (vendor.isApproved === true) return false;
   const s = (vendor.status ?? "").trim().toLowerCase();
   return s !== "rejected" && s !== "reddedildi";
+}
+
+export function vendorUserIsActive(vendor: {
+  isUserActive?: boolean;
+  isActive?: boolean;
+}): boolean {
+  if (vendor.isUserActive !== undefined) return vendor.isUserActive !== false;
+  if (vendor.isActive !== undefined) return vendor.isActive !== false;
+  return true;
+}
+
+export function vendorActiveLabel(vendor: {
+  isUserActive?: boolean;
+  isActive?: boolean;
+}): string {
+  return vendorUserIsActive(vendor) ? "Aktif" : "Pasif";
+}
+
+export function activeStatusClass(isActive: boolean | undefined): string {
+  return isActive === false
+    ? "border-zinc-500/40 bg-zinc-500/15 text-zinc-300"
+    : "border-emerald-400/30 bg-emerald-500/15 text-emerald-100";
+}
+
+export function userRoleLabel(role?: string | null): string {
+  const normalized = normalizeRole(role ?? undefined);
+  if (normalized === "Customer") return "Müşteri";
+  if (normalized === "Vendor") return "İşletme";
+  if (normalized === "Admin") return "Yönetici";
+  const raw = (role ?? "").trim();
+  return raw || "—";
+}
+
+export function formatAdminCategoryLabel(cat: {
+  name?: string;
+  serviceCount?: number;
+}): string {
+  const name = cat.name?.trim() || "—";
+  const count = cat.serviceCount;
+  if (count != null && count > 0) {
+    return `${name} (${count} hizmet)`;
+  }
+  return name;
+}
+
+export function slugifyCategoryName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

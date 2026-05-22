@@ -41,6 +41,14 @@ function sortMessages(list: ChatMessage[]): ChatMessage[] {
   });
 }
 
+function scrollContainerToBottom(
+  el: HTMLDivElement | null,
+  behavior: ScrollBehavior = "auto",
+) {
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior });
+}
+
 export function MessagingPanel({
   viewerRole,
   initialConversationId,
@@ -55,8 +63,17 @@ export function MessagingPanel({
   const [sending, setSending] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   const [messagesError, setMessagesError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesScrollRef = useRef<HTMLDivElement>(null);
   const appliedInitialRef = useRef(false);
+
+  const scrollMessagesToBottom = useCallback(
+    (behavior: ScrollBehavior = "auto") => {
+      requestAnimationFrame(() => {
+        scrollContainerToBottom(messagesScrollRef.current, behavior);
+      });
+    },
+    [],
+  );
 
   const loadConversations = useCallback(async (silent = false) => {
     if (!silent) setListLoading(true);
@@ -77,12 +94,20 @@ export function MessagingPanel({
   }, []);
 
   const loadMessages = useCallback(
-    async (conversationId: string, silent = false) => {
+    async (
+      conversationId: string,
+      options?: { silent?: boolean; scrollAfter?: boolean },
+    ) => {
+      const silent = options?.silent ?? false;
+      const scrollAfter = options?.scrollAfter ?? false;
       if (!silent) setMessagesLoading(true);
       try {
         const list = await fetchConversationMessages(conversationId);
         setMessages(sortMessages(list));
         setMessagesError(null);
+        if (scrollAfter) {
+          scrollMessagesToBottom("smooth");
+        }
       } catch (err) {
         logApiError("Messages fetch failed", err);
         if (!silent) {
@@ -94,7 +119,7 @@ export function MessagingPanel({
         if (!silent) setMessagesLoading(false);
       }
     },
-    [],
+    [scrollMessagesToBottom],
   );
 
   useEffect(() => {
@@ -120,21 +145,17 @@ export function MessagingPanel({
       setMessages([]);
       return;
     }
-    void loadMessages(selectedId);
+    void loadMessages(selectedId, { scrollAfter: true });
   }, [selectedId, loadMessages]);
 
   useEffect(() => {
     if (!selectedId) return;
     const interval = setInterval(() => {
-      void loadMessages(selectedId, true);
+      void loadMessages(selectedId, { silent: true, scrollAfter: false });
       void loadConversations(true);
     }, MESSAGE_POLL_MS);
     return () => clearInterval(interval);
   }, [selectedId, loadMessages, loadConversations]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, selectedId]);
 
   const selectedConversation = conversations.find(
     (c) => c.id != null && String(c.id) === selectedId,
@@ -147,25 +168,43 @@ export function MessagingPanel({
     if (!text) return;
 
     setSending(true);
+    setDraft("");
+    const tempId = `temp-${Date.now()}`;
     const optimistic: ChatMessage = {
+      id: tempId,
       content: text,
       createdAt: new Date().toISOString(),
       isFromMe: true,
       senderId: user?.id,
       senderRole: viewerRole,
+      conversationId: selectedId,
     };
-    setDraft("");
-    setMessages((prev) => [...prev, optimistic]);
+    setMessages((prev) => sortMessages([...prev, optimistic]));
+    scrollMessagesToBottom("smooth");
+
     try {
       const sent = await sendConversationMessage(selectedId, { message: text });
-      setMessages((prev) => {
-        const withoutLast = prev.slice(0, -1);
-        return sortMessages([...withoutLast, sent]);
-      });
+      setMessages((prev) =>
+        sortMessages([
+          ...prev.filter((m) => String(m.id) !== tempId),
+          {
+            ...sent,
+            content: sent.content?.trim() || text,
+            isFromMe: true,
+          },
+        ]),
+      );
+
+      const refreshed = await fetchConversationMessages(selectedId);
+      setMessages((prev) =>
+        refreshed.length > 0 ? sortMessages(refreshed) : prev,
+      );
+
       setMessagesError(null);
+      scrollMessagesToBottom("smooth");
       await loadConversations(true);
     } catch (err) {
-      setMessages((prev) => prev.slice(0, -1));
+      setMessages((prev) => prev.filter((m) => String(m.id) !== tempId));
       setDraft(text);
       logApiError("Send message failed", err);
       setMessagesError(
@@ -180,6 +219,9 @@ export function MessagingPanel({
     (sum, c) => sum + (c.unreadCount ?? 0),
     0,
   );
+
+  const showEmptyMessages =
+    !messagesLoading && !messagesError && messages.length === 0;
 
   return (
     <div className={`${glassCard} mb-8`}>
@@ -295,7 +337,7 @@ export function MessagingPanel({
           )}
         </div>
 
-        <div className="flex min-h-[320px] flex-col">
+        <div className="flex min-h-[320px] flex-col overflow-hidden">
           {!selectedId ? (
             <div className="flex flex-1 items-center justify-center px-6 py-12 text-center">
               <p className="text-sm text-zinc-500">
@@ -304,7 +346,7 @@ export function MessagingPanel({
             </div>
           ) : (
             <>
-              <div className="border-b border-white/10 px-4 py-3">
+              <div className="shrink-0 border-b border-white/10 px-4 py-3">
                 <p className="text-sm font-semibold text-white">
                   {selectedConversation
                     ? getConversationTitle(selectedConversation, viewerRole)
@@ -318,16 +360,19 @@ export function MessagingPanel({
                 ) : null}
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              <div
+                ref={messagesScrollRef}
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
+              >
                 {messagesLoading && messages.length === 0 ? (
                   <div className="space-y-3">
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className={`animate-pulse h-12 max-w-[75%] rounded-2xl bg-white/[0.06] ${
-                          i % 2 === 0 ? "ml-auto" : ""
-                        }`}
-                      />
+                        className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className="h-12 w-[70%] max-w-[75%] animate-pulse rounded-2xl bg-white/[0.06]" />
+                      </div>
                     ))}
                   </div>
                 ) : messagesError && messages.length === 0 ? (
@@ -337,13 +382,14 @@ export function MessagingPanel({
                       type="button"
                       className={`${btnSecondary} mt-3 px-4 py-2 text-xs`}
                       onClick={() =>
-                        selectedId && void loadMessages(selectedId)
+                        selectedId &&
+                        void loadMessages(selectedId, { scrollAfter: true })
                       }
                     >
                       Tekrar dene
                     </button>
                   </div>
-                ) : messages.length === 0 ? (
+                ) : showEmptyMessages ? (
                   <p className="text-center text-sm text-zinc-500">
                     Henüz mesaj yok. İlk mesajı gönderin.
                   </p>
@@ -354,7 +400,8 @@ export function MessagingPanel({
                       viewerRole,
                       user?.id,
                     );
-                    const key = msg.id != null ? String(msg.id) : `local-${index}`;
+                    const key =
+                      msg.id != null ? String(msg.id) : `local-${index}-${msg.createdAt}`;
                     return (
                       <div
                         key={key}
@@ -384,12 +431,11 @@ export function MessagingPanel({
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               <form
                 onSubmit={handleSend}
-                className="flex gap-2 border-t border-white/10 p-4"
+                className="flex shrink-0 gap-2 border-t border-white/10 bg-[#0c0814]/80 p-4 backdrop-blur-sm"
               >
                 <input
                   className={inputClass}
@@ -408,7 +454,7 @@ export function MessagingPanel({
                 </button>
               </form>
               {messagesError && messages.length > 0 ? (
-                <p className="border-t border-white/10 px-4 py-2 text-center text-xs text-red-300/80">
+                <p className="shrink-0 border-t border-white/10 px-4 py-2 text-center text-xs text-red-300/80">
                   {messagesError}
                 </p>
               ) : null}

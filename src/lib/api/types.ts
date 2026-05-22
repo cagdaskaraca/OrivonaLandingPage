@@ -226,12 +226,40 @@ export type AiEventPlanResult = {
 export type AdminVendor = {
   id?: string | number;
   businessName?: string;
+  ownerName?: string;
   email?: string;
   city?: string;
   district?: string;
   isApproved?: boolean;
+  /** User account active (marketplace visibility when approved). */
+  isUserActive?: boolean;
+  rejectionReason?: string;
   status?: string;
   createdAt?: string;
+};
+
+export type AdminCategory = {
+  id?: string | number;
+  name?: string;
+  slug?: string;
+  description?: string;
+  isActive?: boolean;
+  serviceCount?: number;
+};
+
+export type AdminCategoryPayload = {
+  name: string;
+  slug?: string;
+  description?: string;
+  isActive: boolean;
+};
+
+export type AdminUser = {
+  id?: string | number;
+  fullName?: string;
+  email?: string;
+  role?: string;
+  isActive?: boolean;
 };
 
 export type AdminService = {
@@ -387,6 +415,7 @@ export type Category = {
   id?: string | number;
   name?: string;
   slug?: string;
+  description?: string;
 };
 
 export type VendorProfile = {

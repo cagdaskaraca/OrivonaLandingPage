@@ -17,8 +17,9 @@ import {
   getToken,
   logout as clearAuthToken,
 } from "@/src/lib/auth";
-import { ApiError } from "@/src/lib/api/client";
+import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { AuthUser, UserRole } from "@/src/lib/api/types";
+import { useToast } from "@/src/contexts/ToastContext";
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -34,6 +35,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const toast = useToast();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,15 +53,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(me);
       setRole(getRoleFromUser(me));
     } catch (err) {
+      const hadSession = Boolean(token);
       if (err instanceof ApiError && err.status === 401) {
         clearAuthToken();
+        if (hadSession && typeof window !== "undefined") {
+          const msg = formatApiErrorMessage(
+            err,
+            "Hesabınız devre dışı bırakılmış olabilir.",
+          );
+          toast.error(msg);
+          window.location.href = "/login";
+        }
       }
       setUser(null);
       setRole(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     refresh();
