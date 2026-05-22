@@ -528,7 +528,9 @@ export type CreateConversationPayload = {
 };
 
 export type SendChatMessagePayload = {
-  message: string;
+  /** Trimmed before send; mapped to API field `messageText`. */
+  message?: string;
+  messageText?: string;
 };
 
 export type VendorAvailability = {

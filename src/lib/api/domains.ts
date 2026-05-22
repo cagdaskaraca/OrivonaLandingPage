@@ -867,6 +867,7 @@ function normalizeChatMessage(raw: unknown): ChatMessage {
       recordId(o, "conversationID", "ConversationID"),
     content:
       recordStr(o, "content", "Content") ??
+      recordStr(o, "messageText", "MessageText") ??
       recordStr(o, "message", "Message") ??
       recordStr(o, "body", "Body") ??
       recordStr(o, "text", "Text"),
@@ -955,10 +956,13 @@ export async function sendConversationMessage(
   conversationId: string | number,
   payload: SendChatMessagePayload,
 ): Promise<ChatMessage> {
-  const text = payload.message.trim();
+  const text = (payload.messageText ?? payload.message ?? "").trim();
+  if (!text) {
+    throw new Error("Mesaj metni boş.");
+  }
   const body = await apiPostRaw<ApiEnvelope>(
     `/conversations/${conversationId}/messages`,
-    { message: text, content: text },
+    { messageText: text },
   );
   assertSuccess(body);
   const data = body.data;
