@@ -11,6 +11,35 @@ export class ApiError extends Error {
   }
 }
 
+/** Formats API errors including ASP.NET validation `errors` object. */
+export function formatApiErrorMessage(err: unknown, fallback: string): string {
+  if (!(err instanceof ApiError)) return fallback;
+
+  const lines: string[] = [];
+  if (err.message) lines.push(err.message);
+
+  const body = err.body;
+  if (body && typeof body === "object") {
+    const record = body as Record<string, unknown>;
+    const errors = record.errors;
+    if (errors && typeof errors === "object" && !Array.isArray(errors)) {
+      for (const [field, value] of Object.entries(
+        errors as Record<string, unknown>,
+      )) {
+        const msgs = Array.isArray(value)
+          ? value.map(String)
+          : [String(value)];
+        for (const msg of msgs) {
+          if (msg) lines.push(`${field}: ${msg}`);
+        }
+      }
+    }
+  }
+
+  const unique = [...new Set(lines.filter(Boolean))];
+  return unique.length > 0 ? unique.join("\n") : fallback;
+}
+
 export function getApiBaseUrl(): string {
   const base =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080/api";
