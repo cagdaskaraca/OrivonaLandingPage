@@ -17,8 +17,14 @@ export {
   extractMarketplaceItems,
   fetchMarketplace,
   normalizeMarketplaceItem,
+  createVendorService,
+  deleteVendorService,
+  fetchCategories,
   fetchVendorProfile,
   fetchVendorServices,
+  normalizeVendorProfile,
+  normalizeVendorService,
   updateCustomerEventRequest,
+  updateVendorService,
 } from "@/src/lib/api/index";
 export type { AiRecommendationsHttpResponse } from "@/src/lib/api/index";

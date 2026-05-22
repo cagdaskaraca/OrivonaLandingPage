@@ -21,14 +21,20 @@ const emptyFilters: MarketplaceFilters = {
 function MarketplaceCard({ item }: { item: MarketplaceItem }) {
   const title = item.serviceTitle ?? item.title ?? "Hizmet";
   const vendor = item.vendorName ?? "İşletme";
-  const price = item.price ?? item.minPrice;
+  const price = item.price ?? item.basePrice ?? item.minPrice;
+  const capacity =
+    item.capacityMin != null && item.capacityMax != null
+      ? `${item.capacityMin}–${item.capacityMax}`
+      : item.guestCapacity != null
+        ? String(item.guestCapacity)
+        : null;
   const rating = item.rating ?? item.averageRating;
 
   return (
     <article className={`${glassCard} flex flex-col gap-3`}>
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-          {item.category ?? "Kategori"}
+          {item.categoryName ?? item.category ?? "Kategori"}
         </p>
         <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
         <p className="mt-1 text-sm text-zinc-400">{vendor}</p>
@@ -57,9 +63,7 @@ function MarketplaceCard({ item }: { item: MarketplaceItem }) {
             Puan: <strong className="text-white">{rating}</strong>
           </span>
         )}
-        {item.guestCapacity != null && (
-          <span>Kapasite: {item.guestCapacity} kişi</span>
-        )}
+        {capacity != null && <span>Kapasite: {capacity} kişi</span>}
       </div>
     </article>
   );
@@ -81,6 +85,7 @@ export function MarketplaceView() {
       console.log("Marketplace Response", response.data);
       setItems(items);
     } catch (e) {
+      if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
       setItems([]);
       setError(
         e instanceof ApiError

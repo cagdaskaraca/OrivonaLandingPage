@@ -49,11 +49,15 @@ export type MarketplaceItem = {
   district?: string;
   category?: string;
   price?: number;
+  basePrice?: number;
   minPrice?: number;
   maxPrice?: number;
   rating?: number;
   averageRating?: number;
   guestCapacity?: number;
+  capacityMin?: number;
+  capacityMax?: number;
+  categoryName?: string;
   imageUrl?: string;
 };
 
@@ -188,6 +192,18 @@ export function normalizeEventRequest(item: unknown): EventRequest {
   };
 }
 
+export interface ApiEnvelope {
+  success?: boolean;
+  message?: string;
+  data?: unknown;
+}
+
+export type Category = {
+  id?: string | number;
+  name?: string;
+  slug?: string;
+};
+
 export type VendorProfile = {
   id?: string | number;
   businessName?: string;
@@ -196,16 +212,56 @@ export type VendorProfile = {
   district?: string;
   categories?: string[];
   rating?: number;
+  isApproved?: boolean;
+  isActive?: boolean;
 };
 
 export type VendorService = {
   id?: string | number;
+  vendorId?: string | number;
   title?: string;
   description?: string;
   category?: string;
+  categoryName?: string;
+  categoryId?: string | number;
+  basePrice?: number;
   price?: number;
+  city?: string;
+  district?: string;
+  capacityMin?: number;
+  capacityMax?: number;
+  guestCapacity?: number;
   isActive?: boolean;
 };
+
+export type VendorServicePayload = {
+  title: string;
+  description: string;
+  basePrice: number;
+  city: string;
+  district: string;
+  capacityMin: number;
+  capacityMax: number;
+  isActive: boolean;
+  categoryName: string;
+  categoryId?: string | number;
+};
+
+/** MVP category names when GET /categories is unavailable */
+export const VENDOR_CATEGORY_NAMES = [
+  "Mekan",
+  "Fotoğrafçı",
+  "Catering",
+  "Müzik",
+  "Dekorasyon",
+  "Organizasyon Planlayıcı",
+  "Gelinlik",
+  "Saç Makyaj",
+  "Ulaşım",
+  "Davetiye",
+  "Pasta",
+  "Nikah Şekeri",
+] as const;
 
 export type AdminSummary = {
   totalUsers?: number;

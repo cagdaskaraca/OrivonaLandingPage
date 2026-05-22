@@ -1,4 +1,5 @@
 import {
+  ApiError,
   apiGet,
   apiGetOptional,
   apiGetPublic,
@@ -12,12 +13,15 @@ import {
   apiPostPublicRaw,
   buildQuery,
 } from "@/src/lib/api/client";
+import { formatCityForApi } from "@/src/lib/turkish";
 import {
   normalizeEventRequest,
   type AdminSummary,
   type AiRecommendationItem,
   type AiRecommendationsApiResponse,
   type AiRecommendationRequest,
+  type ApiEnvelope,
+  type Category,
   type CreateEventRequestPayload,
   type EventRequest,
   type EventRequestApiResponse,
@@ -28,6 +32,8 @@ import {
   type ServicesListApiResponse,
   type VendorProfile,
   type VendorService,
+  type VendorServicePayload,
+  VENDOR_CATEGORY_NAMES,
 } from "@/src/lib/api/types";
 
 function toList<T>(data: unknown): T[] {
@@ -95,12 +101,20 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
       str("category", "Category") ??
       str("categoryName", "CategoryName") ??
       str("categoryId", "CategoryId"),
-    price: num("price", "Price") ?? num("minPrice", "MinPrice"),
+    price:
+      num("price", "Price") ??
+      num("basePrice", "BasePrice") ??
+      num("minPrice", "MinPrice"),
+    basePrice: num("basePrice", "BasePrice"),
     minPrice: num("minPrice", "MinPrice"),
     maxPrice: num("maxPrice", "MaxPrice"),
     rating: num("rating", "Rating") ?? num("averageRating", "AverageRating"),
     averageRating: num("averageRating", "AverageRating"),
-    guestCapacity: num("guestCapacity", "GuestCapacity"),
+    guestCapacity:
+      num("guestCapacity", "GuestCapacity") ??
+      num("capacityMax", "CapacityMax"),
+    capacityMin: num("capacityMin", "CapacityMin"),
+    capacityMax: num("capacityMax", "CapacityMax"),
     imageUrl: str("imageUrl", "ImageUrl"),
   };
 }
@@ -130,8 +144,8 @@ export async function fetchMarketplace(
   items: MarketplaceItem[];
 }> {
   const query = buildQuery({
-    city: filters.city,
-    district: filters.district,
+    city: filters.city ? formatCityForApi(filters.city) : undefined,
+    district: filters.district?.trim() || undefined,
     categoryId: filters.categoryId,
     minPrice: filters.minPrice,
     maxPrice: filters.maxPrice,
@@ -284,14 +298,206 @@ export async function deleteCustomerEventRequest(
   await apiDeleteRaw<EventRequestApiResponse>(`/event-requests/${id}`);
 }
 
-export async function fetchVendorProfile(): Promise<VendorProfile | null> {
-  return apiGetOptional<VendorProfile>("/vendor/profile");
+function assertApiEnvelopeSuccess(envelope: ApiEnvelope): void {
+  if (envelope.success === false) {
+    throw new Error(
+      typeof envelope.message === "string"
+        ? envelope.message
+        : "İstek başarısız.",
+    );
+  }
 }
 
-export async function fetchVendorServices(): Promise<VendorService[] | null> {
-  const data = await apiGetOptional<unknown>("/vendor/services");
-  if (data === null) return null;
-  return toList<VendorService>(data);
+function extractEnvelopeList(envelope: ApiEnvelope): unknown[] {
+  assertApiEnvelopeSuccess(envelope);
+  return toList(envelope.data);
+}
+
+export function normalizeVendorProfile(raw: unknown): VendorProfile {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const str = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "string" ? v : undefined;
+  };
+  const num = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "number" ? v : undefined;
+  };
+  const bool = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    if (typeof v === "boolean") return v;
+    return undefined;
+  };
+  const categoriesRaw = o.categories ?? o.Categories;
+  const categories = Array.isArray(categoriesRaw)
+    ? categoriesRaw.map(String)
+    : undefined;
+
+  return {
+    id: (o.id ?? o.Id) as string | number | undefined,
+    businessName: str("businessName", "BusinessName"),
+    description: str("description", "Description"),
+    city: str("city", "City"),
+    district: str("district", "District"),
+    categories,
+    rating: num("rating", "Rating"),
+    isApproved:
+      bool("isApproved", "IsApproved") ?? bool("approved", "Approved"),
+    isActive: bool("isActive", "IsActive"),
+  };
+}
+
+export function normalizeVendorService(raw: unknown): VendorService {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const str = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "string" ? v : undefined;
+  };
+  const num = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "number" ? v : undefined;
+  };
+  const bool = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    if (typeof v === "boolean") return v;
+    return undefined;
+  };
+
+  const categoryName =
+    str("categoryName", "CategoryName") ?? str("category", "Category");
+  const basePrice = num("basePrice", "BasePrice") ?? num("price", "Price");
+
+  return {
+    id: (o.id ?? o.Id) as string | number | undefined,
+    vendorId: (o.vendorId ?? o.VendorId) as string | number | undefined,
+    title: str("title", "Title"),
+    description: str("description", "Description"),
+    category: categoryName,
+    categoryName,
+    categoryId: (o.categoryId ?? o.CategoryId) as string | number | undefined,
+    basePrice,
+    price: basePrice,
+    city: str("city", "City"),
+    district: str("district", "District"),
+    capacityMin: num("capacityMin", "CapacityMin"),
+    capacityMax: num("capacityMax", "CapacityMax"),
+    guestCapacity: num("guestCapacity", "GuestCapacity"),
+    isActive: bool("isActive", "IsActive") ?? true,
+  };
+}
+
+export function normalizeCategory(raw: unknown): Category {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const str = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "string" ? v : undefined;
+  };
+  return {
+    id: (o.id ?? o.Id) as string | number | undefined,
+    name: str("name", "Name") ?? str("title", "Title"),
+    slug: str("slug", "Slug"),
+  };
+}
+
+export function extractVendorServices(envelope: ApiEnvelope): VendorService[] {
+  return extractEnvelopeList(envelope).map(normalizeVendorService);
+}
+
+export function extractVendorService(envelope: ApiEnvelope): VendorService {
+  assertApiEnvelopeSuccess(envelope);
+  const payload = envelope.data;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    return normalizeVendorService(payload);
+  }
+  throw new Error("Geçersiz hizmet yanıtı.");
+}
+
+export async function fetchVendorProfile(): Promise<VendorProfile | null> {
+  try {
+    const body = await apiGetRaw<ApiEnvelope>("/vendor/profile");
+    assertApiEnvelopeSuccess(body);
+    if (!body.data) return {};
+    return normalizeVendorProfile(body.data);
+  } catch (e) {
+    if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
+      return null;
+    }
+    throw e;
+  }
+}
+
+export async function fetchVendorServices(): Promise<VendorService[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/vendor/services");
+  return extractVendorServices(body);
+}
+
+export async function fetchCategories(): Promise<Category[]> {
+  try {
+    const body = await apiGetPublicRaw<ApiEnvelope>("/categories");
+    const list = extractEnvelopeList(body);
+    const categories = list.map(normalizeCategory).filter((c) => c.name);
+    if (categories.length > 0) return categories;
+  } catch (e) {
+    console.log("Categories fetch failed", e);
+  }
+  return VENDOR_CATEGORY_NAMES.map((name, index) => ({
+    id: index + 1,
+    name,
+  }));
+}
+
+function isGuidLike(value: string | number | undefined): boolean {
+  if (value == null || value === "") return false;
+  const s = String(value);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
+function buildVendorServiceBody(payload: VendorServicePayload) {
+  const body: Record<string, unknown> = {
+    title: payload.title,
+    description: payload.description,
+    basePrice: payload.basePrice,
+    city: payload.city,
+    district: payload.district,
+    capacityMin: payload.capacityMin,
+    capacityMax: payload.capacityMax,
+    isActive: payload.isActive,
+  };
+  if (isGuidLike(payload.categoryId)) {
+    body.categoryId = payload.categoryId;
+  } else {
+    body.categoryName = payload.categoryName;
+  }
+  return body;
+}
+
+export async function createVendorService(
+  payload: VendorServicePayload,
+): Promise<VendorService> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    "/vendor/services",
+    buildVendorServiceBody(payload),
+  );
+  return extractVendorService(body);
+}
+
+export async function updateVendorService(
+  id: string | number,
+  payload: VendorServicePayload,
+): Promise<VendorService> {
+  const body = await apiPutRaw<ApiEnvelope>(
+    `/vendor/services/${id}`,
+    buildVendorServiceBody(payload),
+  );
+  return extractVendorService(body);
+}
+
+export async function deleteVendorService(id: string | number): Promise<void> {
+  const body = await apiDeleteRaw<ApiEnvelope>(`/vendor/services/${id}`);
+  assertApiEnvelopeSuccess(body);
 }
 
 export async function fetchAdminSummary(): Promise<AdminSummary | null> {
