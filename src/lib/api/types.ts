@@ -2,6 +2,7 @@ export type UserRole = "Customer" | "Vendor" | "Admin";
 
 export type AuthUser = {
   id?: string;
+  userId?: string;
   email?: string;
   fullName?: string;
   name?: string;
@@ -514,7 +515,9 @@ export type ChatMessage = {
   id?: string | number;
   conversationId?: string | number;
   content?: string;
+  senderUserId?: string | number;
   senderId?: string | number;
+  userId?: string | number;
   senderName?: string;
   senderRole?: string;
   isFromMe?: boolean;

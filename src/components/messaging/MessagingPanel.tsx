@@ -10,8 +10,10 @@ import {
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { ChatMessage, Conversation, UserRole } from "@/src/lib/api/types";
 import {
+  getAuthUserId,
   getConversationSubtitle,
   getConversationTitle,
+  getMessageSenderLabel,
   resolveMessageFromMe,
 } from "@/src/lib/messaging";
 import { formatChatTimestamp, formatRelativeTime } from "@/src/lib/relativeTime";
@@ -54,6 +56,7 @@ export function MessagingPanel({
   initialConversationId,
 }: MessagingPanelProps) {
   const { user } = useAuth();
+  const currentUserId = getAuthUserId(user);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -175,8 +178,9 @@ export function MessagingPanel({
       content: text,
       createdAt: new Date().toISOString(),
       isFromMe: true,
-      senderId: user?.id,
-      senderRole: viewerRole,
+      senderUserId: currentUserId,
+      senderId: currentUserId,
+      userId: currentUserId,
       conversationId: selectedId,
     };
     setMessages((prev) => sortMessages([...prev, optimistic]));
@@ -191,6 +195,9 @@ export function MessagingPanel({
             ...sent,
             content: sent.content?.trim() || text,
             isFromMe: true,
+            senderUserId: sent.senderUserId ?? currentUserId,
+            senderId: sent.senderId ?? currentUserId,
+            userId: sent.userId ?? currentUserId,
           },
         ]),
       );
@@ -395,37 +402,51 @@ export function MessagingPanel({
                   </p>
                 ) : (
                   messages.map((msg, index) => {
-                    const fromMe = resolveMessageFromMe(
-                      msg,
-                      viewerRole,
-                      user?.id,
-                    );
+                    const fromMe = resolveMessageFromMe(msg, currentUserId);
+                    const label = getMessageSenderLabel(msg, fromMe);
                     const key =
                       msg.id != null ? String(msg.id) : `local-${index}-${msg.createdAt}`;
                     return (
                       <div
                         key={key}
-                        className={`flex ${fromMe ? "justify-end" : "justify-start"}`}
+                        className={`flex w-full ${fromMe ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                            fromMe
-                              ? "rounded-br-md bg-gradient-to-br from-violet-500/35 to-fuchsia-500/20 text-white"
-                              : "rounded-bl-md border border-white/10 bg-white/[0.06] text-zinc-100"
+                          className={`flex max-w-[min(85%,20rem)] flex-col gap-1 ${
+                            fromMe ? "items-end" : "items-start"
                           }`}
                         >
-                          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                            {msg.content?.trim() || "—"}
-                          </p>
-                          {msg.createdAt ? (
-                            <p
-                              className={`mt-1 text-[10px] ${
-                                fromMe ? "text-violet-100/70" : "text-zinc-500"
-                              }`}
-                            >
-                              {formatChatTimestamp(msg.createdAt)}
+                          <span
+                            className={`px-1 text-[10px] font-medium tracking-wide ${
+                              fromMe
+                                ? "text-violet-300/80"
+                                : "text-zinc-500"
+                            }`}
+                          >
+                            {label}
+                          </span>
+                          <div
+                            className={`rounded-2xl px-4 py-2.5 shadow-sm ${
+                              fromMe
+                                ? "rounded-br-sm border border-violet-400/25 bg-gradient-to-br from-violet-600/55 via-violet-500/45 to-fuchsia-600/35 text-white shadow-violet-950/30"
+                                : "rounded-bl-sm border border-white/12 bg-zinc-800/90 text-zinc-100 shadow-black/20"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-inherit">
+                              {msg.content?.trim() || "—"}
                             </p>
-                          ) : null}
+                            {msg.createdAt ? (
+                              <p
+                                className={`mt-1.5 text-[10px] tabular-nums ${
+                                  fromMe
+                                    ? "text-violet-100/75"
+                                    : "text-zinc-500"
+                                }`}
+                              >
+                                {formatChatTimestamp(msg.createdAt)}
+                              </p>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
                     );

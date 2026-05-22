@@ -857,9 +857,40 @@ function normalizeConversation(raw: unknown): Conversation {
   };
 }
 
+function extractMessageSenderFields(
+  o: Record<string, unknown>,
+): Pick<ChatMessage, "senderUserId" | "senderId" | "userId" | "senderName"> {
+  const sender = o.sender ?? o.Sender;
+  let nestedId: string | number | undefined;
+  let nestedName: string | undefined;
+  if (sender && typeof sender === "object") {
+    const s = sender as Record<string, unknown>;
+    nestedId =
+      recordId(s) ??
+      recordId(s, "userId", "UserId") ??
+      recordId(s, "id", "Id");
+    nestedName = recordStr(s, "fullName", "FullName") ?? recordStr(s, "name", "Name");
+  }
+  const senderUserId =
+    recordId(o, "senderUserId", "SenderUserId") ?? nestedId;
+  const senderId =
+    recordId(o, "senderId", "SenderId") ?? senderUserId ?? nestedId;
+  const userId = recordId(o, "userId", "UserId") ?? senderUserId ?? senderId;
+  return {
+    senderUserId,
+    senderId,
+    userId,
+    senderName:
+      recordStr(o, "senderName", "SenderName") ??
+      recordStr(o, "senderFullName", "SenderFullName") ??
+      nestedName,
+  };
+}
+
 function normalizeChatMessage(raw: unknown): ChatMessage {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const senderFields = extractMessageSenderFields(o);
   return {
     id: recordId(o),
     conversationId:
@@ -871,8 +902,7 @@ function normalizeChatMessage(raw: unknown): ChatMessage {
       recordStr(o, "message", "Message") ??
       recordStr(o, "body", "Body") ??
       recordStr(o, "text", "Text"),
-    senderId: recordId(o, "senderId", "SenderId"),
-    senderName: recordStr(o, "senderName", "SenderName"),
+    ...senderFields,
     senderRole: recordStr(o, "senderRole", "SenderRole"),
     isFromMe: recordBool(o, "isFromMe", "IsFromMe"),
     createdAt:

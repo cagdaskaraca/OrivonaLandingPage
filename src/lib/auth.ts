@@ -73,13 +73,24 @@ function normalizeAuthUser(raw: unknown): AuthUser {
   };
   const rolesRaw = o.roles ?? o.Roles;
   const roles = Array.isArray(rolesRaw) ? rolesRaw.map(String) : undefined;
+  const id =
+    o.id != null
+      ? String(o.id)
+      : o.Id != null
+        ? String(o.Id)
+        : o.userId != null
+          ? String(o.userId)
+          : o.UserId != null
+            ? String(o.UserId)
+            : undefined;
   return {
-    id:
-      o.id != null
-        ? String(o.id)
-        : o.Id != null
-          ? String(o.Id)
-          : undefined,
+    id,
+    userId:
+      o.userId != null
+        ? String(o.userId)
+        : o.UserId != null
+          ? String(o.UserId)
+          : id,
     email: str("email", "Email"),
     fullName: str("fullName", "FullName") ?? str("name", "Name"),
     name: str("name", "Name"),
