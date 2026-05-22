@@ -1,6 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AuthNavLinks } from "@/src/components/nav/AuthNavLinks";
 
 type DemoShellProps = {
   title: string;
@@ -41,12 +44,7 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
             <Link href="/ai-planner" className="hover:text-violet-200">
               AI Planlayıcı
             </Link>
-            <Link href="/login" className="hover:text-violet-200">
-              Giriş
-            </Link>
-            <Link href="/register" className="hover:text-violet-200">
-              Kayıt
-            </Link>
+            <AuthNavLinks variant="demo" />
           </div>
         </nav>
       </header>

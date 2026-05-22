@@ -4,18 +4,17 @@ import { useEffect, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import { fetchAdminSummary } from "@/src/lib/api";
-import type { AdminSummary, AuthUser } from "@/src/lib/api/types";
-import { getCurrentUser, logout } from "@/src/lib/auth";
+import type { AdminSummary } from "@/src/lib/api/types";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 
 function DashboardContent() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user, logout } = useAuth();
   const [summary, setSummary] = useState<AdminSummary | null | undefined>(
     undefined,
   );
 
   useEffect(() => {
-    getCurrentUser().then(setUser);
     fetchAdminSummary().then(setSummary);
   }, []);
 

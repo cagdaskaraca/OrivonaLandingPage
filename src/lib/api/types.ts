@@ -5,8 +5,27 @@ export type AuthUser = {
   email?: string;
   fullName?: string;
   name?: string;
+  phoneNumber?: string;
   role?: string;
   roles?: string[];
+};
+
+export type AccountProfile = {
+  fullName?: string;
+  email?: string;
+  phoneNumber?: string;
+  role?: string;
+  businessName?: string;
+  description?: string;
+  city?: string;
+  district?: string;
+  phone?: string;
+  websiteUrl?: string;
+  instagramUrl?: string;
+  isApproved?: boolean;
+  preferredEventTypes?: string[] | string;
+  budgetMin?: number;
+  budgetMax?: number;
 };
 
 export type AuthResponse = {
@@ -243,8 +262,8 @@ export type VendorServicePayload = {
   capacityMin: number;
   capacityMax: number;
   isActive: boolean;
-  categoryName: string;
-  categoryId?: string | number;
+  categoryId: string | number;
+  categoryName?: string;
 };
 
 /** MVP category names when GET /categories is unavailable */

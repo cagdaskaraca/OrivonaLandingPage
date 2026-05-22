@@ -12,12 +12,8 @@ import {
   updateCustomerEventRequest,
 } from "@/src/lib/api";
 import { ApiError } from "@/src/lib/api/client";
-import type {
-  AuthUser,
-  EventRequest,
-  EventRequestFormPayload,
-} from "@/src/lib/api/types";
-import { getCurrentUser, logout } from "@/src/lib/auth";
+import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const EVENT_REQUEST_STATUS_OPTIONS = [
@@ -78,7 +74,7 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 }
 
 function DashboardContent() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user, logout } = useAuth();
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [form, setForm] = useState<EventRequestFormPayload>(defaultForm);
@@ -91,8 +87,6 @@ function DashboardContent() {
   async function load() {
     setLoadingList(true);
     try {
-      const me = await getCurrentUser();
-      setUser(me);
       const list = await fetchCustomerEventRequests();
       setRequests(list);
     } catch (err) {
@@ -225,6 +219,9 @@ function DashboardContent() {
         >
           Çıkış
         </button>
+        <Link href="/account" className={btnSecondary}>
+          Profil düzenle
+        </Link>
         <Link href="/marketplace" className={btnSecondary}>
           Marketplace
         </Link>

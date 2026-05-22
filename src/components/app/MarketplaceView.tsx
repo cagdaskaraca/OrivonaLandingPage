@@ -142,7 +142,7 @@ export function MarketplaceView() {
       setSearched(true);
       try {
         const { response, items } = await fetchMarketplace(next);
-        console.log("Marketplace Response", response.data);
+        console.log("Marketplace response", response.data);
         setItems(items);
       } catch (e) {
         if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);

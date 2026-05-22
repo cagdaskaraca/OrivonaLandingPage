@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
-import {
-  getDashboardPathForRole,
-  login,
-} from "@/src/lib/auth";
-import { ApiError } from "@/src/lib/api/client";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { getDashboardPathForRole, login } from "@/src/lib/auth";
+import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
 
 export function LoginView() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,12 +28,14 @@ export function LoginView() {
         setError("Kullanıcı rolü tanımlanamadı.");
         return;
       }
+      await refresh();
       router.push(getDashboardPathForRole(role));
     } catch (err) {
       setError(
-        err instanceof ApiError
-          ? err.message
-          : "Giriş başarısız. Bilgilerinizi kontrol edin.",
+        formatApiErrorMessage(
+          err,
+          "Giriş başarısız. Bilgilerinizi kontrol edin.",
+        ),
       );
     } finally {
       setLoading(false);

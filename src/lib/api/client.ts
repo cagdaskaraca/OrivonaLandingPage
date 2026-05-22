@@ -86,19 +86,11 @@ async function request<T>(
 
   const res = await fetch(buildUrl(path), { ...rest, headers });
 
+  const body = await parseBody<unknown>(res);
+
   if (res.status === 401) {
-    removeToken();
-    if (typeof window !== "undefined") {
-      const loginPath = "/login";
-      if (!window.location.pathname.startsWith(loginPath)) {
-        window.location.href = `${loginPath}?unauthorized=1`;
-      }
-    }
-    const body = await parseBody<unknown>(res);
     throw new ApiError(401, "Oturum süresi doldu veya yetkisiz erişim.", body);
   }
-
-  const body = await parseBody<unknown>(res);
 
   if (!res.ok) {
     let message = `İstek başarısız (${res.status})`;
@@ -147,17 +139,6 @@ export async function apiPostPublicRaw<T>(path: string, body: unknown): Promise<
 
   const parsed = await parseBody<unknown>(res);
 
-  if (res.status === 401) {
-    removeToken();
-    if (typeof window !== "undefined") {
-      const loginPath = "/login";
-      if (!window.location.pathname.startsWith(loginPath)) {
-        window.location.href = `${loginPath}?unauthorized=1`;
-      }
-    }
-    throw new ApiError(401, "Oturum süresi doldu veya yetkisiz erişim.", parsed);
-  }
-
   if (!res.ok) {
     throw new ApiError(
       res.status,
@@ -204,17 +185,6 @@ function parseApiErrorMessage(
   return message;
 }
 
-function handleUnauthorized(parsed: unknown): void {
-  removeToken();
-  if (typeof window !== "undefined") {
-    const loginPath = "/login";
-    if (!window.location.pathname.startsWith(loginPath)) {
-      window.location.href = `${loginPath}?unauthorized=1`;
-    }
-  }
-  throw new ApiError(401, "Oturum süresi doldu veya yetkisiz erişim.", parsed);
-}
-
 /** Authenticated request without unwrapping the top-level `data` field. */
 export async function requestRaw<T>(
   method: string,
@@ -233,10 +203,6 @@ export async function requestRaw<T>(
   });
 
   const parsed = await parseBody<unknown>(res);
-
-  if (res.status === 401) {
-    handleUnauthorized(parsed);
-  }
 
   if (!res.ok) {
     throw new ApiError(res.status, parseApiErrorMessage(res.status, parsed), parsed);

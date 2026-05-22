@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import { Suspense } from "react";
 import { GoogleAnalyticsRouteListener } from "@/src/components/GoogleAnalyticsRouteListener";
+import { Providers } from "@/src/components/Providers";
 import { StructuredData } from "@/src/components/StructuredData";
 import { GA_MEASUREMENT_ID } from "@/src/lib/analytics";
 import { SITE_SEO_DESCRIPTION, SITE_SEO_TITLE } from "@/src/lib/seo";
@@ -116,7 +117,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <GoogleAnalyticsRouteListener />
         </Suspense>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

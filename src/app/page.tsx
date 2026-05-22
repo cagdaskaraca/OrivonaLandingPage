@@ -8,6 +8,7 @@ import { DashboardPreviewSection } from "@/src/components/landing/DashboardPrevi
 import { MobileShowcaseSection } from "@/src/components/landing/MobileShowcaseSection";
 import { MouseGlowLayer } from "@/src/components/landing/MouseGlowLayer";
 import { ScrollReveal } from "@/src/components/landing/ScrollReveal";
+import { LandingNavAuth } from "@/src/components/landing/LandingNavAuth";
 import {
   SmoothScrollToSection,
   SmoothScrollToTop,
@@ -302,12 +303,15 @@ export default function Home() {
             </SmoothScrollToSection>
           </div>
 
-          <SmoothScrollToSection
-            sectionId="erken-erisim"
-            className="shrink-0 rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-3.5 py-2 text-xs font-semibold text-[#0a0612] shadow-[0_8px_28px_-6px_rgba(167,139,250,0.55)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-6px_rgba(192,132,252,0.55)] sm:px-4 sm:py-2.5 sm:text-sm"
-          >
-            Erken Erişim
-          </SmoothScrollToSection>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-3 sm:gap-4">
+            <LandingNavAuth className="hidden sm:flex" />
+            <SmoothScrollToSection
+              sectionId="erken-erisim"
+              className="rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-3.5 py-2 text-xs font-semibold text-[#0a0612] shadow-[0_8px_28px_-6px_rgba(167,139,250,0.55)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_12px_36px_-6px_rgba(192,132,252,0.55)] sm:px-4 sm:py-2.5 sm:text-sm"
+            >
+              Erken Erişim
+            </SmoothScrollToSection>
+          </div>
         </nav>
         <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3 text-xs font-medium text-zinc-400 md:hidden">
           <SmoothScrollToSection
@@ -337,6 +341,7 @@ export default function Home() {
           >
             İletişim
           </SmoothScrollToSection>
+          <LandingNavAuth className="w-full justify-center border-t border-white/10 pt-3 sm:hidden" />
         </div>
       </header>
 

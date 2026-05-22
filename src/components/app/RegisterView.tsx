@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
+import { useAuth } from "@/src/contexts/AuthContext";
 import {
   getDashboardPathForRole,
   getRoleFromUser,
@@ -17,6 +18,7 @@ type Tab = "customer" | "vendor";
 
 export function RegisterView() {
   const router = useRouter();
+  const { refresh } = useAuth();
   const [tab, setTab] = useState<Tab>("customer");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,6 +65,7 @@ export function RegisterView() {
       const role =
         getRoleFromUser(data.user) ??
         (tab === "customer" ? "Customer" : "Vendor");
+      await refresh();
       router.push(getDashboardPathForRole(role));
     } catch (err) {
       console.error("Registration failed", err);

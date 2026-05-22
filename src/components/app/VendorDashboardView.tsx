@@ -12,22 +12,21 @@ import {
   fetchVendorServices,
   updateVendorService,
 } from "@/src/lib/api";
-import { ApiError } from "@/src/lib/api/client";
+import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type {
-  AuthUser,
   Category,
   VendorProfile,
   VendorService,
   VendorServicePayload,
 } from "@/src/lib/api/types";
 import { formatCityForApi } from "@/src/lib/turkish";
-import { getCurrentUser, logout } from "@/src/lib/auth";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 function defaultForm(): VendorServicePayload {
   return {
     title: "",
-    categoryName: "",
+    categoryId: "",
     description: "",
     basePrice: 0,
     city: "İzmir",
@@ -38,19 +37,10 @@ function defaultForm(): VendorServicePayload {
   };
 }
 
-function serviceToForm(
-  service: VendorService,
-  categories: Category[],
-): VendorServicePayload {
-  const categoryName =
-    service.categoryName ?? service.category ?? "";
-  const matched = categories.find(
-    (c) => c.name === categoryName || String(c.id) === String(service.categoryId),
-  );
+function serviceToForm(service: VendorService): VendorServicePayload {
   return {
     title: service.title ?? "",
-    categoryName: matched?.name ?? categoryName,
-    categoryId: matched?.id ?? service.categoryId,
+    categoryId: service.categoryId ?? "",
     description: service.description ?? "",
     basePrice: service.basePrice ?? service.price ?? 0,
     city: service.city ?? "",
@@ -62,7 +52,7 @@ function serviceToForm(
 }
 
 function DashboardContent() {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user, logout } = useAuth();
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -112,7 +102,6 @@ function DashboardContent() {
   }, []);
 
   useEffect(() => {
-    getCurrentUser().then(setUser);
     loadProfile();
     loadServices();
     fetchCategories().then(setCategories);
@@ -138,7 +127,7 @@ function DashboardContent() {
     setSuccessMessage(null);
     setErrorMessage(null);
     setEditingId(service.id);
-    setForm(serviceToForm(service, categories));
+    setForm(serviceToForm(service));
     setShowForm(true);
   }
 
@@ -175,12 +164,9 @@ function DashboardContent() {
     setSuccessMessage(null);
     setErrorMessage(null);
 
-    const matchedCategory = categories.find((c) => c.name === form.categoryName);
     const payload: VendorServicePayload = {
       ...form,
       city: formatCityForApi(form.city),
-      categoryName: form.categoryName,
-      categoryId: matchedCategory?.id,
     };
 
     try {
@@ -200,7 +186,7 @@ function DashboardContent() {
       );
       if (err instanceof ApiError) {
         console.error("Backend error response", err.body);
-        setErrorMessage(err.message);
+        setErrorMessage(formatApiErrorMessage(err, err.message));
       } else if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
@@ -233,6 +219,9 @@ function DashboardContent() {
         >
           Çıkış
         </button>
+        <Link href="/account" className={btnSecondary}>
+          Profil düzenle
+        </Link>
         <Link href="/marketplace" className={btnSecondary}>
           Marketplace
         </Link>
@@ -245,15 +234,15 @@ function DashboardContent() {
 
       {!profileLoading && profile && profile.isApproved === false ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          İşletmeniz henüz yönetici onayı bekliyor. Hizmet ekleyebilirsiniz; marketplace
-          listesinde görünmek için onay gerekir.
+          İşletme profiliniz henüz doğrulanmadı. Hizmetleriniz marketplace&apos;te
+          görünmeyebilir.
         </div>
       ) : null}
 
       {!profileLoading && profile?.isApproved !== false ? (
         <div className="mb-6 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-          İşletmeniz onaylı. Aktif hizmetleriniz şehir filtresiyle marketplace&apos;te
-          listelenir.
+          İşletme profiliniz doğrulandı. Aktif hizmetleriniz marketplace&apos;te
+          görüntülenebilir.
         </div>
       ) : null}
 
@@ -389,15 +378,15 @@ function DashboardContent() {
             <span className="mb-1.5 block text-xs text-zinc-400">Kategori</span>
             <select
               className={selectClass}
-              value={form.categoryName}
+              value={String(form.categoryId ?? "")}
               onChange={(e) =>
-                setForm((f) => ({ ...f, categoryName: e.target.value }))
+                setForm((f) => ({ ...f, categoryId: e.target.value }))
               }
               required
             >
               <option value="">Seçin</option>
               {categories.map((c) => (
-                <option key={String(c.id ?? c.name)} value={c.name ?? ""}>
+                <option key={String(c.id)} value={String(c.id ?? "")}>
                   {c.name}
                 </option>
               ))}

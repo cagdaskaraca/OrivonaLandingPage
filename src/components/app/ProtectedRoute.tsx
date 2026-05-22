@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { getCurrentUser, getRoleFromUser, getToken } from "@/src/lib/auth";
+import { useAuth } from "@/src/contexts/AuthContext";
 import type { UserRole } from "@/src/lib/api/types";
+import { getToken } from "@/src/lib/auth";
 
 type ProtectedRouteProps = {
   allowedRoles: UserRole[];
@@ -15,37 +16,26 @@ export function ProtectedRoute({
   children,
 }: ProtectedRouteProps) {
   const router = useRouter();
+  const { loading, role } = useAuth();
   const [ready, setReady] = useState(false);
   const rolesKey = allowedRoles.join(",");
 
   useEffect(() => {
-    let cancelled = false;
+    setReady(false);
+    if (loading) return;
 
-    async function verify() {
-      if (!getToken()) {
-        router.replace("/login");
-        return;
-      }
-      try {
-        const user = await getCurrentUser();
-        const role = getRoleFromUser(user);
-        if (!role || !allowedRoles.includes(role)) {
-          router.replace("/login");
-          return;
-        }
-        if (!cancelled) setReady(true);
-      } catch {
-        if (!cancelled) router.replace("/login");
-      }
+    if (!getToken()) {
+      router.replace("/login");
+      return;
     }
+    if (!role || !allowedRoles.includes(role)) {
+      router.replace("/login?unauthorized=1");
+      return;
+    }
+    setReady(true);
+  }, [loading, role, rolesKey, router, allowedRoles]);
 
-    verify();
-    return () => {
-      cancelled = true;
-    };
-  }, [rolesKey, router, allowedRoles]);
-
-  if (!ready) {
+  if (loading || !ready) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-sm text-zinc-400">Oturum doğrulanıyor…</p>

@@ -1,5 +1,10 @@
-import { apiGet, apiPostPublic } from "@/src/lib/api/client";
-import type { AuthResponse, AuthUser, UserRole } from "@/src/lib/api/types";
+import { apiGetRaw, apiPostPublic } from "@/src/lib/api/client";
+import type {
+  ApiEnvelope,
+  AuthResponse,
+  AuthUser,
+  UserRole,
+} from "@/src/lib/api/types";
 
 const TOKEN_KEY = "orivona_auth_token";
 
@@ -53,6 +58,64 @@ export function getDashboardPathForRole(role: UserRole): string {
   }
 }
 
+/** Primary "Hesabım" destination by role. */
+export function getHesabimPath(role: UserRole | null): string {
+  if (!role) return "/login";
+  switch (role) {
+    case "Customer":
+      return "/account";
+    case "Vendor":
+      return "/vendor/dashboard";
+    case "Admin":
+      return "/admin/dashboard";
+    default:
+      return "/login";
+  }
+}
+
+function normalizeAuthUser(raw: unknown): AuthUser {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const str = (key: string, alt?: string) => {
+    const v = o[key] ?? (alt ? o[alt] : undefined);
+    return typeof v === "string" ? v : undefined;
+  };
+  const rolesRaw = o.roles ?? o.Roles;
+  const roles = Array.isArray(rolesRaw) ? rolesRaw.map(String) : undefined;
+  return {
+    id:
+      o.id != null
+        ? String(o.id)
+        : o.Id != null
+          ? String(o.Id)
+          : undefined,
+    email: str("email", "Email"),
+    fullName: str("fullName", "FullName") ?? str("name", "Name"),
+    name: str("name", "Name"),
+    role: str("role", "Role"),
+    roles,
+  };
+}
+
+function extractAuthUserFromEnvelope(envelope: ApiEnvelope): AuthUser {
+  if (envelope.success === false) {
+    throw new Error(
+      typeof envelope.message === "string"
+        ? envelope.message
+        : "Oturum doğrulanamadı.",
+    );
+  }
+  const payload = envelope.data;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const obj = payload as Record<string, unknown>;
+    if (obj.user && typeof obj.user === "object") {
+      return normalizeAuthUser(obj.user);
+    }
+    return normalizeAuthUser(payload);
+  }
+  throw new Error("Geçersiz oturum yanıtı.");
+}
+
 function extractToken(data: AuthResponse): string | null {
   return data.token ?? data.accessToken ?? null;
 }
@@ -93,7 +156,8 @@ export async function registerVendor(payload: Record<string, unknown>) {
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {
-  return apiGet<AuthUser>("/auth/me");
+  const body = await apiGetRaw<ApiEnvelope>("/auth/me");
+  return extractAuthUserFromEnvelope(body);
 }
 
 export function logout(): void {
