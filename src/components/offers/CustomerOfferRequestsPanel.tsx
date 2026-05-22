@@ -13,9 +13,8 @@ import { ApiError, formatApiErrorMessage, logApiError } from "@/src/lib/api/clie
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
-  canCustomerActOnOffer,
+  canCustomerRespondToOffer,
   getCustomerOfferActionId,
-  hasVendorPricedOffer,
 } from "@/src/lib/offerRequest";
 import { btnPrimary, btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
@@ -44,7 +43,15 @@ export function CustomerOfferRequestsPanel({
     setLoading(true);
     setError(null);
     try {
-      setOffers(await fetchMyOfferRequests());
+      const list = await fetchMyOfferRequests();
+      list.forEach((item) => {
+        console.log("Customer offer item", item);
+        console.log(
+          "Using offerId for accept/reject",
+          getCustomerOfferActionId(item),
+        );
+      });
+      setOffers(list);
     } catch (e) {
       logApiError("My offer requests", e);
       setOffers([]);
@@ -145,8 +152,7 @@ export function CustomerOfferRequestsPanel({
           {offers.map((o) => {
             const actionId = getCustomerOfferActionId(o);
             const busy = actionId != null && actionOfferId === actionId;
-            const showActions =
-              canCustomerActOnOffer(o.status) && hasVendorPricedOffer(o);
+            const showActions = canCustomerRespondToOffer(o);
             const showDemoConfirm =
               demoConfirmationId != null &&
               (o.id === demoConfirmationId || actionId === demoConfirmationId);

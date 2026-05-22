@@ -84,6 +84,25 @@ export function canCustomerActOnOffer(status?: string | null): boolean {
   return isOfferSentToCustomer(status) && !isFinalOfferStatus(status);
 }
 
+/** POST /api/offers/{offerId}/accept|reject — must not be the offer-request id. */
+export function getCustomerOfferActionId(
+  offer: OfferRequest,
+): string | number | undefined {
+  const vendorOfferId = offer.offerId;
+  if (vendorOfferId == null) return undefined;
+  if (offer.id != null && String(vendorOfferId) === String(offer.id)) {
+    return undefined;
+  }
+  return vendorOfferId;
+}
+
+export function canCustomerRespondToOffer(offer: OfferRequest): boolean {
+  return (
+    isOfferSentToCustomer(offer.status) &&
+    getCustomerOfferActionId(offer) != null
+  );
+}
+
 /** @deprecated Use isPendingVendorResponse */
 export function isOfferPending(status?: string | null): boolean {
   return isPendingVendorResponse(status);
@@ -124,15 +143,7 @@ export function offerResponseDescription(
 
 export function hasVendorPricedOffer(offer: OfferRequest): boolean {
   return (
-    isOfferSentToCustomer(offer.status) ||
     offerResponsePrice(offer) != null ||
     Boolean(offerResponseDescription(offer)?.trim())
   );
-}
-
-/** ID for POST /api/offers/{offerId}/accept|reject */
-export function getCustomerOfferActionId(
-  offer: OfferRequest,
-): string | number | undefined {
-  return offer.offerId ?? offer.id;
 }

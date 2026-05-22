@@ -151,25 +151,68 @@ export async function removeFavorite(
   assertSuccess(body);
 }
 
+function nestedOfferRecord(
+  o: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const single =
+    o.offer ?? o.Offer ?? o.vendorOffer ?? o.VendorOffer;
+  if (single && typeof single === "object" && !Array.isArray(single)) {
+    return single as Record<string, unknown>;
+  }
+  const list = o.offers ?? o.Offers;
+  if (Array.isArray(list) && list[0] && typeof list[0] === "object") {
+    return list[0] as Record<string, unknown>;
+  }
+  return undefined;
+}
+
+/** Vendor offer id for POST /api/offers/{offerId}/accept|reject — never the offer-request id. */
+function extractVendorOfferId(
+  o: Record<string, unknown>,
+  requestId?: string | number,
+): string | number | undefined {
+  const nested = nestedOfferRecord(o);
+  if (nested) {
+    const nestedId = recordId(nested);
+    if (nestedId != null) return nestedId;
+  }
+
+  const topOfferId =
+    recordId(o, "offerId", "OfferId") ??
+    recordId(o, "vendorOfferId", "VendorOfferId");
+  if (topOfferId != null && topOfferId !== requestId) return topOfferId;
+
+  return undefined;
+}
+
 function normalizeOffer(raw: unknown): OfferRequest {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  const requestId = recordId(o);
-  const offerId =
-    recordId(o, "offerId", "OfferId") ??
-    recordId(o, "vendorOfferId", "VendorOfferId");
+  const requestId =
+    recordId(o, "offerRequestId", "OfferRequestId") ?? recordId(o);
+  const nested = nestedOfferRecord(o);
+  const vendorOfferId = extractVendorOfferId(o, requestId);
+
   const vendorOfferPrice =
     recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
+    (nested ? recordNum(nested, "price", "Price") : undefined) ??
     recordNum(o, "offeredPrice", "OfferedPrice") ??
     recordNum(o, "price", "Price");
   const vendorOfferDescription =
     recordStr(o, "vendorOfferDescription", "VendorOfferDescription") ??
+    (nested
+      ? recordStr(nested, "description", "Description") ??
+        recordStr(nested, "responseDescription", "ResponseDescription")
+      : undefined) ??
     recordStr(o, "responseDescription", "ResponseDescription") ??
     recordStr(o, "description", "Description");
+  const validUntil =
+    recordStr(o, "validUntil", "ValidUntil") ??
+    (nested ? recordStr(nested, "validUntil", "ValidUntil") : undefined);
 
   return {
     id: requestId,
-    offerId: offerId ?? requestId,
+    offerId: vendorOfferId,
     vendorServiceId: recordId(o, "vendorServiceId", "VendorServiceId"),
     serviceTitle: recordStr(o, "serviceTitle", "ServiceTitle"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
@@ -184,7 +227,7 @@ function normalizeOffer(raw: unknown): OfferRequest {
     price: vendorOfferPrice,
     responseDescription: vendorOfferDescription,
     description: vendorOfferDescription,
-    validUntil: recordStr(o, "validUntil", "ValidUntil"),
+    validUntil,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
   };
 }
