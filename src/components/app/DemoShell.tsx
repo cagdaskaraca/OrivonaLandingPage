@@ -34,9 +34,7 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
                 className="h-8 w-auto object-contain"
               />
             </span>
-            <span className="hidden text-xs font-semibold tracking-[0.22em] text-zinc-200 sm:inline">
-              ORIVONA
-            </span>
+            
           </Link>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-zinc-400 sm:gap-x-4 sm:text-sm">
             <Link href="/marketplace" className="hover:text-violet-200">

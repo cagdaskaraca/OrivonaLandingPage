@@ -809,9 +809,11 @@ function nestedMessageText(o: Record<string, unknown>): string | undefined {
   if (last && typeof last === "object") {
     const m = last as Record<string, unknown>;
     return (
+      recordStr(m, "messageText", "MessageText") ??
       recordStr(m, "content", "Content") ??
       recordStr(m, "message", "Message") ??
-      recordStr(m, "body", "Body")
+      recordStr(m, "body", "Body") ??
+      recordStr(m, "text", "Text")
     );
   }
   return (
@@ -833,14 +835,25 @@ function normalizeConversation(raw: unknown): Conversation {
       recordStr(m, "createdAt", "CreatedAt") ?? lastMessageAt;
   }
 
+  const vendorBusinessName =
+    recordStr(o, "vendorBusinessName", "VendorBusinessName") ??
+    recordStr(o, "businessName", "BusinessName");
+  const vendorName =
+    recordStr(o, "vendorName", "VendorName") ?? vendorBusinessName;
+  const customerFullName =
+    recordStr(o, "customerFullName", "CustomerFullName");
+  const customerName =
+    recordStr(o, "customerName", "CustomerName") ?? customerFullName;
+
   return {
     id: recordId(o),
     vendorId: recordId(o, "vendorId", "VendorId"),
-    vendorName: recordStr(o, "vendorName", "VendorName"),
+    vendorName,
+    vendorBusinessName: vendorBusinessName ?? vendorName,
+    businessName: recordStr(o, "businessName", "BusinessName") ?? vendorBusinessName,
     customerId: recordId(o, "customerId", "CustomerId"),
-    customerName:
-      recordStr(o, "customerName", "CustomerName") ??
-      recordStr(o, "customerFullName", "CustomerFullName"),
+    customerName,
+    customerFullName: customerFullName ?? customerName,
     vendorServiceId:
       recordId(o, "vendorServiceId", "VendorServiceId") ??
       recordId(o, "serviceId", "ServiceId"),
@@ -859,31 +872,76 @@ function normalizeConversation(raw: unknown): Conversation {
 
 function extractMessageSenderFields(
   o: Record<string, unknown>,
-): Pick<ChatMessage, "senderUserId" | "senderId" | "userId" | "senderName"> {
+): Pick<
+  ChatMessage,
+  | "senderUserId"
+  | "senderId"
+  | "userId"
+  | "senderName"
+  | "senderFullName"
+  | "senderBusinessName"
+  | "customerName"
+  | "customerFullName"
+  | "vendorName"
+  | "vendorBusinessName"
+  | "businessName"
+> {
   const sender = o.sender ?? o.Sender;
   let nestedId: string | number | undefined;
   let nestedName: string | undefined;
+  let nestedFullName: string | undefined;
+  let nestedBusinessName: string | undefined;
   if (sender && typeof sender === "object") {
     const s = sender as Record<string, unknown>;
     nestedId =
       recordId(s) ??
       recordId(s, "userId", "UserId") ??
       recordId(s, "id", "Id");
-    nestedName = recordStr(s, "fullName", "FullName") ?? recordStr(s, "name", "Name");
+    nestedFullName =
+      recordStr(s, "fullName", "FullName") ?? recordStr(s, "name", "Name");
+    nestedName = nestedFullName;
+    nestedBusinessName =
+      recordStr(s, "businessName", "BusinessName") ??
+      recordStr(s, "vendorBusinessName", "VendorBusinessName");
   }
   const senderUserId =
     recordId(o, "senderUserId", "SenderUserId") ?? nestedId;
   const senderId =
     recordId(o, "senderId", "SenderId") ?? senderUserId ?? nestedId;
   const userId = recordId(o, "userId", "UserId") ?? senderUserId ?? senderId;
+  const senderFullName =
+    recordStr(o, "senderFullName", "SenderFullName") ?? nestedFullName;
+  const senderBusinessName =
+    recordStr(o, "senderBusinessName", "SenderBusinessName") ??
+    recordStr(o, "businessName", "BusinessName") ??
+    nestedBusinessName;
+  const senderName =
+    recordStr(o, "senderName", "SenderName") ??
+    senderBusinessName ??
+    senderFullName ??
+    nestedName;
   return {
     senderUserId,
     senderId,
     userId,
-    senderName:
-      recordStr(o, "senderName", "SenderName") ??
-      recordStr(o, "senderFullName", "SenderFullName") ??
-      nestedName,
+    senderName,
+    senderFullName,
+    senderBusinessName,
+    customerName:
+      recordStr(o, "customerName", "CustomerName") ??
+      recordStr(o, "customerFullName", "CustomerFullName"),
+    customerFullName:
+      recordStr(o, "customerFullName", "CustomerFullName") ??
+      recordStr(o, "customerName", "CustomerName"),
+    vendorName:
+      recordStr(o, "vendorName", "VendorName") ??
+      recordStr(o, "vendorBusinessName", "VendorBusinessName"),
+    vendorBusinessName:
+      recordStr(o, "vendorBusinessName", "VendorBusinessName") ??
+      recordStr(o, "businessName", "BusinessName"),
+    businessName:
+      recordStr(o, "businessName", "BusinessName") ??
+      recordStr(o, "vendorBusinessName", "VendorBusinessName"),
   };
 }
 

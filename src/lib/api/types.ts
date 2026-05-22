@@ -500,8 +500,11 @@ export type Conversation = {
   id?: string | number;
   vendorId?: string | number;
   vendorName?: string;
+  vendorBusinessName?: string;
+  businessName?: string;
   customerId?: string | number;
   customerName?: string;
+  customerFullName?: string;
   vendorServiceId?: string | number;
   serviceTitle?: string;
   lastMessage?: string;
@@ -519,6 +522,13 @@ export type ChatMessage = {
   senderId?: string | number;
   userId?: string | number;
   senderName?: string;
+  senderFullName?: string;
+  senderBusinessName?: string;
+  customerName?: string;
+  customerFullName?: string;
+  vendorName?: string;
+  vendorBusinessName?: string;
+  businessName?: string;
   senderRole?: string;
   isFromMe?: boolean;
   createdAt?: string;
