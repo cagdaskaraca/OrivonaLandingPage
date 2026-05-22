@@ -1,11 +1,19 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
-import { fetchMarketplace } from "@/src/lib/api";
-import type { MarketplaceFilters, MarketplaceItem } from "@/src/lib/api/types";
+import {
+  buildMarketplaceQueryParams,
+  fetchCategories,
+  fetchMarketplace,
+} from "@/src/lib/api";
+import type {
+  Category,
+  MarketplaceFilters,
+  MarketplaceItem,
+} from "@/src/lib/api/types";
 import { ApiError } from "@/src/lib/api/client";
-import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
+import { btnPrimary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const emptyFilters: MarketplaceFilters = {
   city: "",
@@ -17,6 +25,40 @@ const emptyFilters: MarketplaceFilters = {
   guestCount: "",
   keyword: "",
 };
+
+const textFilterFieldsBeforeCategory = [
+  ["city", "Şehir"],
+  ["district", "İlçe"],
+] as const;
+
+const textFilterFieldsAfterCategory = [
+  ["keyword", "Anahtar kelime"],
+  ["minPrice", "Min fiyat"],
+  ["maxPrice", "Max fiyat"],
+  ["minRating", "Min puan"],
+  ["guestCount", "Misafir sayısı"],
+] as const;
+
+function FilterInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
+      <input
+        className={inputClass}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
+  );
+}
 
 function MarketplaceCard({ item }: { item: MarketplaceItem }) {
   const title = item.serviceTitle ?? item.title ?? "Hizmet";
@@ -71,35 +113,55 @@ function MarketplaceCard({ item }: { item: MarketplaceItem }) {
 
 export function MarketplaceView() {
   const [filters, setFilters] = useState<MarketplaceFilters>(emptyFilters);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const load = useCallback(async (next: MarketplaceFilters) => {
-    setLoading(true);
-    setError(null);
-    setSearched(true);
-    try {
-      const { response, items } = await fetchMarketplace(next);
-      console.log("Marketplace Response", response.data);
-      setItems(items);
-    } catch (e) {
-      if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
-      setItems([]);
-      setError(
-        e instanceof ApiError
-          ? e.message
-          : "Marketplace verisi yüklenemedi. API çalışıyor mu?",
-      );
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    fetchCategories()
+      .then(setCategories)
+      .catch((e) => console.log("Marketplace categories failed", e));
   }, []);
+
+  const load = useCallback(
+    async (next: MarketplaceFilters, categoryList: Category[]) => {
+      const selectedCategory =
+        next.categoryId?.trim()
+          ? (categoryList.find(
+              (c) => String(c.id) === String(next.categoryId?.trim()),
+            ) ?? null)
+          : null;
+      const params = buildMarketplaceQueryParams(next);
+      console.log("Selected category", selectedCategory);
+      console.log("Marketplace query params", params);
+
+      setLoading(true);
+      setError(null);
+      setSearched(true);
+      try {
+        const { response, items } = await fetchMarketplace(next);
+        console.log("Marketplace Response", response.data);
+        setItems(items);
+      } catch (e) {
+        if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
+        setItems([]);
+        setError(
+          e instanceof ApiError
+            ? e.message
+            : "Marketplace verisi yüklenemedi. API çalışıyor mu?",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    load(filters);
+    load(filters, categories);
   }
 
   return (
@@ -111,28 +173,38 @@ export function MarketplaceView() {
         onSubmit={handleSubmit}
         className={`${glassCard} mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4`}
       >
-        {(
-          [
-            ["city", "Şehir"],
-            ["district", "İlçe"],
-            ["categoryId", "Kategori"],
-            ["keyword", "Anahtar kelime"],
-            ["minPrice", "Min fiyat"],
-            ["maxPrice", "Max fiyat"],
-            ["minRating", "Min puan"],
-            ["guestCount", "Misafir sayısı"],
-          ] as const
-        ).map(([key, label]) => (
-          <label key={key} className="block text-sm">
-            <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
-            <input
-              className={inputClass}
-              value={filters[key] ?? ""}
-              onChange={(e) =>
-                setFilters((f) => ({ ...f, [key]: e.target.value }))
-              }
-            />
-          </label>
+        {textFilterFieldsBeforeCategory.map(([key, label]) => (
+          <FilterInput
+            key={key}
+            label={label}
+            value={filters[key] ?? ""}
+            onChange={(value) => setFilters((f) => ({ ...f, [key]: value }))}
+          />
+        ))}
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-xs text-zinc-400">Kategori</span>
+          <select
+            className={selectClass}
+            value={filters.categoryId ?? ""}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, categoryId: e.target.value }))
+            }
+          >
+            <option value="">Tüm kategoriler</option>
+            {categories.map((c) => (
+              <option key={String(c.id)} value={String(c.id ?? "")}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {textFilterFieldsAfterCategory.map(([key, label]) => (
+          <FilterInput
+            key={key}
+            label={label}
+            value={filters[key] ?? ""}
+            onChange={(value) => setFilters((f) => ({ ...f, [key]: value }))}
+          />
         ))}
         <div className="flex items-end sm:col-span-2 lg:col-span-4">
           <button type="submit" className={btnPrimary} disabled={loading}>

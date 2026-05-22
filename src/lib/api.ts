@@ -14,6 +14,7 @@ export {
   fetchAiRecommendations,
   fetchCustomerEventRequests,
   fetchEventRequestById,
+  buildMarketplaceQueryParams,
   extractMarketplaceItems,
   fetchMarketplace,
   normalizeMarketplaceItem,

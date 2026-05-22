@@ -137,25 +137,42 @@ export function extractMarketplaceItems(
   return [];
 }
 
+/** Query params for GET /services — omits empty optional filters. */
+export function buildMarketplaceQueryParams(
+  filters: MarketplaceFilters,
+): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  const city = filters.city?.trim();
+  if (city) params.city = formatCityForApi(city);
+  const district = filters.district?.trim();
+  if (district) params.district = district;
+  const categoryId = filters.categoryId?.trim();
+  if (categoryId) params.categoryId = categoryId;
+  const minPrice = filters.minPrice?.trim();
+  if (minPrice) params.minPrice = minPrice;
+  const maxPrice = filters.maxPrice?.trim();
+  if (maxPrice) params.maxPrice = maxPrice;
+  const minRating = filters.minRating?.trim();
+  if (minRating) params.minRating = minRating;
+  const guestCount = filters.guestCount?.trim();
+  if (guestCount) params.guestCount = guestCount;
+  const keyword = filters.keyword?.trim();
+  if (keyword) params.keyword = keyword;
+  if (filters.page?.trim()) params.page = filters.page.trim();
+  if (filters.pageSize?.trim()) params.pageSize = filters.pageSize.trim();
+  if (filters.sortBy?.trim()) params.sortBy = filters.sortBy.trim();
+  return params;
+}
+
 export async function fetchMarketplace(
   filters: MarketplaceFilters,
 ): Promise<{
   response: MarketplaceHttpResponse;
   items: MarketplaceItem[];
+  queryParams: Record<string, string | number>;
 }> {
-  const query = buildQuery({
-    city: filters.city ? formatCityForApi(filters.city) : undefined,
-    district: filters.district?.trim() || undefined,
-    categoryId: filters.categoryId,
-    minPrice: filters.minPrice,
-    maxPrice: filters.maxPrice,
-    minRating: filters.minRating,
-    guestCount: filters.guestCount,
-    keyword: filters.keyword,
-    page: filters.page,
-    pageSize: filters.pageSize,
-    sortBy: filters.sortBy,
-  });
+  const queryParams = buildMarketplaceQueryParams(filters);
+  const query = buildQuery(queryParams);
   const body = await apiGetPublicRaw<ServicesListApiResponse>(
     `/services${query}`,
   );
@@ -163,6 +180,7 @@ export async function fetchMarketplace(
   return {
     response,
     items: extractMarketplaceItems(response),
+    queryParams,
   };
 }
 
