@@ -69,7 +69,7 @@ export function OfferRequestCard({ offer, variant }: OfferRequestCardProps) {
       {price != null || responseText || offer.validUntil ? (
         <div className="mt-4 rounded-lg border border-violet-400/20 bg-violet-500/10 px-3 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-            İşletme yanıtı
+            İşletme teklifi
           </p>
           {price != null ? (
             <p className="mt-2 text-base font-semibold text-white">

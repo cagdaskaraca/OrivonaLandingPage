@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import {
   cancelReservation,
   fetchCustomerDashboardSummary,
@@ -20,7 +19,7 @@ import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
-type Tab = "summary" | "favorites" | "offers" | "reservations";
+type Tab = "summary" | "favorites" | "reservations";
 
 export function CustomerOverview() {
   const toast = useToast();
@@ -95,7 +94,6 @@ export function CustomerOverview() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "summary", label: "Özet" },
     { id: "favorites", label: "Favoriler" },
-    { id: "offers", label: "Teklif Taleplerim" },
     { id: "reservations", label: "Rezervasyonlar" },
   ];
 
@@ -168,8 +166,6 @@ export function CustomerOverview() {
             ))}
           </ul>
         )
-      ) : tab === "offers" ? (
-        <CustomerOfferRequestsPanel embedded />
       ) : reservations.length === 0 ? (
         <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
       ) : (

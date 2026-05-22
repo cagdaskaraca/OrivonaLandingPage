@@ -109,6 +109,7 @@ export type FavoriteItem = {
 
 export type OfferRequest = {
   id?: string | number;
+  offerId?: string | number;
   vendorServiceId?: string | number;
   serviceTitle?: string;
   vendorName?: string;
@@ -117,6 +118,8 @@ export type OfferRequest = {
   guestCount?: number;
   eventDate?: string;
   status?: string;
+  vendorOfferPrice?: number;
+  vendorOfferDescription?: string;
   offeredPrice?: number;
   price?: number;
   responseDescription?: string;
@@ -132,10 +135,23 @@ export type CreateOfferRequestPayload = {
   guestCount: number;
 };
 
-export type RespondOfferPayload = {
+export type SendVendorOfferPayload = {
   price: number;
   description: string;
   validUntil: string;
+};
+
+export type AcceptCustomerOfferPayload = {
+  paymentMode: string;
+  note: string;
+};
+
+export type RejectCustomerOfferPayload = {
+  reason: string;
+};
+
+/** @deprecated Use sendVendorOffer */
+export type RespondOfferPayload = SendVendorOfferPayload & {
   accept: boolean;
 };
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CustomerOverview } from "@/src/components/app/dashboard/CustomerOverview";
+import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -81,6 +82,7 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 
 function DashboardContent() {
   const { user, logout } = useAuth();
+  const [reservationsKey, setReservationsKey] = useState(0);
   const [requests, setRequests] = useState<EventRequest[]>([]);
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [form, setForm] = useState<EventRequestFormPayload>(defaultForm);
@@ -224,7 +226,11 @@ function DashboardContent() {
         </Link>
       </div>
 
-      <CustomerOverview />
+      <CustomerOverview key={reservationsKey} />
+
+      <CustomerOfferRequestsPanel
+        onAfterAccept={() => setReservationsKey((k) => k + 1)}
+      />
 
       <div className={`${glassCard} mb-8`}>
         <h2 className="text-lg font-semibold text-white">Hesabım</h2>

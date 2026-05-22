@@ -7,7 +7,7 @@ import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
 import { btnPrimary, inputClass } from "@/src/lib/ui";
 
-const SUCCESS_MESSAGE = "Teklif talebiniz gönderildi.";
+const SUCCESS_MESSAGE = "Teklif talebiniz işletmeye gönderildi.";
 
 type OfferRequestModalProps = {
   item: MarketplaceItem | null;

@@ -17,13 +17,15 @@ import type {
   AiEventPlanRequest,
   AiEventPlanResult,
   ApiEnvelope,
+  AcceptCustomerOfferPayload,
   CreateOfferRequestPayload,
   CreateReservationPayload,
   DashboardSummary,
   FavoriteItem,
   OfferRequest,
+  RejectCustomerOfferPayload,
   Reservation,
-  RespondOfferPayload,
+  SendVendorOfferPayload,
   ServiceImage,
   ServiceImagePayload,
 } from "@/src/lib/api/types";
@@ -152,8 +154,22 @@ export async function removeFavorite(
 function normalizeOffer(raw: unknown): OfferRequest {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const requestId = recordId(o);
+  const offerId =
+    recordId(o, "offerId", "OfferId") ??
+    recordId(o, "vendorOfferId", "VendorOfferId");
+  const vendorOfferPrice =
+    recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
+    recordNum(o, "offeredPrice", "OfferedPrice") ??
+    recordNum(o, "price", "Price");
+  const vendorOfferDescription =
+    recordStr(o, "vendorOfferDescription", "VendorOfferDescription") ??
+    recordStr(o, "responseDescription", "ResponseDescription") ??
+    recordStr(o, "description", "Description");
+
   return {
-    id: recordId(o),
+    id: requestId,
+    offerId: offerId ?? requestId,
     vendorServiceId: recordId(o, "vendorServiceId", "VendorServiceId"),
     serviceTitle: recordStr(o, "serviceTitle", "ServiceTitle"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
@@ -162,16 +178,12 @@ function normalizeOffer(raw: unknown): OfferRequest {
     guestCount: recordNum(o, "guestCount", "GuestCount"),
     eventDate: recordStr(o, "eventDate", "EventDate"),
     status: recordStr(o, "status", "Status"),
-    offeredPrice:
-      recordNum(o, "offeredPrice", "OfferedPrice") ??
-      recordNum(o, "price", "Price"),
-    price: recordNum(o, "price", "Price") ?? recordNum(o, "offeredPrice", "OfferedPrice"),
-    responseDescription:
-      recordStr(o, "responseDescription", "ResponseDescription") ??
-      recordStr(o, "description", "Description"),
-    description:
-      recordStr(o, "description", "Description") ??
-      recordStr(o, "responseDescription", "ResponseDescription"),
+    vendorOfferPrice,
+    vendorOfferDescription,
+    offeredPrice: vendorOfferPrice,
+    price: vendorOfferPrice,
+    responseDescription: vendorOfferDescription,
+    description: vendorOfferDescription,
     validUntil: recordStr(o, "validUntil", "ValidUntil"),
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
   };
@@ -208,23 +220,59 @@ export async function fetchVendorOfferRequests(): Promise<OfferRequest[]> {
   return toList(body.data).map(normalizeOffer);
 }
 
-export async function respondVendorOffer(
-  id: string | number,
-  payload: RespondOfferPayload,
+export async function sendVendorOffer(
+  requestId: string | number,
+  payload: SendVendorOfferPayload,
 ): Promise<OfferRequest> {
   const body = await apiPostRaw<ApiEnvelope>(
-    `/vendor/offer-requests/${id}/respond`,
+    `/vendor/offer-requests/${requestId}/send-offer`,
     {
       price: payload.price,
       description: payload.description,
       validUntil: payload.validUntil || null,
-      accept: payload.accept,
-      offeredPrice: payload.price,
-      responseDescription: payload.description,
     },
   );
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);
+}
+
+export async function rejectVendorOfferRequest(
+  requestId: string | number,
+): Promise<OfferRequest> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/vendor/offer-requests/${requestId}/reject`,
+    {},
+  );
+  assertSuccess(body);
+  return normalizeOffer(body.data);
+}
+
+export async function acceptCustomerOffer(
+  offerId: string | number,
+  payload: AcceptCustomerOfferPayload = {
+    paymentMode: "Demo",
+    note: "Demo ödeme ile kabul edildi",
+  },
+): Promise<OfferRequest> {
+  const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/accept`, {
+    paymentMode: payload.paymentMode,
+    note: payload.note,
+  });
+  assertSuccess(body);
+  return normalizeOffer(body.data);
+}
+
+export async function rejectCustomerOffer(
+  offerId: string | number,
+  payload: RejectCustomerOfferPayload = {
+    reason: "Müşteri tarafından reddedildi",
+  },
+): Promise<OfferRequest> {
+  const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/reject`, {
+    reason: payload.reason,
+  });
+  assertSuccess(body);
+  return normalizeOffer(body.data);
 }
 
 function normalizeReservation(raw: unknown): Reservation {
