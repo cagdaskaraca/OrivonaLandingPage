@@ -53,7 +53,7 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
-            ORIVONA · API Demo
+            ORIVONA
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {title}

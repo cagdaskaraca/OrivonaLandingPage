@@ -96,5 +96,5 @@ export function getMessageSenderLabel(
   fromMe: boolean,
 ): string {
   if (fromMe) return "Siz";
-  return message.senderName?.trim() || "Karşı taraf";
+  return message.senderName?.trim() || "İşletme";
 }
