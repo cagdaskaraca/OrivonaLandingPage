@@ -185,6 +185,7 @@ export type AiEventPlanRequest = {
 };
 
 export type AiBudgetLine = {
+  categoryName?: string;
   category?: string;
   amount?: number;
   percentage?: number;

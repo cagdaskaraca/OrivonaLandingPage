@@ -92,3 +92,44 @@ export function budgetPercent(line: AiBudgetLine, total: number): number {
   if (!total || line.amount == null) return 0;
   return Math.round((line.amount / total) * 100);
 }
+
+const GENERIC_BUDGET_LABELS = new Set([
+  "",
+  "kategori",
+  "category",
+  "categories",
+  "genel",
+  "other",
+  "diğer",
+  "diger",
+]);
+
+function isGenericBudgetLabel(value?: string | null): boolean {
+  if (!value?.trim()) return true;
+  return GENERIC_BUDGET_LABELS.has(value.trim().toLowerCase());
+}
+
+/** Resolves display label: categoryName → category → preferredCategories[index]. */
+export function resolveBudgetLineLabel(
+  line: AiBudgetLine,
+  index: number,
+  preferredCategories: string[],
+): string {
+  const categoryName = line.categoryName?.trim();
+  if (categoryName && !isGenericBudgetLabel(categoryName)) {
+    return categoryName;
+  }
+
+  const category = line.category?.trim();
+  if (category && !isGenericBudgetLabel(category)) {
+    return category;
+  }
+
+  const preferred = preferredCategories[index]?.trim();
+  if (preferred) return preferred;
+
+  if (categoryName) return categoryName;
+  if (category) return category;
+
+  return preferredCategories[0]?.trim() || "Diğer";
+}

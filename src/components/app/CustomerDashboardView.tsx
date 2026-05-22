@@ -12,7 +12,12 @@ import {
   fetchEventRequestById,
   updateCustomerEventRequest,
 } from "@/src/lib/api";
-import { ApiError } from "@/src/lib/api/client";
+import {
+  formatUiErrorMessage,
+  isApiNotFound,
+  logApiError,
+} from "@/src/lib/api/client";
+import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
@@ -87,17 +92,18 @@ function DashboardContent() {
 
   async function load() {
     setLoadingList(true);
+    setErrorMessage(null);
     try {
       const list = await fetchCustomerEventRequests();
       setRequests(list);
     } catch (err) {
-      console.error("Event requests list failed", err);
-      if (err instanceof ApiError) {
-        console.error("Backend error message:", err.message);
-        console.error("Backend error response", err.body);
-      }
+      logApiError("Event requests list", err);
       setRequests([]);
-      setErrorMessage("Etkinlik talepleri yüklenemedi.");
+      if (!isApiNotFound(err)) {
+        setErrorMessage(
+          formatUiErrorMessage(err, "Etkinlik talepleri yüklenemedi."),
+        );
+      }
     } finally {
       setLoadingList(false);
     }
@@ -123,13 +129,9 @@ function DashboardContent() {
       const detail = await fetchEventRequestById(request.id);
       setForm(eventRequestToForm({ ...request, ...detail }));
     } catch (err) {
-      console.error("Event request fetch failed", err);
-      if (err instanceof ApiError) {
-        console.error("Backend error message:", err.message);
-        console.error("Backend error response", err.body);
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage("Talep yüklenemedi.");
+      logApiError("Event request fetch", err);
+      if (!isApiNotFound(err)) {
+        setErrorMessage(formatUiErrorMessage(err, "Talep yüklenemedi."));
       }
     }
   }
@@ -153,13 +155,9 @@ function DashboardContent() {
       setSuccessMessage("Etkinlik talebi silindi.");
       await load();
     } catch (err) {
-      console.error("Event request delete failed", err);
-      if (err instanceof ApiError) {
-        console.error("Backend error message:", err.message);
-        console.error("Backend error response", err.body);
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage("Talep silinemedi.");
+      logApiError("Event request delete", err);
+      if (!isApiNotFound(err)) {
+        setErrorMessage(formatUiErrorMessage(err, "Talep silinemedi."));
       }
     } finally {
       setDeletingId(null);
@@ -183,20 +181,18 @@ function DashboardContent() {
       }
       await load();
     } catch (err) {
-      console.error(
-        editingId != null
-          ? "Event request update failed"
-          : "Event request creation failed",
+      logApiError(
+        editingId != null ? "Event request update" : "Event request create",
         err,
       );
-      if (err instanceof ApiError) {
-        console.error("Backend error response", err.body);
-        setErrorMessage(err.message);
-      } else {
+      if (!isApiNotFound(err)) {
         setErrorMessage(
-          editingId != null
-            ? "Etkinlik talebi güncellenemedi."
-            : "Etkinlik talebi oluşturulamadı. Lütfen tekrar deneyin.",
+          formatUiErrorMessage(
+            err,
+            editingId != null
+              ? "Etkinlik talebi güncellenemedi."
+              : "Etkinlik talebi oluşturulamadı. Lütfen tekrar deneyin.",
+          ),
         );
       }
     } finally {
@@ -309,7 +305,7 @@ function DashboardContent() {
         ) : (
           !loadingList && (
             <p className="mt-3 text-sm leading-relaxed text-zinc-500">
-              Henüz etkinlik talebiniz yok. Aşağıdaki formdan yeni bir talep
+              {CUSTOMER_EMPTY_DATA_MESSAGE} Aşağıdaki formdan yeni bir talep
               oluşturabilirsiniz.
             </p>
           )

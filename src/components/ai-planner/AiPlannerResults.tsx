@@ -133,7 +133,10 @@ export function AiPlannerResults({
         empty={!planHasBudget(plan)}
         emptyMessage="Bütçe dağılımı bu planda yer almıyor."
       >
-        <AiBudgetBreakdown lines={plan!.budgetBreakdown!} />
+        <AiBudgetBreakdown
+          lines={plan!.budgetBreakdown!}
+          preferredCategories={form.preferredCategories}
+        />
       </AiPlannerSection>
 
       <AiPlannerSection

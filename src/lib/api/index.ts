@@ -12,6 +12,7 @@ import {
   apiPostPublic,
   apiPostPublicRaw,
   buildQuery,
+  withOptionalNotFound,
 } from "@/src/lib/api/client";
 import { formatCityForApi } from "@/src/lib/turkish";
 import {
@@ -303,11 +304,17 @@ export function extractMyEventRequests(
 }
 
 export async function fetchCustomerEventRequests(): Promise<EventRequest[]> {
-  const body = await apiGetRaw<EventRequestsListApiResponse>(
-    "/event-requests/my",
+  return withOptionalNotFound(
+    async () => {
+      const body = await apiGetRaw<EventRequestsListApiResponse>(
+        "/event-requests/my",
+      );
+      const response: EventRequestsListHttpResponse = { data: body };
+      return extractMyEventRequests(response);
+    },
+    [],
+    "Customer event requests endpoint not available yet",
   );
-  const response: EventRequestsListHttpResponse = { data: body };
-  return extractMyEventRequests(response);
 }
 
 function buildEventRequestBody(payload: UpdateEventRequestPayload) {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import {
   cancelReservation,
@@ -9,7 +9,7 @@ import {
   fetchFavorites,
   fetchMyReservations,
 } from "@/src/lib/api";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type {
   DashboardSummary,
   FavoriteItem,
@@ -17,6 +17,7 @@ import type {
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
+import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type Tab = "summary" | "favorites" | "offers" | "reservations";
@@ -25,27 +26,71 @@ export function CustomerOverview() {
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("summary");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [summaryUnavailable, setSummaryUnavailable] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(true);
+  const [loadingFavorites, setLoadingFavorites] = useState(false);
+  const [loadingReservations, setLoadingReservations] = useState(false);
 
-  async function loadTab(next: Tab) {
-    setLoading(true);
+  const loadSummary = useCallback(async () => {
+    setLoadingSummary(true);
+    setSummaryUnavailable(false);
     try {
-      if (next === "summary") setSummary(await fetchCustomerDashboardSummary());
-      if (next === "favorites") setFavorites(await fetchFavorites());
-      if (next === "reservations") setReservations(await fetchMyReservations());
+      const data = await fetchCustomerDashboardSummary();
+      setSummary(data);
+      const hasMetrics = Object.keys(data).length > 0;
+      setSummaryUnavailable(!hasMetrics);
     } catch (e) {
-      if (e instanceof ApiError) console.log("Customer overview failed", e.body);
-      toast.error(formatApiErrorMessage(e, "Veri yüklenemedi."));
+      logApiError("Customer dashboard summary", e);
+      setSummary({});
+      setSummaryUnavailable(true);
+      if (!isApiNotFound(e)) {
+        toast.error("Özet verisi yüklenemedi.");
+      }
     } finally {
-      setLoading(false);
+      setLoadingSummary(false);
     }
-  }
+  }, [toast]);
+
+  const loadFavorites = useCallback(async () => {
+    setLoadingFavorites(true);
+    try {
+      setFavorites(await fetchFavorites());
+    } catch (e) {
+      logApiError("Customer favorites", e);
+      setFavorites([]);
+      if (!isApiNotFound(e)) {
+        toast.error("Favoriler yüklenemedi.");
+      }
+    } finally {
+      setLoadingFavorites(false);
+    }
+  }, [toast]);
+
+  const loadReservations = useCallback(async () => {
+    setLoadingReservations(true);
+    try {
+      setReservations(await fetchMyReservations());
+    } catch (e) {
+      logApiError("Customer reservations", e);
+      setReservations([]);
+      if (!isApiNotFound(e)) {
+        toast.error("Rezervasyonlar yüklenemedi.");
+      }
+    } finally {
+      setLoadingReservations(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    loadTab(tab);
-  }, [tab]);
+    loadSummary();
+  }, [loadSummary]);
+
+  useEffect(() => {
+    if (tab === "favorites") loadFavorites();
+    if (tab === "reservations") loadReservations();
+  }, [tab, loadFavorites, loadReservations]);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "summary", label: "Özet" },
@@ -53,6 +98,15 @@ export function CustomerOverview() {
     { id: "offers", label: "Teklif Taleplerim" },
     { id: "reservations", label: "Rezervasyonlar" },
   ];
+
+  const tabLoading =
+    tab === "summary"
+      ? loadingSummary
+      : tab === "favorites"
+        ? loadingFavorites
+        : tab === "reservations"
+          ? loadingReservations
+          : false;
 
   return (
     <div className={`${glassCard} mb-8`}>
@@ -72,18 +126,30 @@ export function CustomerOverview() {
           </button>
         ))}
       </div>
+
       {tab === "summary" ? (
-        <SummaryCards summary={summary} loading={loading} className="mb-0" />
-      ) : loading ? (
+        loadingSummary ? (
+          <div className={`${skeletonClass} h-24`} />
+        ) : summaryUnavailable ? (
+          <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
+        ) : (
+          <SummaryCards
+            summary={summary}
+            loading={false}
+            className="mb-0"
+            emptyMessage={CUSTOMER_EMPTY_DATA_MESSAGE}
+          />
+        )
+      ) : tabLoading ? (
         <div className={`${skeletonClass} h-24`} />
       ) : tab === "favorites" ? (
         favorites.length === 0 ? (
           <p className="text-sm text-zinc-500">
-            Favori yok.{" "}
-            <Link href="/marketplace" className="text-violet-300">
+            {CUSTOMER_EMPTY_DATA_MESSAGE}{" "}
+            <Link href="/marketplace" className="text-violet-300 hover:text-violet-200">
               Marketplace
             </Link>
-            &apos;ten ekleyin.
+            &apos;ten keşfedebilirsiniz.
           </p>
         ) : (
           <ul className="space-y-2 text-sm">
@@ -105,7 +171,7 @@ export function CustomerOverview() {
       ) : tab === "offers" ? (
         <CustomerOfferRequestsPanel embedded />
       ) : reservations.length === 0 ? (
-        <p className="text-sm text-zinc-500">Rezervasyon yok.</p>
+        <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
       ) : (
         <ul className="space-y-2 text-sm">
           {reservations.map((r) => (
@@ -127,11 +193,12 @@ export function CustomerOverview() {
                     try {
                       await cancelReservation(r.id!);
                       toast.success("Rezervasyon iptal edildi.");
-                      loadTab("reservations");
+                      loadReservations();
                     } catch (err) {
-                      toast.error(
-                        formatApiErrorMessage(err, "İptal edilemedi."),
-                      );
+                      logApiError("Cancel reservation", err);
+                      if (!isApiNotFound(err)) {
+                        toast.error("İptal edilemedi.");
+                      }
                     }
                   }}
                 >

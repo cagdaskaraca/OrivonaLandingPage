@@ -5,7 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import { OfferRequestCard } from "@/src/components/offers/OfferRequestCard";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { fetchMyOfferRequests } from "@/src/lib/api";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { logApiError } from "@/src/lib/api/client";
+import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { OfferRequest } from "@/src/lib/api/types";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
@@ -19,17 +20,14 @@ export function CustomerOfferRequestsPanel({
 }: CustomerOfferRequestsPanelProps) {
   const [offers, setOffers] = useState<OfferRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       setOffers(await fetchMyOfferRequests());
     } catch (e) {
-      if (e instanceof ApiError) console.log("My offer requests failed", e.body);
+      logApiError("My offer requests", e);
       setOffers([]);
-      setError(formatApiErrorMessage(e, "Teklif talepleri yüklenemedi."));
     } finally {
       setLoading(false);
     }
@@ -60,15 +58,9 @@ export function CustomerOfferRequestsPanel({
 
       {loading ? <div className={`${skeletonClass} h-32`} /> : null}
 
-      {!loading && error ? (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
-
-      {!loading && !error && offers.length === 0 ? (
+      {!loading && offers.length === 0 ? (
         <EmptyState
-          title="Henüz teklif talebiniz yok"
+          title={CUSTOMER_EMPTY_DATA_MESSAGE}
           description="Beğendiğiniz hizmetlerde Teklif İste ile işletmelerden fiyat alın."
           actionLabel="Marketplace'e git"
           onAction={() => {
@@ -77,7 +69,7 @@ export function CustomerOfferRequestsPanel({
         />
       ) : null}
 
-      {!loading && !error && offers.length > 0 ? (
+      {!loading && offers.length > 0 ? (
         <ul className="space-y-3">
           {offers.map((o) => (
             <OfferRequestCard key={String(o.id)} offer={o} variant="customer" />

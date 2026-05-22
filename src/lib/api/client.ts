@@ -11,12 +11,70 @@ export class ApiError extends Error {
   }
 }
 
-/** Formats API errors including ASP.NET validation `errors` object. */
+function messageLooksLikeNotFound(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("404") ||
+    m.includes("not found") ||
+    m.includes("bulunamad") ||
+    m === "notfound"
+  );
+}
+
+export function isApiNotFound(err: unknown): boolean {
+  if (err instanceof ApiError && err.status === 404) return true;
+  if (err instanceof ApiError && messageLooksLikeNotFound(err.message)) {
+    return true;
+  }
+  if (err instanceof Error && messageLooksLikeNotFound(err.message)) {
+    return true;
+  }
+  return false;
+}
+
+/** Runs a request; on 404 returns fallback and logs (optional). */
+export async function withOptionalNotFound<T>(
+  fn: () => Promise<T>,
+  fallback: T,
+  notFoundLog?: string,
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (isApiNotFound(err)) {
+      if (notFoundLog) console.log(notFoundLog);
+      return fallback;
+    }
+    throw err;
+  }
+}
+
+/** Logs API failures to console; never surfaces 404 to the UI. */
+export function logApiError(context: string, err: unknown): void {
+  if (isApiNotFound(err)) return;
+  console.error(context, err);
+  if (err instanceof ApiError) {
+    console.error("Backend error message:", err.message);
+    console.error("Backend error response", err.body);
+  }
+}
+
+/** User-facing error text; never exposes raw 404 / Not Found strings. */
+export function formatUiErrorMessage(err: unknown, fallback: string): string {
+  if (isApiNotFound(err)) return fallback;
+  const formatted = formatApiErrorMessage(err, fallback);
+  if (messageLooksLikeNotFound(formatted)) return fallback;
+  return formatted;
+}
+
 export function formatApiErrorMessage(err: unknown, fallback: string): string {
+  if (isApiNotFound(err)) return fallback;
   if (!(err instanceof ApiError)) return fallback;
 
   const lines: string[] = [];
-  if (err.message) lines.push(err.message);
+  if (err.message && !messageLooksLikeNotFound(err.message)) {
+    lines.push(err.message);
+  }
 
   const body = err.body;
   if (body && typeof body === "object") {

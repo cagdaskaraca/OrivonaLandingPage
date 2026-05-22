@@ -3,6 +3,7 @@ import {
   apiGetRaw,
   apiPostRaw,
   apiPutRaw,
+  withOptionalNotFound,
 } from "@/src/lib/api/client";
 import {
   recordBool,
@@ -75,9 +76,15 @@ export async function fetchVendorDashboardSummary(): Promise<DashboardSummary> {
 }
 
 export async function fetchCustomerDashboardSummary(): Promise<DashboardSummary> {
-  const body = await apiGetRaw<ApiEnvelope>("/customer/dashboard/summary");
-  assertSuccess(body);
-  return normalizeSummary(body.data);
+  return withOptionalNotFound(
+    async () => {
+      const body = await apiGetRaw<ApiEnvelope>("/customer/dashboard/summary");
+      assertSuccess(body);
+      return normalizeSummary(body.data);
+    },
+    {},
+    "Customer summary endpoint not available yet",
+  );
 }
 
 export async function fetchAdminDashboardSummary(): Promise<DashboardSummary> {
@@ -114,9 +121,15 @@ function normalizeFavorite(raw: unknown): FavoriteItem {
 }
 
 export async function fetchFavorites(): Promise<FavoriteItem[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/favorites");
-  assertSuccess(body);
-  return toList(body.data).map(normalizeFavorite);
+  return withOptionalNotFound(
+    async () => {
+      const body = await apiGetRaw<ApiEnvelope>("/favorites");
+      assertSuccess(body);
+      return toList(body.data).map(normalizeFavorite);
+    },
+    [],
+    "Customer favorites endpoint not available yet",
+  );
 }
 
 export async function addFavorite(
@@ -178,9 +191,15 @@ export async function createOfferRequest(
 }
 
 export async function fetchMyOfferRequests(): Promise<OfferRequest[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/offer-requests/my");
-  assertSuccess(body);
-  return toList(body.data).map(normalizeOffer);
+  return withOptionalNotFound(
+    async () => {
+      const body = await apiGetRaw<ApiEnvelope>("/offer-requests/my");
+      assertSuccess(body);
+      return toList(body.data).map(normalizeOffer);
+    },
+    [],
+    "Customer offer requests endpoint not available yet",
+  );
 }
 
 export async function fetchVendorOfferRequests(): Promise<OfferRequest[]> {
@@ -235,9 +254,15 @@ export async function createReservation(
 }
 
 export async function fetchMyReservations(): Promise<Reservation[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/reservations/my");
-  assertSuccess(body);
-  return toList(body.data).map(normalizeReservation);
+  return withOptionalNotFound(
+    async () => {
+      const body = await apiGetRaw<ApiEnvelope>("/reservations/my");
+      assertSuccess(body);
+      return toList(body.data).map(normalizeReservation);
+    },
+    [],
+    "Customer reservations endpoint not available yet",
+  );
 }
 
 export async function fetchVendorReservations(): Promise<Reservation[]> {
@@ -368,8 +393,13 @@ function normalizeAiPlan(raw: unknown): AiEventPlanResult {
     budgetBreakdown: Array.isArray(budget)
       ? budget.map((b) => {
           const line = b as Record<string, unknown>;
+          const categoryName =
+            recordStr(line, "categoryName", "CategoryName") ??
+            recordStr(line, "name", "Name");
+          const category = recordStr(line, "category", "Category");
           return {
-            category: recordStr(line, "category", "Category"),
+            categoryName,
+            category: category ?? categoryName,
             amount: recordNum(line, "amount", "Amount"),
             percentage: recordNum(line, "percentage", "Percentage"),
           };

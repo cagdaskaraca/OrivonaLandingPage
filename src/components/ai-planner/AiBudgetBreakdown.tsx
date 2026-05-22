@@ -1,5 +1,5 @@
 import type { AiBudgetLine } from "@/src/lib/api/types";
-import { budgetPercent, budgetTotal } from "@/src/lib/aiPlanner";
+import { budgetPercent, budgetTotal, resolveBudgetLineLabel } from "@/src/lib/aiPlanner";
 
 const BAR_COLORS = [
   "from-violet-400 to-violet-500",
@@ -12,9 +12,13 @@ const BAR_COLORS = [
 
 type AiBudgetBreakdownProps = {
   lines: AiBudgetLine[];
+  preferredCategories: string[];
 };
 
-export function AiBudgetBreakdown({ lines }: AiBudgetBreakdownProps) {
+export function AiBudgetBreakdown({
+  lines,
+  preferredCategories,
+}: AiBudgetBreakdownProps) {
   const total = budgetTotal(lines) || 1;
 
   return (
@@ -22,12 +26,11 @@ export function AiBudgetBreakdown({ lines }: AiBudgetBreakdownProps) {
       {lines.map((line, i) => {
         const pct = budgetPercent(line, total);
         const color = BAR_COLORS[i % BAR_COLORS.length];
+        const label = resolveBudgetLineLabel(line, i, preferredCategories);
         return (
-          <div key={`${line.category}-${i}`}>
+          <div key={`${label}-${i}`}>
             <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-sm">
-              <span className="font-medium text-zinc-200">
-                {line.category ?? "Kategori"}
-              </span>
+              <span className="font-medium text-zinc-200">{label}</span>
               <span className="text-zinc-400">
                 {line.amount != null
                   ? `${line.amount.toLocaleString("tr-TR")} ₺`
