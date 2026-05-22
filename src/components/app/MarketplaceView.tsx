@@ -299,7 +299,7 @@ export function MarketplaceView() {
         item={offerItem}
         open={offerItem != null}
         onClose={() => setOfferItem(null)}
-        onSuccess={() => toast.success("Teklif isteğiniz gönderildi.")}
+        onSuccess={(msg) => toast.success(msg)}
       />
     </DemoShell>
   );

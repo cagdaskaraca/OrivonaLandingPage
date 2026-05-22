@@ -1,6 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import {
+  DEFAULT_CATEGORY_IMAGE,
+  getServiceImageUrl,
+  isLocalMarketplaceImage,
+} from "@/src/lib/serviceImage";
 import type { MarketplaceItem } from "@/src/lib/api/types";
 import { badgeClass, btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
 
@@ -23,9 +29,9 @@ export function MarketplaceServiceCard({
 }: MarketplaceServiceCardProps) {
   const title = item.serviceTitle ?? item.title ?? "Hizmet";
   const vendor = item.vendorName ?? "İşletme";
+  const categoryName = item.categoryName ?? item.category;
   const price = item.price ?? item.basePrice ?? item.minPrice;
   const rating = item.rating ?? item.averageRating;
-  const cover = item.coverImageUrl ?? item.imageUrl;
   const capacity =
     item.capacityMin != null && item.capacityMax != null
       ? `${item.capacityMin}–${item.capacityMax}`
@@ -33,24 +39,46 @@ export function MarketplaceServiceCard({
         ? String(item.guestCapacity)
         : null;
 
+  const [imageSrc, setImageSrc] = useState(() => getServiceImageUrl(item));
+
+  useEffect(() => {
+    setImageSrc(getServiceImageUrl(item));
+  }, [
+    item.coverImageUrl,
+    item.imageUrl,
+    item.categoryName,
+    item.category,
+  ]);
+
+  function handleImageError() {
+    if (imageSrc !== DEFAULT_CATEGORY_IMAGE) {
+      setImageSrc(DEFAULT_CATEGORY_IMAGE);
+    }
+  }
+
+  const useUnoptimized =
+    !isLocalMarketplaceImage(imageSrc) &&
+    (imageSrc.startsWith("http://") || imageSrc.startsWith("https://"));
+
   return (
-    <article className={`${glassCard} ${cardHover} flex flex-col overflow-hidden p-0`}>
-      <div className="relative aspect-[16/10] w-full bg-white/[0.04]">
-        {cover ? (
-          <Image
-            src={cover}
-            alt={title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 33vw"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-zinc-500">
-            Görsel yok
-          </div>
-        )}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-1">
+    <article
+      className={`${glassCard} ${cardHover} flex flex-col overflow-hidden p-0`}
+    >
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl bg-[#0a0612]">
+        <Image
+          src={imageSrc}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
+          unoptimized={useUnoptimized}
+          onError={handleImageError}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06040c]/75 via-[#06040c]/10 to-[#06040c]/25"
+          aria-hidden
+        />
+        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1">
           {item.isFeatured ? (
             <span className={badgeClass}>Öne Çıkan</span>
           ) : null}
@@ -64,7 +92,7 @@ export function MarketplaceServiceCard({
           <button
             type="button"
             aria-label={isFavorite ? "Favoriden çıkar" : "Favoriye ekle"}
-            className="absolute right-3 top-3 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
+            className="absolute right-3 top-3 z-10 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
             onClick={onFavoriteToggle}
             disabled={favoriteLoading}
           >
@@ -75,7 +103,7 @@ export function MarketplaceServiceCard({
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-            {item.categoryName ?? item.category ?? "Kategori"}
+            {categoryName ?? "Kategori"}
           </p>
           <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
           <p className="mt-1 text-sm text-zinc-400">{vendor}</p>

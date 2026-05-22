@@ -22,6 +22,7 @@ import type {
   VendorService,
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
+import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import { btnPrimary, btnSecondary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
 
 export function VendorSummaryCards() {
@@ -38,22 +39,13 @@ export function VendorSummaryCards() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className={`${skeletonClass} mb-6 h-20`} />;
-  const entries = Object.entries(summary ?? {});
-  if (entries.length === 0) return null;
-
   return (
-    <dl className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {entries.map(([k, v]) => (
-        <div
-          key={k}
-          className={`${glassCard} py-4`}
-        >
-          <dt className="text-xs text-zinc-500">{k}</dt>
-          <dd className="mt-1 text-xl font-semibold text-white">{v}</dd>
-        </div>
-      ))}
-    </dl>
+    <SummaryCards
+      summary={summary}
+      loading={loading}
+      className="mb-6"
+      emptyMessage=""
+    />
   );
 }
 

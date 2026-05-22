@@ -17,6 +17,7 @@ import type {
   Reservation,
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
+import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type Tab = "summary" | "favorites" | "offers" | "reservations";
@@ -74,23 +75,10 @@ export function CustomerOverview() {
           </button>
         ))}
       </div>
-      {loading ? (
+      {tab === "summary" ? (
+        <SummaryCards summary={summary} loading={loading} className="mb-0" />
+      ) : loading ? (
         <div className={`${skeletonClass} h-24`} />
-      ) : tab === "summary" ? (
-        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(summary ?? {}).map(([k, v]) => (
-            <div
-              key={k}
-              className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
-            >
-              <dt className="text-xs text-zinc-500">{k}</dt>
-              <dd className="mt-1 text-lg font-semibold text-white">{v}</dd>
-            </div>
-          ))}
-          {Object.keys(summary ?? {}).length === 0 ? (
-            <p className="text-sm text-zinc-500">Özet verisi yok.</p>
-          ) : null}
-        </dl>
       ) : tab === "favorites" ? (
         favorites.length === 0 ? (
           <p className="text-sm text-zinc-500">

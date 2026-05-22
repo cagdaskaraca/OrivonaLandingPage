@@ -118,8 +118,8 @@ export type OfferRequest = {
 export type CreateOfferRequestPayload = {
   vendorServiceId: string | number;
   message: string;
+  eventDate: string;
   guestCount: number;
-  eventDate?: string;
 };
 
 export type RespondOfferPayload = {

@@ -21,7 +21,8 @@ import type {
 } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useToast } from "@/src/contexts/ToastContext";
-import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
+import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
+import { btnSecondary, glassCard } from "@/src/lib/ui";
 
 function DashboardContent() {
   const { user, logout } = useAuth();
@@ -80,18 +81,7 @@ function DashboardContent() {
         <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
       </div>
 
-      {loading ? (
-        <div className={`${skeletonClass} mb-8 h-24`} />
-      ) : (
-        <dl className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {Object.entries(summary ?? {}).map(([k, v]) => (
-            <div key={k} className={`${glassCard} py-4`}>
-              <dt className="text-xs text-zinc-500">{k}</dt>
-              <dd className="mt-1 text-xl font-semibold text-white">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      <SummaryCards summary={summary} loading={loading} />
 
       <div className={`${glassCard} mb-8`}>
         <h2 className="text-lg font-semibold text-white">Onay bekleyen işletmeler</h2>

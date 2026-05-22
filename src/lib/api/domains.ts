@@ -162,7 +162,12 @@ function normalizeOffer(raw: unknown): OfferRequest {
 export async function createOfferRequest(
   payload: CreateOfferRequestPayload,
 ): Promise<OfferRequest> {
-  const body = await apiPostRaw<ApiEnvelope>("/offer-requests", payload);
+  const body = await apiPostRaw<ApiEnvelope>("/offer-requests", {
+    vendorServiceId: payload.vendorServiceId,
+    message: payload.message,
+    eventDate: payload.eventDate || null,
+    guestCount: payload.guestCount,
+  });
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);
 }
