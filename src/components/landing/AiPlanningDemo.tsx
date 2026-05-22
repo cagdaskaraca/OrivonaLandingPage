@@ -90,8 +90,8 @@ export function AiPlanningDemo() {
   const cardVisible = (i: number) => phase === "cards" && cardIdx >= i;
 
   return (
-    <div className="grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-14">
-      <div className="order-2 space-y-4 lg:order-1">
+    <div className="mx-auto grid w-full max-w-6xl gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] lg:items-start lg:gap-12">
+      <div className="order-2 space-y-4 lg:order-1 lg:min-w-0">
         <div className="rounded-2xl border border-violet-400/20 bg-black/50 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl">
           <div className="mb-3 flex shrink-0 items-center gap-2 border-b border-white/10 pb-3">
             <span className="flex h-2 w-2 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
@@ -154,18 +154,21 @@ export function AiPlanningDemo() {
         </p>
       </div>
 
-      <div className="order-1 lg:order-2">
-        <div className="relative">
-          <div className="pointer-events-none absolute -inset-4 rounded-3xl bg-gradient-to-b from-violet-500/30 via-fuchsia-500/10 to-transparent blur-2xl" />
-          <div className="relative overflow-hidden rounded-3xl border border-violet-300/20 bg-gradient-to-br from-white/[0.1] to-white/[0.02] p-2 shadow-[0_24px_70px_-20px_rgba(109,40,217,0.5)] backdrop-blur-xl sm:p-3">
+      <div className="order-1 flex w-full justify-center lg:order-2 lg:min-w-0 lg:justify-center">
+        <div className="relative w-full max-w-2xl sm:max-w-3xl lg:max-w-none lg:origin-center lg:scale-[1.02] xl:scale-[1.05] motion-reduce:scale-100">
+          <div
+            className="pointer-events-none absolute -inset-5 rounded-[2rem] bg-gradient-to-b from-violet-500/40 via-fuchsia-500/18 to-transparent blur-3xl sm:-inset-6 lg:-inset-7"
+            aria-hidden
+          />
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-violet-300/25 bg-gradient-to-br from-white/[0.12] to-white/[0.02] p-1.5 shadow-[0_32px_88px_-22px_rgba(109,40,217,0.62)] backdrop-blur-xl sm:rounded-[2rem] sm:p-2 lg:rounded-[2.25rem]">
             <Image
               src="/ai-dashboard-preview.png"
               alt="ORIVONA AI planlama paneli önizlemesi"
               width={1600}
               height={1000}
               loading="lazy"
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="h-auto w-full rounded-2xl object-cover"
+              sizes="(max-width: 1024px) 100vw, 58vw"
+              className="h-auto w-full rounded-xl object-cover sm:rounded-2xl lg:rounded-[1.75rem]"
             />
           </div>
         </div>

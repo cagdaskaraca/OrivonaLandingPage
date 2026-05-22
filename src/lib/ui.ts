@@ -1,0 +1,16 @@
+/** Shared ORIVONA demo / app surface styles (matches landing glass cards). */
+export const glassCard =
+  "rounded-2xl border border-violet-200/[0.07] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 shadow-[0_12px_48px_-18px_rgba(24,12,48,0.75)] backdrop-blur-xl";
+
+export const inputClass =
+  "w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 outline-none transition-colors focus:border-violet-400/40 focus:bg-white/[0.06]";
+
+/** Dark-theme native select (options stay readable on Windows/Chrome). */
+export const selectClass =
+  `${inputClass} cursor-pointer appearance-none bg-zinc-950/90 text-white [&>option]:bg-zinc-900 [&>option]:text-zinc-100`;
+
+export const btnPrimary =
+  "inline-flex items-center justify-center rounded-full bg-gradient-to-r from-violet-300 via-violet-400 to-fuchsia-400 px-6 py-2.5 text-sm font-semibold text-[#0a0612] shadow-[0_8px_28px_-6px_rgba(167,139,250,0.55)] transition-[transform,box-shadow] hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none";
+
+export const btnSecondary =
+  "inline-flex items-center justify-center rounded-full border border-violet-300/25 bg-violet-500/10 px-6 py-2.5 text-sm font-semibold text-violet-50 backdrop-blur-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-violet-500/18 disabled:opacity-50";

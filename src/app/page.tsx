@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { EarlyAccessForm } from "@/src/components/EarlyAccessForm";
 import { AiPlanningDemo } from "@/src/components/landing/AiPlanningDemo";
 import { AnimatedMetrics } from "@/src/components/landing/AnimatedMetrics";
@@ -228,6 +229,15 @@ const MAIL_PARTNERS_EARLY =
 const glassCard =
   "rounded-2xl border border-violet-200/[0.07] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 shadow-[0_12px_48px_-18px_rgba(24,12,48,0.75)] backdrop-blur-xl transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-violet-400/22 hover:shadow-[0_22px_56px_-18px_rgba(109,40,217,0.38)]";
 
+const heroCta =
+  "inline-flex h-11 w-full shrink-0 items-center justify-center rounded-full border border-violet-300/25 bg-gradient-to-b from-white/[0.06] via-violet-500/10 to-violet-950/40 px-5 text-sm font-semibold text-violet-50 shadow-[0_8px_28px_-14px_rgba(88,28,135,0.38)] backdrop-blur-md transition-[transform,box-shadow,border-color,background-color] duration-300 hover:-translate-y-0.5 hover:border-violet-300/38 hover:from-violet-500/14 hover:to-violet-900/45 hover:shadow-[0_12px_36px_-12px_rgba(109,40,217,0.45)] sm:h-12 sm:w-auto sm:px-6 lg:px-5 lg:whitespace-nowrap xl:px-7";
+
+/** Same glass base; slightly stronger border, gradient and hover for primary action */
+const heroCtaEmphasis = `${heroCta} border-violet-300/35 from-violet-500/12 to-violet-800/35 shadow-[0_10px_32px_-12px_rgba(109,40,217,0.44)] hover:border-violet-300/48 hover:from-violet-500/18 hover:to-violet-800/40 hover:shadow-[0_14px_40px_-10px_rgba(139,92,246,0.5)]`;
+
+const navMarketplaceLink =
+  "text-violet-100/90 transition-[color,text-shadow] duration-300 hover:text-white hover:drop-shadow-[0_0_14px_rgba(167,139,250,0.55)]";
+
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#06040c] text-zinc-100">
@@ -262,7 +272,7 @@ export default function Home() {
             
           </SmoothScrollToTop>
 
-          <div className="hidden items-center gap-8 text-sm text-zinc-300 md:flex">
+          <div className="hidden items-center gap-5 text-sm text-zinc-300 md:flex lg:gap-6">
             <SmoothScrollToSection
               sectionId="guven"
               className="transition-colors hover:text-white"
@@ -275,6 +285,9 @@ export default function Home() {
             >
               Nasıl Çalışır
             </SmoothScrollToSection>
+            <Link href="/marketplace" className={navMarketplaceLink}>
+              Marketplace
+            </Link>
             <SmoothScrollToSection
               sectionId="isletmeler"
               className="transition-colors hover:text-white"
@@ -296,7 +309,7 @@ export default function Home() {
             Erken Erişim
           </SmoothScrollToSection>
         </nav>
-        <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-5 gap-y-2 border-t border-white/10 px-4 py-3 text-xs font-medium text-zinc-400 md:hidden">
+        <div className="mx-auto flex max-w-6xl flex-wrap justify-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-3 text-xs font-medium text-zinc-400 md:hidden">
           <SmoothScrollToSection
             sectionId="guven"
             className="hover:text-violet-200"
@@ -309,6 +322,9 @@ export default function Home() {
           >
             Nasıl Çalışır
           </SmoothScrollToSection>
+          <Link href="/marketplace" className="hover:text-violet-200 hover:drop-shadow-[0_0_10px_rgba(167,139,250,0.45)]">
+            Marketplace
+          </Link>
           <SmoothScrollToSection
             sectionId="isletmeler"
             className="hover:text-violet-200"
@@ -355,23 +371,23 @@ export default function Home() {
               hizmet sağlayıcıları keşfet. Teklif al, rezervasyon yap ve tüm
               süreci ORIVONA ile kolayca yönet.
             </p>
-            <div className="mt-10 flex w-full max-w-xl flex-col items-stretch justify-center gap-3 sm:mx-auto sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-3">
+            <div className="mx-auto mt-10 flex w-full max-w-4xl flex-col items-center justify-center gap-3 px-2 sm:max-w-3xl sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4 md:max-w-4xl lg:max-w-6xl lg:flex-nowrap lg:justify-center lg:gap-3 xl:max-w-7xl xl:gap-4">
+              <Link href="/ai-planner" className={heroCta}>
+                AI Planlayıcıyı Dene
+              </Link>
+              <Link href="/marketplace" className={heroCta}>
+                Marketplace&apos;i Keşfet
+              </Link>
               <SmoothScrollToSection
                 sectionId="erken-erisim"
-                className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[#0a0612] shadow-[0_14px_44px_-12px_rgba(255,255,255,0.28)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_18px_52px_-12px_rgba(237,233,254,0.35)]"
+                className={heroCtaEmphasis}
               >
                 Erken Erişime Katıl
               </SmoothScrollToSection>
-              <a
-                href={MAIL_PARTNERS_BUSINESS}
-                className="inline-flex items-center justify-center rounded-full border border-violet-300/25 bg-violet-500/10 px-7 py-3.5 text-sm font-semibold text-violet-50 backdrop-blur-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-violet-500/18"
-              >
+              <a href={MAIL_PARTNERS_BUSINESS} className={heroCta}>
                 İşletme Başvurusu Yap
               </a>
-              <a
-                href={MAIL_INFO}
-                className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-7 py-3.5 text-sm font-semibold text-white transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white/[0.07]"
-              >
+              <a href={MAIL_INFO} className={heroCta}>
                 İletişime Geç
               </a>
             </div>
@@ -416,7 +432,7 @@ export default function Home() {
                   veri değil, ürün vizyonunu yansıtan bir simülasyon.
                 </p>
               </div>
-              <div className="mt-14">
+              <div className="mt-14 lg:mt-16">
                 <AiPlanningDemo />
               </div>
             </ScrollReveal>
@@ -658,7 +674,7 @@ export default function Home() {
           id="mobil-uygulama"
           className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-20 sm:py-28"
         >
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto mb-12 max-w-2xl text-center">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
                 Yakında mobil uygulama

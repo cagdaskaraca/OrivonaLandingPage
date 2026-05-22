@@ -1,7 +1,7 @@
 import { SITE_SEO_DESCRIPTION } from "@/src/lib/seo";
 import { SITE_CANONICAL_URL, SITE_URL } from "@/src/lib/site";
 
-const logoUrl = `${SITE_URL}/favicon.png`;
+const logoUrl = `${SITE_URL}/orivona-icon-v2.png`;
 
 const organization = {
   "@context": "https://schema.org",

@@ -51,11 +51,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico?v=4", sizes: "any", type: "image/x-icon" },
-      { url: "/favicon.png?v=4", type: "image/png" },
+      { url: "/orivona-icon-v2.ico", sizes: "any", type: "image/x-icon" },
+      { url: "/orivona-icon-v2.png", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=4",
-    apple: "/apple-touch-icon.png?v=4",
+    shortcut: "/orivona-icon-v2.ico",
+    apple: "/orivona-apple-touch-icon-v2.png",
   },
   openGraph: {
     title: SITE_SEO_TITLE,
