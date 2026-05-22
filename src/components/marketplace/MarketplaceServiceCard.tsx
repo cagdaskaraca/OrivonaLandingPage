@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   DEFAULT_CATEGORY_IMAGE,
@@ -32,6 +33,9 @@ export function MarketplaceServiceCard({
   const categoryName = item.categoryName ?? item.category;
   const price = item.price ?? item.basePrice ?? item.minPrice;
   const rating = item.rating ?? item.averageRating;
+  const serviceId = item.vendorServiceId ?? item.id;
+  const detailHref =
+    serviceId != null ? `/services/${encodeURIComponent(String(serviceId))}` : null;
   const capacity =
     item.capacityMin != null && item.capacityMax != null
       ? `${item.capacityMin}–${item.capacityMax}`
@@ -62,14 +66,19 @@ export function MarketplaceServiceCard({
 
   return (
     <article
-      className={`${glassCard} ${cardHover} flex flex-col overflow-hidden p-0`}
+      className={`${glassCard} ${cardHover} group flex flex-col overflow-hidden p-0`}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-2xl bg-[#0a0612]">
+        {detailHref ? (
+          <Link href={detailHref} className="absolute inset-0 z-0">
+            <span className="sr-only">{title} detayına git</span>
+          </Link>
+        ) : null}
         <Image
           src={imageSrc}
           alt={title}
           fill
-          className="object-cover"
+          className="object-cover transition duration-300 group-hover:scale-[1.02]"
           sizes="(max-width: 768px) 100vw, 33vw"
           unoptimized={useUnoptimized}
           onError={handleImageError}
@@ -78,7 +87,7 @@ export function MarketplaceServiceCard({
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06040c]/75 via-[#06040c]/10 to-[#06040c]/25"
           aria-hidden
         />
-        <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-1">
+        <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap gap-1">
           {item.isFeatured ? (
             <span className={badgeClass}>Öne Çıkan</span>
           ) : null}
@@ -92,20 +101,32 @@ export function MarketplaceServiceCard({
           <button
             type="button"
             aria-label={isFavorite ? "Favoriden çıkar" : "Favoriye ekle"}
-            className="absolute right-3 top-3 z-10 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
-            onClick={onFavoriteToggle}
+            className="absolute right-3 top-3 z-20 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onFavoriteToggle();
+            }}
             disabled={favoriteLoading}
           >
             {isFavorite ? "♥" : "♡"}
           </button>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="relative flex flex-1 flex-col gap-3 p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
             {categoryName ?? "Kategori"}
           </p>
-          <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
+          {detailHref ? (
+            <Link href={detailHref}>
+              <h3 className="mt-1 text-lg font-semibold text-white transition hover:text-violet-100">
+                {title}
+              </h3>
+            </Link>
+          ) : (
+            <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
+          )}
           <p className="mt-1 text-sm text-zinc-400">{vendor}</p>
         </div>
         {(item.city || item.district) && (
@@ -135,15 +156,22 @@ export function MarketplaceServiceCard({
           )}
           {capacity != null && <span>Kapasite: {capacity} kişi</span>}
         </div>
-        {showOfferButton && onOfferRequest ? (
-          <button type="button" className={btnPrimary} onClick={onOfferRequest}>
-            Teklif İste
-          </button>
-        ) : (
-          <span className={`${btnSecondary} pointer-events-none opacity-60`}>
-            Giriş yaparak teklif isteyin
-          </span>
-        )}
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {detailHref ? (
+            <Link href={detailHref} className={`${btnSecondary} text-center`}>
+              Detayları gör
+            </Link>
+          ) : null}
+          {showOfferButton && onOfferRequest ? (
+            <button type="button" className={btnPrimary} onClick={onOfferRequest}>
+              Teklif İste
+            </button>
+          ) : (
+            <span className={`${btnSecondary} pointer-events-none opacity-60`}>
+              Giriş yaparak teklif isteyin
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );

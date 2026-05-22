@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ServiceImageManager,
-  VendorOfferRequestsPanel,
   VendorReservationsPanel,
   VendorSummaryCards,
 } from "@/src/components/app/dashboard/VendorExtras";
+import { VendorOfferRequestsPanel } from "@/src/components/offers/VendorOfferRequestsPanel";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {

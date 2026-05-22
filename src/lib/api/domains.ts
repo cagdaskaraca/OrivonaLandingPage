@@ -149,12 +149,17 @@ function normalizeOffer(raw: unknown): OfferRequest {
     guestCount: recordNum(o, "guestCount", "GuestCount"),
     eventDate: recordStr(o, "eventDate", "EventDate"),
     status: recordStr(o, "status", "Status"),
-    offeredPrice: recordNum(o, "offeredPrice", "OfferedPrice"),
-    responseDescription: recordStr(
-      o,
-      "responseDescription",
-      "ResponseDescription",
-    ),
+    offeredPrice:
+      recordNum(o, "offeredPrice", "OfferedPrice") ??
+      recordNum(o, "price", "Price"),
+    price: recordNum(o, "price", "Price") ?? recordNum(o, "offeredPrice", "OfferedPrice"),
+    responseDescription:
+      recordStr(o, "responseDescription", "ResponseDescription") ??
+      recordStr(o, "description", "Description"),
+    description:
+      recordStr(o, "description", "Description") ??
+      recordStr(o, "responseDescription", "ResponseDescription"),
+    validUntil: recordStr(o, "validUntil", "ValidUntil"),
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
   };
 }
@@ -190,7 +195,14 @@ export async function respondVendorOffer(
 ): Promise<OfferRequest> {
   const body = await apiPostRaw<ApiEnvelope>(
     `/vendor/offer-requests/${id}/respond`,
-    payload,
+    {
+      price: payload.price,
+      description: payload.description,
+      validUntil: payload.validUntil || null,
+      accept: payload.accept,
+      offeredPrice: payload.price,
+      responseDescription: payload.description,
+    },
   );
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);
@@ -333,13 +345,23 @@ function normalizeAiPlan(raw: unknown): AiEventPlanResult {
       ? (recs as unknown[]).map((r) => {
           if (!r || typeof r !== "object") return {};
           const item = r as Record<string, unknown>;
+          const serviceId =
+            recordId(item, "serviceId", "ServiceId") ??
+            recordId(item, "vendorServiceId", "VendorServiceId");
+          const reasonsRaw = item.reasons ?? item.Reasons;
           return {
             vendorName: recordStr(item, "vendorName", "VendorName"),
             serviceTitle: recordStr(item, "serviceTitle", "ServiceTitle"),
             score: recordNum(item, "score", "Score"),
             estimatedPrice: recordNum(item, "estimatedPrice", "EstimatedPrice"),
-            serviceId: recordId(item, "serviceId", "ServiceId"),
+            serviceId,
+            vendorServiceId: serviceId,
             vendorId: recordId(item, "vendorId", "VendorId"),
+            reasons: Array.isArray(reasonsRaw)
+              ? reasonsRaw.map(String)
+              : typeof reasonsRaw === "string"
+                ? reasonsRaw
+                : undefined,
           };
         })
       : undefined,
@@ -390,6 +412,9 @@ function normalizeAdminVendor(raw: unknown): AdminVendor {
     city: recordStr(o, "city", "City"),
     district: recordStr(o, "district", "District"),
     isApproved: recordBool(o, "isApproved", "IsApproved"),
+    status:
+      recordStr(o, "status", "Status") ??
+      recordStr(o, "approvalStatus", "ApprovalStatus"),
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
   };
 }
@@ -399,7 +424,9 @@ function normalizeAdminService(raw: unknown): AdminService {
   const o = raw as Record<string, unknown>;
   return {
     id: recordId(o),
-    title: recordStr(o, "title", "Title"),
+    title:
+      recordStr(o, "title", "Title") ??
+      recordStr(o, "serviceTitle", "ServiceTitle"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
     categoryName: recordStr(o, "categoryName", "CategoryName"),
     city: recordStr(o, "city", "City"),

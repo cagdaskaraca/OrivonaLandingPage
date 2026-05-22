@@ -84,6 +84,13 @@ export type MarketplaceItem = {
   isFeatured?: boolean;
   isFavorite?: boolean;
   badges?: string[];
+  images?: ServiceGalleryImage[];
+};
+
+export type ServiceGalleryImage = {
+  url?: string;
+  imageUrl?: string;
+  isCover?: boolean;
 };
 
 export type DashboardSummary = Record<string, number | string | undefined>;
@@ -111,7 +118,10 @@ export type OfferRequest = {
   eventDate?: string;
   status?: string;
   offeredPrice?: number;
+  price?: number;
   responseDescription?: string;
+  description?: string;
+  validUntil?: string;
   createdAt?: string;
 };
 
@@ -123,8 +133,9 @@ export type CreateOfferRequestPayload = {
 };
 
 export type RespondOfferPayload = {
-  offeredPrice: number;
-  responseDescription: string;
+  price: number;
+  description: string;
+  validUntil: string;
   accept: boolean;
 };
 
@@ -200,6 +211,7 @@ export type AdminVendor = {
   city?: string;
   district?: string;
   isApproved?: boolean;
+  status?: string;
   createdAt?: string;
 };
 
@@ -233,6 +245,7 @@ export interface AiRecommendationItem {
   reasons?: string[] | string;
   vendorId?: string | number;
   serviceId?: string | number;
+  vendorServiceId?: string | number;
 }
 
 /** @deprecated Use AiRecommendationItem */

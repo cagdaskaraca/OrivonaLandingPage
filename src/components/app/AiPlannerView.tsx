@@ -1,7 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AiPlannerResults } from "@/src/components/ai-planner/AiPlannerResults";
 import { DemoShell } from "@/src/components/app/DemoShell";
+import {
+  OFFER_REQUEST_SUCCESS_MESSAGE,
+  OfferRequestModal,
+} from "@/src/components/marketplace/OfferRequestModal";
 import {
   fetchAiEventPlan,
   fetchAiRecommendations,
@@ -11,39 +16,19 @@ import type {
   AiEventPlanResult,
   AiRecommendationItem,
   Category,
+  MarketplaceItem,
 } from "@/src/lib/api/types";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
-import { btnPrimary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
-
-function RecommendationCard({ rec }: { rec: AiRecommendationItem }) {
-  const reasons = Array.isArray(rec.reasons)
-    ? rec.reasons
-    : rec.reasons
-      ? [rec.reasons]
-      : [];
-  return (
-    <article className={`${glassCard} border-emerald-500/15`}>
-      <h3 className="text-lg font-semibold text-white">
-        {rec.serviceTitle ?? "Hizmet"}
-      </h3>
-      <p className="text-sm text-violet-100/90">{rec.vendorName ?? "İşletme"}</p>
-      {rec.estimatedPrice != null && (
-        <p className="mt-2 text-sm text-zinc-300">
-          Tahmini: {rec.estimatedPrice.toLocaleString("tr-TR")} ₺
-        </p>
-      )}
-      {reasons.length > 0 && (
-        <ul className="mt-2 list-inside list-disc text-xs text-zinc-400">
-          {reasons.map((r) => (
-            <li key={r}>{r}</li>
-          ))}
-        </ul>
-      )}
-    </article>
-  );
-}
+import {
+  recommendationToMarketplaceItem,
+  type AiPlanFormSnapshot,
+} from "@/src/lib/aiPlanner";
+import { useToast } from "@/src/contexts/ToastContext";
+import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
 
 export function AiPlannerView() {
+  const toast = useToast();
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [eventType, setEventType] = useState("Düğün");
   const [city, setCity] = useState("İzmir");
   const [district, setDistrict] = useState("Konak");
@@ -55,7 +40,11 @@ export function AiPlannerView() {
   const [plan, setPlan] = useState<AiEventPlanResult | null>(null);
   const [fallbackRecs, setFallbackRecs] = useState<AiRecommendationItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [partialMode, setPartialMode] = useState(false);
+  const [offerItem, setOfferItem] = useState<MarketplaceItem | null>(null);
+  const [offerOpen, setOfferOpen] = useState(false);
 
   useEffect(() => {
     fetchCategories().then(setCategories);
@@ -67,17 +56,22 @@ export function AiPlannerView() {
     );
   }
 
+  const formSnapshot: AiPlanFormSnapshot = {
+    eventType,
+    city,
+    district,
+    guestCount,
+    budgetMin,
+    budgetMax,
+    preferredCategories: selectedCats,
+  };
+
   const recommendations = plan?.recommendations?.length
     ? plan.recommendations
     : fallbackRecs;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setPlan(null);
-    setFallbackRecs([]);
-    const payload = {
+  function buildPayload() {
+    return {
       eventType,
       city,
       district,
@@ -86,14 +80,36 @@ export function AiPlannerView() {
       budgetMax: Number(budgetMax) || 0,
       preferredCategories: selectedCats,
     };
+  }
+
+  async function runPlan() {
+    setLoading(true);
+    setError(null);
+    setPlan(null);
+    setFallbackRecs([]);
+    setPartialMode(false);
+    const payload = buildPayload();
+
     try {
       const result = await fetchAiEventPlan(payload);
       setPlan(result);
+
+      if (!result.recommendations?.length) {
+        try {
+          const { recommendations: recs } = await fetchAiRecommendations(payload);
+          if (recs.length > 0) {
+            setPlan({ ...result, recommendations: recs });
+          }
+        } catch {
+          /* recommendations optional supplement */
+        }
+      }
     } catch (err) {
       if (err instanceof ApiError) console.log("AI event-plan failed", err.body);
       try {
-        const { recommendations } = await fetchAiRecommendations(payload);
-        setFallbackRecs(recommendations);
+        const { recommendations: recs } = await fetchAiRecommendations(payload);
+        setFallbackRecs(recs);
+        setPartialMode(true);
       } catch (err2) {
         if (err2 instanceof ApiError) console.log("AI recommendations failed", err2.body);
         setError(
@@ -105,7 +121,21 @@ export function AiPlannerView() {
       }
     } finally {
       setLoading(false);
+      requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setHasSearched(true);
+    await runPlan();
+  }
+
+  function openOfferModal(rec: AiRecommendationItem) {
+    setOfferItem(recommendationToMarketplaceItem(rec));
+    setOfferOpen(true);
   }
 
   const catNames =
@@ -140,23 +170,47 @@ export function AiPlannerView() {
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Şehir</span>
-          <input className={inputClass} value={city} onChange={(e) => setCity(e.target.value)} required />
+          <input
+            className={inputClass}
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            required
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">İlçe</span>
-          <input className={inputClass} value={district} onChange={(e) => setDistrict(e.target.value)} />
+          <input
+            className={inputClass}
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Misafir</span>
-          <input type="number" className={inputClass} value={guestCount} onChange={(e) => setGuestCount(e.target.value)} />
+          <input
+            type="number"
+            className={inputClass}
+            value={guestCount}
+            onChange={(e) => setGuestCount(e.target.value)}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Min bütçe</span>
-          <input type="number" className={inputClass} value={budgetMin} onChange={(e) => setBudgetMin(e.target.value)} />
+          <input
+            type="number"
+            className={inputClass}
+            value={budgetMin}
+            onChange={(e) => setBudgetMin(e.target.value)}
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Max bütçe</span>
-          <input type="number" className={inputClass} value={budgetMax} onChange={(e) => setBudgetMax(e.target.value)} />
+          <input
+            type="number"
+            className={inputClass}
+            value={budgetMax}
+            onChange={(e) => setBudgetMax(e.target.value)}
+          />
         </label>
         <div className="sm:col-span-2">
           <span className="mb-2 block text-xs text-zinc-400">Tercih edilen kategoriler</span>
@@ -168,8 +222,8 @@ export function AiPlannerView() {
                 onClick={() => toggleCategory(name)}
                 className={
                   selectedCats.includes(name)
-                    ? "rounded-full bg-violet-500/30 px-3 py-1 text-xs font-medium text-white"
-                    : "rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-400"
+                    ? "rounded-full bg-violet-500/30 px-3 py-1 text-xs font-medium text-white ring-1 ring-violet-400/30"
+                    : "rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-400 transition-colors hover:border-violet-400/30 hover:text-zinc-200"
                 }
               >
                 {name}
@@ -184,74 +238,29 @@ export function AiPlannerView() {
         </div>
       </form>
 
-      {error ? (
-        <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
+      <div ref={resultsRef}>
+        <AiPlannerResults
+          form={formSnapshot}
+          plan={plan}
+          recommendations={recommendations}
+          loading={loading}
+          hasSearched={hasSearched}
+          error={error}
+          partialMode={partialMode}
+          onRetry={runPlan}
+          onRequestOffer={openOfferModal}
+        />
+      </div>
 
-      {loading ? <div className={`${skeletonClass} mb-6 h-32`} /> : null}
-
-      {!loading && plan?.summary ? (
-        <div className={`${glassCard} mb-6`}>
-          <h2 className="text-lg font-semibold text-white">Özet</h2>
-          <p className="mt-2 text-sm text-zinc-300">{plan.summary}</p>
-        </div>
-      ) : null}
-
-      {!loading && (plan?.budgetBreakdown?.length ?? 0) > 0 ? (
-        <div className={`${glassCard} mb-6`}>
-          <h2 className="text-lg font-semibold text-white">Bütçe dağılımı</h2>
-          <ul className="mt-3 space-y-2 text-sm">
-            {plan!.budgetBreakdown!.map((line, i) => (
-              <li key={i} className="flex justify-between text-zinc-300">
-                <span>{line.category}</span>
-                <span>
-                  {line.amount?.toLocaleString("tr-TR")} ₺
-                  {line.percentage != null ? ` (${line.percentage}%)` : ""}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {!loading && (plan?.timeline?.length ?? 0) > 0 ? (
-        <div className={`${glassCard} mb-6`}>
-          <h2 className="text-lg font-semibold text-white">Zaman çizelgesi</h2>
-          <ol className="mt-3 space-y-3">
-            {plan!.timeline!.map((step, i) => (
-              <li key={i} className="border-l-2 border-violet-500/40 pl-4">
-                <p className="font-medium text-white">{step.title}</p>
-                <p className="text-xs text-violet-200">{step.timing}</p>
-                <p className="text-sm text-zinc-400">{step.description}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      ) : null}
-
-      {!loading && (plan?.conceptIdeas?.length ?? 0) > 0 ? (
-        <div className={`${glassCard} mb-6`}>
-          <h2 className="text-lg font-semibold text-white">Konsept fikirleri</h2>
-          <ul className="mt-2 list-inside list-disc text-sm text-zinc-300">
-            {plan!.conceptIdeas!.map((idea) => (
-              <li key={idea}>{idea}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {!loading && recommendations.length > 0 ? (
-        <div>
-          <h2 className="mb-4 text-lg font-semibold text-white">Önerilen hizmetler</h2>
-          <div className="grid gap-5 sm:grid-cols-2">
-            {recommendations.map((rec, i) => (
-              <RecommendationCard key={i} rec={rec} />
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <OfferRequestModal
+        item={offerItem}
+        open={offerOpen}
+        onClose={() => {
+          setOfferOpen(false);
+          setOfferItem(null);
+        }}
+        onSuccess={(msg) => toast.success(msg || OFFER_REQUEST_SUCCESS_MESSAGE)}
+      />
     </DemoShell>
   );
 }

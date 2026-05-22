@@ -8,15 +8,12 @@ import {
   deleteServiceImage,
   fetchServiceImages,
   fetchVendorDashboardSummary,
-  fetchVendorOfferRequests,
   fetchVendorReservations,
-  respondVendorOffer,
   updateServiceImage,
 } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type {
   DashboardSummary,
-  OfferRequest,
   Reservation,
   ServiceImage,
   VendorService,
@@ -46,111 +43,6 @@ export function VendorSummaryCards() {
       className="mb-6"
       emptyMessage=""
     />
-  );
-}
-
-export function VendorOfferRequestsPanel() {
-  const toast = useToast();
-  const [offers, setOffers] = useState<OfferRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [respondingId, setRespondingId] = useState<string | number | null>(null);
-  const [price, setPrice] = useState("");
-  const [desc, setDesc] = useState("");
-
-  async function load() {
-    setLoading(true);
-    try {
-      setOffers(await fetchVendorOfferRequests());
-    } catch (e) {
-      if (e instanceof ApiError) console.log("Vendor offers failed", e.body);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  async function respond(id: string | number, accept: boolean) {
-    try {
-      await respondVendorOffer(id, {
-        offeredPrice: Number(price) || 0,
-        responseDescription: desc,
-        accept,
-      });
-      toast.success(accept ? "Teklif kabul edildi." : "Teklif reddedildi.");
-      setRespondingId(null);
-      setPrice("");
-      setDesc("");
-      load();
-    } catch (e) {
-      toast.error(formatApiErrorMessage(e, "Yanıt gönderilemedi."));
-    }
-  }
-
-  return (
-    <div className={`${glassCard} mb-8`}>
-      <h2 className="text-lg font-semibold text-white">Gelen teklif istekleri</h2>
-      {loading ? (
-        <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
-      ) : offers.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-500">Bekleyen teklif yok.</p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {offers.map((o) => (
-            <li
-              key={String(o.id)}
-              className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
-            >
-              <p className="font-medium text-white">{o.serviceTitle ?? "Hizmet"}</p>
-              <p className="text-zinc-400">{o.customerName ?? "Müşteri"}</p>
-              <p className="mt-1 text-zinc-500">{o.message}</p>
-              {respondingId === o.id ? (
-                <div className="mt-3 space-y-2">
-                  <input
-                    className={inputClass}
-                    placeholder="Fiyat (₺)"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                  />
-                  <input
-                    className={inputClass}
-                    placeholder="Açıklama"
-                    value={desc}
-                    onChange={(e) => setDesc(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className={btnPrimary}
-                      onClick={() => o.id != null && respond(o.id, true)}
-                    >
-                      Kabul
-                    </button>
-                    <button
-                      type="button"
-                      className={btnSecondary}
-                      onClick={() => o.id != null && respond(o.id, false)}
-                    >
-                      Red
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className={`${btnSecondary} mt-2 text-xs`}
-                  onClick={() => setRespondingId(o.id ?? null)}
-                >
-                  Yanıtla
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
   );
 }
 

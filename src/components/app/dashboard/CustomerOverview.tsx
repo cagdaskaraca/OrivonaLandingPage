@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import {
   cancelReservation,
   fetchCustomerDashboardSummary,
   fetchFavorites,
-  fetchMyOfferRequests,
   fetchMyReservations,
 } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type {
   DashboardSummary,
   FavoriteItem,
-  OfferRequest,
   Reservation,
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -27,7 +26,6 @@ export function CustomerOverview() {
   const [tab, setTab] = useState<Tab>("summary");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
-  const [offers, setOffers] = useState<OfferRequest[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -36,7 +34,6 @@ export function CustomerOverview() {
     try {
       if (next === "summary") setSummary(await fetchCustomerDashboardSummary());
       if (next === "favorites") setFavorites(await fetchFavorites());
-      if (next === "offers") setOffers(await fetchMyOfferRequests());
       if (next === "reservations") setReservations(await fetchMyReservations());
     } catch (e) {
       if (e instanceof ApiError) console.log("Customer overview failed", e.body);
@@ -53,7 +50,7 @@ export function CustomerOverview() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "summary", label: "Özet" },
     { id: "favorites", label: "Favoriler" },
-    { id: "offers", label: "Teklifler" },
+    { id: "offers", label: "Teklif Taleplerim" },
     { id: "reservations", label: "Rezervasyonlar" },
   ];
 
@@ -106,26 +103,7 @@ export function CustomerOverview() {
           </ul>
         )
       ) : tab === "offers" ? (
-        offers.length === 0 ? (
-          <p className="text-sm text-zinc-500">Teklif isteği yok.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {offers.map((o) => (
-              <li
-                key={String(o.id)}
-                className="rounded-lg border border-white/10 px-3 py-2"
-              >
-                <p className="font-medium text-white">{o.serviceTitle ?? "—"}</p>
-                <p className="text-zinc-400">{o.status ?? "Bekliyor"}</p>
-                {o.offeredPrice != null ? (
-                  <p className="text-violet-200">
-                    Teklif: {o.offeredPrice.toLocaleString("tr-TR")} ₺
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )
+        <CustomerOfferRequestsPanel embedded />
       ) : reservations.length === 0 ? (
         <p className="text-sm text-zinc-500">Rezervasyon yok.</p>
       ) : (

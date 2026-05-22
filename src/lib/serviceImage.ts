@@ -61,3 +61,27 @@ export function getServiceImageUrl(service: ServiceImageSource): string {
 export function isLocalMarketplaceImage(src: string): boolean {
   return src.startsWith("/marketplace/categories/");
 }
+
+/** Gallery URLs for detail page (cover + API images, deduped). */
+export function getServiceGalleryUrls(
+  service: ServiceImageSource & {
+    images?: { url?: string; imageUrl?: string }[];
+  },
+): string[] {
+  const seen = new Set<string>();
+  const list: string[] = [];
+
+  const add = (url?: string) => {
+    const u = url?.trim();
+    if (!u || seen.has(u)) return;
+    seen.add(u);
+    list.push(u);
+  };
+
+  add(getServiceImageUrl(service));
+  for (const img of service.images ?? []) {
+    add(img.url ?? img.imageUrl);
+  }
+
+  return list.length > 0 ? list : [getCategoryFallbackImage(service.categoryName ?? service.category)];
+}

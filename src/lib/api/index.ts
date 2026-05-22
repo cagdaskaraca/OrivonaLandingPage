@@ -29,6 +29,7 @@ import {
   type UpdateEventRequestPayload,
   type MarketplaceFilters,
   type MarketplaceItem,
+  type ServiceGalleryImage,
   type ServicesListApiResponse,
   type AccountProfile,
   type VendorProfile,
@@ -102,6 +103,8 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
       str("category", "Category") ??
       str("categoryName", "CategoryName") ??
       str("categoryId", "CategoryId"),
+    categoryName:
+      str("categoryName", "CategoryName") ?? str("category", "Category"),
     price:
       num("price", "Price") ??
       num("basePrice", "BasePrice") ??
@@ -132,7 +135,60 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
       : Array.isArray(o.Badges)
         ? (o.Badges as unknown[]).map(String)
         : undefined,
+    images: extractServiceGalleryImages(o),
   };
+}
+
+function extractServiceGalleryImages(
+  o: Record<string, unknown>,
+): ServiceGalleryImage[] {
+  const raw =
+    o.images ??
+    o.Images ??
+    o.gallery ??
+    o.Gallery ??
+    o.imageUrls ??
+    o.ImageUrls;
+  if (!Array.isArray(raw)) return [];
+  const out: ServiceGalleryImage[] = [];
+  for (const entry of raw) {
+    if (typeof entry === "string" && entry.trim()) {
+      out.push({ url: entry.trim() });
+      continue;
+    }
+    if (entry && typeof entry === "object") {
+      const img = entry as Record<string, unknown>;
+      const url =
+        typeof img.url === "string"
+          ? img.url
+          : typeof img.Url === "string"
+            ? img.Url
+            : typeof img.imageUrl === "string"
+              ? img.imageUrl
+              : typeof img.ImageUrl === "string"
+                ? img.ImageUrl
+                : undefined;
+      if (url?.trim()) {
+        out.push({
+          url: url.trim(),
+          isCover: img.isCover === true || img.IsCover === true,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+export async function fetchServiceById(
+  id: string | number,
+): Promise<MarketplaceItem> {
+  const body = await apiGetPublicRaw<ApiEnvelope>(`/services/${id}`);
+  assertApiEnvelopeSuccess(body);
+  const payload = body.data;
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    return normalizeMarketplaceItem(payload);
+  }
+  throw new Error("Hizmet detayı bulunamadı.");
 }
 
 /** Reads services from `response.data.data` or `response.data.data.items`. */

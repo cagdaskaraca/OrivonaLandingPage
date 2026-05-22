@@ -20,6 +20,7 @@ export {
   normalizeAccountProfile,
   extractMarketplaceItems,
   fetchMarketplace,
+  fetchServiceById,
   normalizeMarketplaceItem,
   createVendorService,
   deleteVendorService,
