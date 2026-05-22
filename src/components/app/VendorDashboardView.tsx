@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import {
+  ServiceImageManager,
+  VendorOfferRequestsPanel,
+  VendorReservationsPanel,
+  VendorSummaryCards,
+} from "@/src/components/app/dashboard/VendorExtras";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -245,6 +251,10 @@ function DashboardContent() {
           görüntülenebilir.
         </div>
       ) : null}
+
+      <VendorSummaryCards />
+      <VendorOfferRequestsPanel />
+      <VendorReservationsPanel />
 
       <div className={`${glassCard} mb-8`}>
         <h2 className="text-lg font-semibold text-white">Hesabım</h2>
@@ -511,6 +521,11 @@ function DashboardContent() {
               İptal
             </button>
           </div>
+          {editingId != null ? (
+            <ServiceImageManager
+              service={services.find((s) => s.id === editingId) ?? { id: editingId }}
+            />
+          ) : null}
         </form>
       ) : null}
     </DemoShell>

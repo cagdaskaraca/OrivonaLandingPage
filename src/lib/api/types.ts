@@ -59,6 +59,7 @@ export interface ServicesListApiResponse {
 
 export type MarketplaceItem = {
   id?: string | number;
+  vendorServiceId?: string | number;
   vendorId?: string | number;
   vendorName?: string;
   serviceTitle?: string;
@@ -73,11 +74,144 @@ export type MarketplaceItem = {
   maxPrice?: number;
   rating?: number;
   averageRating?: number;
+  reviewCount?: number;
   guestCapacity?: number;
   capacityMin?: number;
   capacityMax?: number;
   categoryName?: string;
   imageUrl?: string;
+  coverImageUrl?: string;
+  isFeatured?: boolean;
+  isFavorite?: boolean;
+  badges?: string[];
+};
+
+export type DashboardSummary = Record<string, number | string | undefined>;
+
+export type FavoriteItem = {
+  id?: string | number;
+  vendorServiceId?: string | number;
+  serviceTitle?: string;
+  vendorName?: string;
+  city?: string;
+  district?: string;
+  basePrice?: number;
+  coverImageUrl?: string;
+  categoryName?: string;
+};
+
+export type OfferRequest = {
+  id?: string | number;
+  vendorServiceId?: string | number;
+  serviceTitle?: string;
+  vendorName?: string;
+  customerName?: string;
+  message?: string;
+  guestCount?: number;
+  eventDate?: string;
+  status?: string;
+  offeredPrice?: number;
+  responseDescription?: string;
+  createdAt?: string;
+};
+
+export type CreateOfferRequestPayload = {
+  vendorServiceId: string | number;
+  message: string;
+  guestCount: number;
+  eventDate?: string;
+};
+
+export type RespondOfferPayload = {
+  offeredPrice: number;
+  responseDescription: string;
+  accept: boolean;
+};
+
+export type Reservation = {
+  id?: string | number;
+  vendorServiceId?: string | number;
+  serviceTitle?: string;
+  vendorName?: string;
+  customerName?: string;
+  eventDate?: string;
+  guestCount?: number;
+  totalPrice?: number;
+  status?: string;
+  notes?: string;
+  createdAt?: string;
+};
+
+export type CreateReservationPayload = {
+  vendorServiceId: string | number;
+  eventDate: string;
+  guestCount: number;
+  notes?: string;
+};
+
+export type ServiceImage = {
+  id?: string | number;
+  url?: string;
+  imageUrl?: string;
+  isCover?: boolean;
+  sortOrder?: number;
+};
+
+export type ServiceImagePayload = {
+  url: string;
+  isCover?: boolean;
+  sortOrder?: number;
+};
+
+export type AiEventPlanRequest = {
+  eventType: string;
+  city: string;
+  district: string;
+  guestCount: number;
+  budgetMin: number;
+  budgetMax: number;
+  preferredCategories: string[];
+};
+
+export type AiBudgetLine = {
+  category?: string;
+  amount?: number;
+  percentage?: number;
+};
+
+export type AiTimelineStep = {
+  title?: string;
+  description?: string;
+  timing?: string;
+};
+
+export type AiEventPlanResult = {
+  recommendations?: AiRecommendationItem[];
+  budgetBreakdown?: AiBudgetLine[];
+  timeline?: AiTimelineStep[];
+  conceptIdeas?: string[];
+  summary?: string;
+};
+
+export type AdminVendor = {
+  id?: string | number;
+  businessName?: string;
+  email?: string;
+  city?: string;
+  district?: string;
+  isApproved?: boolean;
+  createdAt?: string;
+};
+
+export type AdminService = {
+  id?: string | number;
+  title?: string;
+  vendorName?: string;
+  categoryName?: string;
+  city?: string;
+  isFeatured?: boolean;
+  isActive?: boolean;
+  basePrice?: number;
 };
 
 export type AiRecommendationRequest = {

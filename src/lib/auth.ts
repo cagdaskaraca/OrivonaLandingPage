@@ -58,19 +58,10 @@ export function getDashboardPathForRole(role: UserRole): string {
   }
 }
 
-/** Primary "Hesabım" destination by role. */
+/** Primary "Hesabım" destination by role (role dashboards). */
 export function getHesabimPath(role: UserRole | null): string {
   if (!role) return "/login";
-  switch (role) {
-    case "Customer":
-      return "/account";
-    case "Vendor":
-      return "/vendor/dashboard";
-    case "Admin":
-      return "/admin/dashboard";
-    default:
-      return "/login";
-  }
+  return getDashboardPathForRole(role);
 }
 
 function normalizeAuthUser(raw: unknown): AuthUser {

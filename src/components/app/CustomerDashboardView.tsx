@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CustomerOverview } from "@/src/components/app/dashboard/CustomerOverview";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -226,6 +227,8 @@ function DashboardContent() {
           Marketplace
         </Link>
       </div>
+
+      <CustomerOverview />
 
       <div className={`${glassCard} mb-8`}>
         <h2 className="text-lg font-semibold text-white">Hesabım</h2>

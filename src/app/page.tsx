@@ -389,12 +389,12 @@ export default function Home() {
               >
                 Erken Erişime Katıl
               </SmoothScrollToSection>
-              <a href={MAIL_PARTNERS_BUSINESS} className={heroCta}>
+              <Link href="/register?type=vendor" className={heroCta}>
                 İşletme Başvurusu Yap
-              </a>
-              <a href={MAIL_INFO} className={heroCta}>
+              </Link>
+              <SmoothScrollToSection sectionId="iletisim" className={heroCta}>
                 İletişime Geç
-              </a>
+              </SmoothScrollToSection>
             </div>
           </div>
 

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { useAuth } from "@/src/contexts/AuthContext";
 import {
@@ -18,8 +18,13 @@ type Tab = "customer" | "vendor";
 
 export function RegisterView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refresh } = useAuth();
   const [tab, setTab] = useState<Tab>("customer");
+
+  useEffect(() => {
+    if (searchParams.get("type") === "vendor") setTab("vendor");
+  }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");

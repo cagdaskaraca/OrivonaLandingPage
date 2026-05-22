@@ -14,3 +14,12 @@ export const btnPrimary =
 
 export const btnSecondary =
   "inline-flex items-center justify-center rounded-full border border-violet-300/25 bg-violet-500/10 px-6 py-2.5 text-sm font-semibold text-violet-50 backdrop-blur-sm transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-violet-500/18 disabled:opacity-50";
+
+export const cardHover =
+  "transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-violet-400/25 hover:shadow-[0_18px_48px_-16px_rgba(109,40,217,0.35)]";
+
+export const badgeClass =
+  "inline-flex rounded-full border border-violet-400/25 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100";
+
+export const skeletonClass =
+  "animate-pulse rounded-xl bg-white/[0.06]";

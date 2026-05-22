@@ -1,18 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
+import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
+import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { SkeletonGrid } from "@/src/components/ui/SkeletonGrid";
+import { useAuth } from "@/src/contexts/AuthContext";
+import { useToast } from "@/src/contexts/ToastContext";
 import {
+  addFavorite,
   buildMarketplaceQueryParams,
   fetchCategories,
+  fetchFavorites,
   fetchMarketplace,
+  removeFavorite,
 } from "@/src/lib/api";
+import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type {
   Category,
   MarketplaceFilters,
   MarketplaceItem,
 } from "@/src/lib/api/types";
-import { ApiError } from "@/src/lib/api/client";
 import { btnPrimary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const emptyFilters: MarketplaceFilters = {
@@ -24,100 +33,31 @@ const emptyFilters: MarketplaceFilters = {
   minRating: "",
   guestCount: "",
   keyword: "",
+  sortBy: "",
 };
 
-const textFilterFieldsBeforeCategory = [
-  ["city", "Şehir"],
-  ["district", "İlçe"],
-] as const;
-
-const textFilterFieldsAfterCategory = [
-  ["keyword", "Anahtar kelime"],
-  ["minPrice", "Min fiyat"],
-  ["maxPrice", "Max fiyat"],
-  ["minRating", "Min puan"],
-  ["guestCount", "Misafir sayısı"],
-] as const;
-
-function FilterInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
-      <input
-        className={inputClass}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
-  );
-}
-
-function MarketplaceCard({ item }: { item: MarketplaceItem }) {
-  const title = item.serviceTitle ?? item.title ?? "Hizmet";
-  const vendor = item.vendorName ?? "İşletme";
-  const price = item.price ?? item.basePrice ?? item.minPrice;
-  const capacity =
-    item.capacityMin != null && item.capacityMax != null
-      ? `${item.capacityMin}–${item.capacityMax}`
-      : item.guestCapacity != null
-        ? String(item.guestCapacity)
-        : null;
-  const rating = item.rating ?? item.averageRating;
-
-  return (
-    <article className={`${glassCard} flex flex-col gap-3`}>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-          {item.categoryName ?? item.category ?? "Kategori"}
-        </p>
-        <h3 className="mt-1 text-lg font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-sm text-zinc-400">{vendor}</p>
-      </div>
-      {(item.city || item.district) && (
-        <p className="text-xs text-zinc-500">
-          {[item.city, item.district].filter(Boolean).join(" · ")}
-        </p>
-      )}
-      {item.description ? (
-        <p className="text-sm leading-relaxed text-zinc-400 line-clamp-3">
-          {item.description}
-        </p>
-      ) : null}
-      <div className="mt-auto flex flex-wrap gap-3 border-t border-white/10 pt-3 text-xs text-zinc-300">
-        {price != null && (
-          <span>
-            Fiyat:{" "}
-            <strong className="text-white">
-              {price.toLocaleString("tr-TR")} ₺
-            </strong>
-          </span>
-        )}
-        {rating != null && (
-          <span>
-            Puan: <strong className="text-white">{rating}</strong>
-          </span>
-        )}
-        {capacity != null && <span>Kapasite: {capacity} kişi</span>}
-      </div>
-    </article>
-  );
-}
+const SORT_OPTIONS = [
+  { value: "", label: "Sıralama yok" },
+  { value: "price_asc", label: "Fiyat (artan)" },
+  { value: "price_desc", label: "Fiyat (azalan)" },
+  { value: "rating_desc", label: "Puan" },
+];
 
 export function MarketplaceView() {
+  const { isAuthenticated, role } = useAuth();
+  const toast = useToast();
   const [filters, setFilters] = useState<MarketplaceFilters>(emptyFilters);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [favLoadingId, setFavLoadingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
+  const [offerItem, setOfferItem] = useState<MarketplaceItem | null>(null);
+
+  const canFavorite = isAuthenticated && role === "Customer";
+  const canOffer = isAuthenticated && role === "Customer";
 
   useEffect(() => {
     fetchCategories()
@@ -125,16 +65,33 @@ export function MarketplaceView() {
       .catch((e) => console.log("Marketplace categories failed", e));
   }, []);
 
+  const loadFavorites = useCallback(async () => {
+    if (!canFavorite) {
+      setFavoriteIds(new Set());
+      return;
+    }
+    try {
+      const list = await fetchFavorites();
+      setFavoriteIds(
+        new Set(
+          list
+            .map((f) => f.vendorServiceId)
+            .filter((id) => id != null)
+            .map(String),
+        ),
+      );
+    } catch (e) {
+      console.log("Favorites load failed", e);
+    }
+  }, [canFavorite]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
   const load = useCallback(
-    async (next: MarketplaceFilters, categoryList: Category[]) => {
-      const selectedCategory =
-        next.categoryId?.trim()
-          ? (categoryList.find(
-              (c) => String(c.id) === String(next.categoryId?.trim()),
-            ) ?? null)
-          : null;
+    async (next: MarketplaceFilters) => {
       const params = buildMarketplaceQueryParams(next);
-      console.log("Selected category", selectedCategory);
       console.log("Marketplace query params", params);
 
       setLoading(true);
@@ -148,9 +105,10 @@ export function MarketplaceView() {
         if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
         setItems([]);
         setError(
-          e instanceof ApiError
-            ? e.message
-            : "Marketplace verisi yüklenemedi. API çalışıyor mu?",
+          formatApiErrorMessage(
+            e,
+            "Marketplace verisi yüklenemedi. API çalışıyor mu?",
+          ),
         );
       } finally {
         setLoading(false);
@@ -161,8 +119,52 @@ export function MarketplaceView() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    load(filters, categories);
+    load(filters);
   }
+
+  function clearFilters() {
+    setFilters(emptyFilters);
+    load(emptyFilters);
+  }
+
+  const serviceId = (item: MarketplaceItem) =>
+    String(item.vendorServiceId ?? item.id ?? "");
+
+  async function toggleFavorite(item: MarketplaceItem) {
+    const id = item.vendorServiceId ?? item.id;
+    if (id == null || !canFavorite) return;
+    const key = String(id);
+    setFavLoadingId(key);
+    try {
+      if (favoriteIds.has(key)) {
+        await removeFavorite(id);
+        setFavoriteIds((prev) => {
+          const n = new Set(prev);
+          n.delete(key);
+          return n;
+        });
+        toast.success("Favorilerden kaldırıldı.");
+      } else {
+        await addFavorite(id);
+        setFavoriteIds((prev) => new Set(prev).add(key));
+        toast.success("Favorilere eklendi.");
+      }
+    } catch (err) {
+      if (err instanceof ApiError) console.log("Favorite toggle failed", err.body);
+      toast.error(formatApiErrorMessage(err, "Favori işlemi başarısız."));
+    } finally {
+      setFavLoadingId(null);
+    }
+  }
+
+  const mergedItems = useMemo(
+    () =>
+      items.map((item) => ({
+        ...item,
+        isFavorite: favoriteIds.has(serviceId(item)),
+      })),
+    [items, favoriteIds],
+  );
 
   return (
     <DemoShell
@@ -173,13 +175,22 @@ export function MarketplaceView() {
         onSubmit={handleSubmit}
         className={`${glassCard} mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4`}
       >
-        {textFilterFieldsBeforeCategory.map(([key, label]) => (
-          <FilterInput
-            key={key}
-            label={label}
-            value={filters[key] ?? ""}
-            onChange={(value) => setFilters((f) => ({ ...f, [key]: value }))}
-          />
+        {(
+          [
+            ["city", "Şehir"],
+            ["district", "İlçe"],
+          ] as const
+        ).map(([key, label]) => (
+          <label key={key} className="block text-sm">
+            <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
+            <input
+              className={inputClass}
+              value={filters[key] ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, [key]: e.target.value }))
+              }
+            />
+          </label>
         ))}
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Kategori</span>
@@ -198,15 +209,43 @@ export function MarketplaceView() {
             ))}
           </select>
         </label>
-        {textFilterFieldsAfterCategory.map(([key, label]) => (
-          <FilterInput
-            key={key}
-            label={label}
-            value={filters[key] ?? ""}
-            onChange={(value) => setFilters((f) => ({ ...f, [key]: value }))}
-          />
+        {(
+          [
+            ["keyword", "Anahtar kelime"],
+            ["minPrice", "Min fiyat"],
+            ["maxPrice", "Max fiyat"],
+            ["minRating", "Min puan"],
+            ["guestCount", "Misafir sayısı"],
+          ] as const
+        ).map(([key, label]) => (
+          <label key={key} className="block text-sm">
+            <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
+            <input
+              className={inputClass}
+              value={filters[key] ?? ""}
+              onChange={(e) =>
+                setFilters((f) => ({ ...f, [key]: e.target.value }))
+              }
+            />
+          </label>
         ))}
-        <div className="flex items-end sm:col-span-2 lg:col-span-4">
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-xs text-zinc-400">Sıralama</span>
+          <select
+            className={selectClass}
+            value={filters.sortBy ?? ""}
+            onChange={(e) =>
+              setFilters((f) => ({ ...f, sortBy: e.target.value }))
+            }
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-wrap items-end gap-3 sm:col-span-2 lg:col-span-4">
           <button type="submit" className={btnPrimary} disabled={loading}>
             {loading ? "Yükleniyor…" : "Ara"}
           </button>
@@ -214,31 +253,37 @@ export function MarketplaceView() {
       </form>
 
       {error ? (
-        <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+        <div className="mb-6 whitespace-pre-line rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
         </div>
       ) : null}
 
-      {loading ? (
-        <div className="flex min-h-[200px] items-center justify-center">
-          <p className="text-sm text-zinc-400">Sonuçlar yükleniyor…</p>
-        </div>
+      {loading ? <SkeletonGrid /> : null}
+
+      {!loading && searched && mergedItems.length === 0 && !error ? (
+        <EmptyState
+          title="Filtrelere uygun hizmet bulunamadı"
+          description="Farklı şehir veya kategori deneyin."
+          actionLabel="Filtreleri temizle"
+          onAction={clearFilters}
+        />
       ) : null}
 
-      {!loading && searched && items.length === 0 && !error ? (
-        <div
-          className={`${glassCard} text-center text-sm text-zinc-400`}
-        >
-          Filtrelere uygun hizmet bulunamadı.
-        </div>
-      ) : null}
-
-      {!loading && items.length > 0 ? (
+      {!loading && mergedItems.length > 0 ? (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item, i) => (
-            <MarketplaceCard
-              key={String(item.id ?? item.vendorId ?? i)}
+          {mergedItems.map((item, i) => (
+            <MarketplaceServiceCard
+              key={serviceId(item) || i}
               item={item}
+              isFavorite={item.isFavorite}
+              favoriteLoading={favLoadingId === serviceId(item)}
+              onFavoriteToggle={
+                canFavorite ? () => toggleFavorite(item) : undefined
+              }
+              showOfferButton={canOffer}
+              onOfferRequest={
+                canOffer ? () => setOfferItem(item) : undefined
+              }
             />
           ))}
         </div>
@@ -249,6 +294,13 @@ export function MarketplaceView() {
           Aramaya başlamak için filtreleri doldurup Ara&apos;ya tıklayın.
         </p>
       ) : null}
+
+      <OfferRequestModal
+        item={offerItem}
+        open={offerItem != null}
+        onClose={() => setOfferItem(null)}
+        onSuccess={() => toast.success("Teklif isteğiniz gönderildi.")}
+      />
     </DemoShell>
   );
 }

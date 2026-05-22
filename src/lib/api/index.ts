@@ -117,6 +117,21 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
     capacityMin: num("capacityMin", "CapacityMin"),
     capacityMax: num("capacityMax", "CapacityMax"),
     imageUrl: str("imageUrl", "ImageUrl"),
+    coverImageUrl:
+      str("coverImageUrl", "CoverImageUrl") ?? str("imageUrl", "ImageUrl"),
+    reviewCount: num("reviewCount", "ReviewCount"),
+    isFeatured: o.isFeatured === true || o.IsFeatured === true,
+    isFavorite: o.isFavorite === true || o.IsFavorite === true,
+    vendorServiceId:
+      (o.vendorServiceId ?? o.VendorServiceId ?? o.id ?? o.Id) as
+        | string
+        | number
+        | undefined,
+    badges: Array.isArray(o.badges)
+      ? (o.badges as unknown[]).map(String)
+      : Array.isArray(o.Badges)
+        ? (o.Badges as unknown[]).map(String)
+        : undefined,
   };
 }
 
@@ -578,5 +593,6 @@ export async function fetchAdminSummary(): Promise<AdminSummary | null> {
   return apiGetOptional<AdminSummary>("/admin/summary");
 }
 
+export * from "@/src/lib/api/domains";
 export * from "@/src/lib/api/client";
 export * from "@/src/lib/api/types";

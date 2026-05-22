@@ -3,34 +3,66 @@
 import { useEffect, useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
-import { fetchAdminSummary } from "@/src/lib/api";
-import type { AdminSummary } from "@/src/lib/api/types";
+import {
+  approveAdminVendor,
+  featureAdminService,
+  fetchAdminDashboardSummary,
+  fetchAdminPendingVendors,
+  fetchAdminServices,
+  fetchAdminVendors,
+  rejectAdminVendor,
+  unfeatureAdminService,
+} from "@/src/lib/api";
+import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import type {
+  AdminService,
+  AdminVendor,
+  DashboardSummary,
+} from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
-import { btnSecondary, glassCard } from "@/src/lib/ui";
+import { useToast } from "@/src/contexts/ToastContext";
+import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 function DashboardContent() {
   const { user, logout } = useAuth();
-  const [summary, setSummary] = useState<AdminSummary | null | undefined>(
-    undefined,
-  );
+  const toast = useToast();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [pending, setPending] = useState<AdminVendor[]>([]);
+  const [vendors, setVendors] = useState<AdminVendor[]>([]);
+  const [services, setServices] = useState<AdminService[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const [s, p, v, svc] = await Promise.all([
+        fetchAdminDashboardSummary(),
+        fetchAdminPendingVendors(),
+        fetchAdminVendors(),
+        fetchAdminServices(),
+      ]);
+      setSummary(s);
+      setPending(p);
+      setVendors(v);
+      setServices(svc);
+    } catch (e) {
+      if (e instanceof ApiError) console.log("Admin dashboard failed", e.body);
+      toast.error(formatApiErrorMessage(e, "Admin verisi yüklenemedi."));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    fetchAdminSummary().then(setSummary);
+    load();
   }, []);
-
-  const entries =
-    summary && typeof summary === "object"
-      ? Object.entries(summary).filter(
-          ([, v]) => typeof v === "number" || typeof v === "string",
-        )
-      : [];
 
   return (
     <DemoShell
       title="Yönetici Paneli"
-      subtitle="Platform özeti ve operasyon metrikleri."
+      subtitle="Platform özeti, işletme onayları ve hizmet yönetimi."
     >
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap gap-3">
         <button
           type="button"
           className={btnSecondary}
@@ -45,38 +77,121 @@ function DashboardContent() {
 
       <div className={`${glassCard} mb-8`}>
         <h2 className="text-lg font-semibold text-white">Hesabım</h2>
-        <p className="mt-3 text-sm text-zinc-400">
-          {user?.email ?? user?.fullName ?? "Yükleniyor…"}
-        </p>
+        <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
+      </div>
+
+      {loading ? (
+        <div className={`${skeletonClass} mb-8 h-24`} />
+      ) : (
+        <dl className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Object.entries(summary ?? {}).map(([k, v]) => (
+            <div key={k} className={`${glassCard} py-4`}>
+              <dt className="text-xs text-zinc-500">{k}</dt>
+              <dd className="mt-1 text-xl font-semibold text-white">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      <div className={`${glassCard} mb-8`}>
+        <h2 className="text-lg font-semibold text-white">Onay bekleyen işletmeler</h2>
+        {pending.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-500">Bekleyen işletme yok.</p>
+        ) : (
+          <ul className="mt-4 space-y-2 text-sm">
+            {pending.map((v) => (
+              <li
+                key={String(v.id)}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
+              >
+                <span className="text-white">{v.businessName ?? v.email}</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`${btnSecondary} text-xs`}
+                    onClick={async () => {
+                      if (v.id == null) return;
+                      try {
+                        await approveAdminVendor(v.id);
+                        toast.success("İşletme onaylandı.");
+                        load();
+                      } catch (e) {
+                        toast.error(formatApiErrorMessage(e, "Onaylanamadı."));
+                      }
+                    }}
+                  >
+                    Onayla
+                  </button>
+                  <button
+                    type="button"
+                    className={`${btnSecondary} text-xs`}
+                    onClick={async () => {
+                      if (v.id == null) return;
+                      try {
+                        await rejectAdminVendor(v.id);
+                        toast.success("İşletme reddedildi.");
+                        load();
+                      } catch (e) {
+                        toast.error(formatApiErrorMessage(e, "Reddedilemedi."));
+                      }
+                    }}
+                  >
+                    Reddet
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className={`${glassCard} mb-8`}>
+        <h2 className="text-lg font-semibold text-white">Tüm işletmeler</h2>
+        <ul className="mt-4 space-y-2 text-sm text-zinc-400">
+          {vendors.map((v) => (
+            <li key={String(v.id)}>
+              {v.businessName} · {v.city} ·{" "}
+              {v.isApproved ? "Onaylı" : "Bekliyor"}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className={glassCard}>
-        <h2 className="text-lg font-semibold text-white">Özet</h2>
-        {summary === undefined ? (
-          <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
-        ) : summary === null ? (
-          <p className="mt-3 text-sm text-zinc-500">
-            /admin/summary uç noktası henüz mevcut değil.
-          </p>
-        ) : entries.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">Özet verisi boş.</p>
-        ) : (
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-            {entries.map(([key, value]) => (
-              <div
-                key={key}
-                className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
+        <h2 className="text-lg font-semibold text-white">Hizmetler</h2>
+        <ul className="mt-4 space-y-2 text-sm">
+          {services.map((s) => (
+            <li
+              key={String(s.id)}
+              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
+            >
+              <span className="text-white">
+                {s.title} · {s.vendorName}
+              </span>
+              <button
+                type="button"
+                className={`${btnSecondary} text-xs`}
+                onClick={async () => {
+                  if (s.id == null) return;
+                  try {
+                    if (s.isFeatured) {
+                      await unfeatureAdminService(s.id);
+                      toast.success("Öne çıkarma kaldırıldı.");
+                    } else {
+                      await featureAdminService(s.id);
+                      toast.success("Öne çıkarıldı.");
+                    }
+                    load();
+                  } catch (e) {
+                    toast.error(formatApiErrorMessage(e, "İşlem başarısız."));
+                  }
+                }}
               >
-                <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                  {key}
-                </dt>
-                <dd className="mt-1 text-xl font-semibold text-white">
-                  {value}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        )}
+                {s.isFeatured ? "Öne çıkarmayı kaldır" : "Öne çıkar"}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </DemoShell>
   );
