@@ -505,6 +505,7 @@ export type Conversation = {
   customerId?: string | number;
   customerName?: string;
   customerFullName?: string;
+  customerEmail?: string;
   vendorServiceId?: string | number;
   serviceTitle?: string;
   lastMessage?: string;
@@ -523,9 +524,11 @@ export type ChatMessage = {
   userId?: string | number;
   senderName?: string;
   senderFullName?: string;
+  senderEmail?: string;
   senderBusinessName?: string;
   customerName?: string;
   customerFullName?: string;
+  customerEmail?: string;
   vendorName?: string;
   vendorBusinessName?: string;
   businessName?: string;

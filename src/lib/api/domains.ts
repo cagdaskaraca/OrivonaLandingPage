@@ -803,6 +803,39 @@ export async function markAllNotificationsRead(): Promise<void> {
   assertSuccess(body);
 }
 
+function extractCustomerPartyFields(
+  o: Record<string, unknown>,
+): Pick<Conversation, "customerName" | "customerFullName" | "customerEmail"> {
+  const customer = o.customer ?? o.Customer;
+  let nestedFullName: string | undefined;
+  let nestedName: string | undefined;
+  let nestedEmail: string | undefined;
+  if (customer && typeof customer === "object") {
+    const c = customer as Record<string, unknown>;
+    nestedFullName = recordStr(c, "fullName", "FullName");
+    nestedName =
+      recordStr(c, "name", "Name") ??
+      recordStr(c, "userName", "UserName") ??
+      recordStr(c, "username", "Username");
+    nestedEmail = recordStr(c, "email", "Email");
+  }
+  const customerEmail =
+    recordStr(o, "customerEmail", "CustomerEmail") ?? nestedEmail;
+  const customerFullName =
+    recordStr(o, "customerFullName", "CustomerFullName") ?? nestedFullName;
+  const customerName =
+    recordStr(o, "customerName", "CustomerName") ??
+    recordStr(o, "customerUserName", "CustomerUserName") ??
+    nestedName ??
+    customerFullName;
+
+  return {
+    customerName,
+    customerFullName: customerFullName ?? customerName,
+    customerEmail,
+  };
+}
+
 function nestedMessageText(o: Record<string, unknown>): string | undefined {
   const last = o.lastMessage ?? o.LastMessage;
   if (typeof last === "string") return last;
@@ -840,10 +873,7 @@ function normalizeConversation(raw: unknown): Conversation {
     recordStr(o, "businessName", "BusinessName");
   const vendorName =
     recordStr(o, "vendorName", "VendorName") ?? vendorBusinessName;
-  const customerFullName =
-    recordStr(o, "customerFullName", "CustomerFullName");
-  const customerName =
-    recordStr(o, "customerName", "CustomerName") ?? customerFullName;
+  const customerParty = extractCustomerPartyFields(o);
 
   return {
     id: recordId(o),
@@ -852,8 +882,9 @@ function normalizeConversation(raw: unknown): Conversation {
     vendorBusinessName: vendorBusinessName ?? vendorName,
     businessName: recordStr(o, "businessName", "BusinessName") ?? vendorBusinessName,
     customerId: recordId(o, "customerId", "CustomerId"),
-    customerName,
-    customerFullName: customerFullName ?? customerName,
+    customerName: customerParty.customerName,
+    customerFullName: customerParty.customerFullName,
+    customerEmail: customerParty.customerEmail,
     vendorServiceId:
       recordId(o, "vendorServiceId", "VendorServiceId") ??
       recordId(o, "serviceId", "ServiceId"),
@@ -879,9 +910,11 @@ function extractMessageSenderFields(
   | "userId"
   | "senderName"
   | "senderFullName"
+  | "senderEmail"
   | "senderBusinessName"
   | "customerName"
   | "customerFullName"
+  | "customerEmail"
   | "vendorName"
   | "vendorBusinessName"
   | "businessName"
@@ -891,19 +924,25 @@ function extractMessageSenderFields(
   let nestedName: string | undefined;
   let nestedFullName: string | undefined;
   let nestedBusinessName: string | undefined;
+  let nestedEmail: string | undefined;
   if (sender && typeof sender === "object") {
     const s = sender as Record<string, unknown>;
     nestedId =
       recordId(s) ??
       recordId(s, "userId", "UserId") ??
       recordId(s, "id", "Id");
-    nestedFullName =
-      recordStr(s, "fullName", "FullName") ?? recordStr(s, "name", "Name");
-    nestedName = nestedFullName;
+    nestedFullName = recordStr(s, "fullName", "FullName");
+    nestedName =
+      recordStr(s, "name", "Name") ??
+      recordStr(s, "userName", "UserName") ??
+      recordStr(s, "username", "Username") ??
+      nestedFullName;
+    nestedEmail = recordStr(s, "email", "Email");
     nestedBusinessName =
       recordStr(s, "businessName", "BusinessName") ??
       recordStr(s, "vendorBusinessName", "VendorBusinessName");
   }
+  const customerParty = extractCustomerPartyFields(o);
   const senderUserId =
     recordId(o, "senderUserId", "SenderUserId") ?? nestedId;
   const senderId =
@@ -915,24 +954,24 @@ function extractMessageSenderFields(
     recordStr(o, "senderBusinessName", "SenderBusinessName") ??
     recordStr(o, "businessName", "BusinessName") ??
     nestedBusinessName;
+  const senderEmail =
+    recordStr(o, "senderEmail", "SenderEmail") ?? nestedEmail;
   const senderName =
     recordStr(o, "senderName", "SenderName") ??
-    senderBusinessName ??
     senderFullName ??
-    nestedName;
+    nestedName ??
+    senderBusinessName;
   return {
     senderUserId,
     senderId,
     userId,
     senderName,
     senderFullName,
+    senderEmail,
     senderBusinessName,
-    customerName:
-      recordStr(o, "customerName", "CustomerName") ??
-      recordStr(o, "customerFullName", "CustomerFullName"),
-    customerFullName:
-      recordStr(o, "customerFullName", "CustomerFullName") ??
-      recordStr(o, "customerName", "CustomerName"),
+    customerName: customerParty.customerName,
+    customerFullName: customerParty.customerFullName,
+    customerEmail: customerParty.customerEmail,
     vendorName:
       recordStr(o, "vendorName", "VendorName") ??
       recordStr(o, "vendorBusinessName", "VendorBusinessName"),

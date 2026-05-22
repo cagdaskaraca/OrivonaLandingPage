@@ -82,6 +82,9 @@ export function MessagingPanel({
     if (!silent) setListLoading(true);
     try {
       const list = await fetchConversations();
+      for (const conversation of list) {
+        console.log("Conversation item", conversation);
+      }
       setConversations(sortConversations(list));
       setListError(null);
     } catch (err) {
@@ -106,6 +109,9 @@ export function MessagingPanel({
       if (!silent) setMessagesLoading(true);
       try {
         const list = await fetchConversationMessages(conversationId);
+        for (const message of list) {
+          console.log("Message item", message);
+        }
         setMessages(sortMessages(list));
         setMessagesError(null);
         if (scrollAfter) {

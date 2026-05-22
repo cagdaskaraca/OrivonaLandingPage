@@ -2,12 +2,22 @@ import type { AuthUser, ChatMessage, Conversation, UserRole } from "@/src/lib/ap
 
 const warnedMissingSender = new Set<string>();
 
+const GENERIC_CUSTOMER_LABELS = new Set(
+  ["müşteri", "musteri", "customer", "user", "kullanıcı", "kullanici"].map((s) =>
+    s.toLocaleLowerCase("tr"),
+  ),
+);
+
 function firstNonEmpty(...values: (string | undefined | null)[]): string | undefined {
   for (const v of values) {
     const t = v?.trim();
     if (t) return t;
   }
   return undefined;
+}
+
+function isGenericCustomerLabel(value: string): boolean {
+  return GENERIC_CUSTOMER_LABELS.has(value.trim().toLocaleLowerCase("tr"));
 }
 
 /** Masks each name part for vendor-side customer privacy. */
@@ -28,6 +38,65 @@ export function maskFullName(fullName: string): string {
     .join(" ");
 }
 
+/** Masks email local part: cagdaskrc@gmail.com -> cag****** */
+export function maskEmail(email: string): string {
+  const trimmed = email.trim();
+  if (!trimmed) return "";
+
+  const at = trimmed.indexOf("@");
+  const local = (at >= 0 ? trimmed.slice(0, at) : trimmed).trim();
+  if (!local) return "";
+
+  if (local.length > 3) {
+    return local.slice(0, 3) + "*".repeat(local.length - 3);
+  }
+  if (local.length <= 1) return local;
+  return local.slice(0, 1) + "*".repeat(local.length - 1);
+}
+
+export type CustomerIdentity = {
+  name?: string;
+  email?: string;
+};
+
+/** Raw customer identity from conversation and/or message (unmasked). */
+export function resolveCustomerIdentity(
+  conversation?: Conversation | null,
+  message?: ChatMessage,
+): CustomerIdentity {
+  const name = firstNonEmpty(
+    message?.senderFullName,
+    message?.senderName,
+    message?.customerFullName,
+    message?.customerName,
+    conversation?.customerFullName,
+    conversation?.customerName,
+  );
+  const email = firstNonEmpty(
+    message?.senderEmail,
+    message?.customerEmail,
+    conversation?.customerEmail,
+  );
+
+  const cleanName =
+    name && !isGenericCustomerLabel(name) ? name : undefined;
+
+  return { name: cleanName, email };
+}
+
+/** Masked display for vendor view. */
+export function maskCustomerDisplay(identity: CustomerIdentity): string | undefined {
+  if (identity.name) {
+    const masked = maskFullName(identity.name);
+    if (masked) return masked;
+  }
+  if (identity.email) {
+    const masked = maskEmail(identity.email);
+    if (masked) return masked;
+  }
+  return undefined;
+}
+
 export function resolveVendorBusinessName(
   conversation?: Conversation | null,
   message?: ChatMessage,
@@ -43,18 +112,13 @@ export function resolveVendorBusinessName(
   );
 }
 
+/** @deprecated Prefer resolveCustomerIdentity */
 export function resolveCustomerFullName(
   conversation?: Conversation | null,
   message?: ChatMessage,
 ): string | undefined {
-  return firstNonEmpty(
-    message?.senderFullName,
-    message?.senderName,
-    message?.customerFullName,
-    message?.customerName,
-    conversation?.customerFullName,
-    conversation?.customerName,
-  );
+  const { name, email } = resolveCustomerIdentity(conversation, message);
+  return name ?? email;
 }
 
 /** Customer view: vendor business name, else service title. */
@@ -69,14 +133,15 @@ export function getCustomerViewOtherPartyLabel(
   );
 }
 
-/** Vendor view: masked customer name, else Müşteri. */
+/** Vendor view: masked customer name or email prefix. */
 export function getVendorViewOtherPartyLabel(
   conversation?: Conversation | null,
   message?: ChatMessage,
 ): string {
-  const raw = resolveCustomerFullName(conversation, message);
-  if (raw) return maskFullName(raw);
-  return "Müşteri";
+  return (
+    maskCustomerDisplay(resolveCustomerIdentity(conversation, message)) ??
+    "Müşteri"
+  );
 }
 
 export function getOtherPartyLabel(
@@ -90,7 +155,10 @@ export function getOtherPartyLabel(
   if (viewerRole === "Vendor") {
     return getVendorViewOtherPartyLabel(conversation, message);
   }
-  return resolveCustomerFullName(conversation, message) ?? "Müşteri";
+  const masked = maskCustomerDisplay(
+    resolveCustomerIdentity(conversation, message),
+  );
+  return masked ?? "Müşteri";
 }
 
 export function getConversationParticipantName(
@@ -135,11 +203,14 @@ function collectParticipantPreviewKeys(
   add(conversation.vendorBusinessName);
   add(conversation.businessName);
   add(conversation.serviceTitle);
-  add(resolveCustomerFullName(conversation));
+  const identity = resolveCustomerIdentity(conversation);
+  add(identity.name);
+  add(identity.email);
   add(conversation.customerName);
   add(conversation.customerFullName);
-  const rawCustomer = resolveCustomerFullName(conversation);
-  if (rawCustomer) add(maskFullName(rawCustomer));
+  add(conversation.customerEmail);
+  const masked = maskCustomerDisplay(identity);
+  if (masked) add(masked);
 
   return keys;
 }
