@@ -4,9 +4,14 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
-import { CustomerOverview } from "@/src/components/app/dashboard/CustomerOverview";
+import { CustomerFavoritesSection } from "@/src/components/app/dashboard/CustomerFavoritesSection";
+import { CustomerReservationsSection } from "@/src/components/app/dashboard/CustomerReservationsSection";
+import { CustomerSummarySection } from "@/src/components/app/dashboard/CustomerSummarySection";
 import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
-import { DemoShell } from "@/src/components/app/DemoShell";
+import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
+import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
+import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
+import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createCustomerEventRequest,
@@ -206,43 +211,45 @@ function DashboardContent() {
     }
   }
 
+  const navItems: DashboardNavItem[] = [
+    { id: "dashboard-account", label: "Hesabım" },
+    { id: "dashboard-events", label: "Etkinlik Talepleri" },
+    { id: "dashboard-favorites", label: "Favoriler" },
+    { id: "dashboard-offers", label: "Tekliflerim" },
+    { id: "dashboard-reservations", label: "Rezervasyonlarım" },
+    { id: "dashboard-messages", label: "Mesajlar" },
+    { id: "dashboard-notifications", label: "Bildirimler" },
+  ];
+
+  const toolbar = (
+    <>
+      <button
+        type="button"
+        className={btnSecondary}
+        onClick={() => {
+          logout();
+          window.location.href = "/login";
+        }}
+      >
+        Çıkış
+      </button>
+      <Link href="/account" className={btnSecondary}>
+        Profil düzenle
+      </Link>
+      <Link href="/marketplace" className={btnSecondary}>
+        Marketplace
+      </Link>
+    </>
+  );
+
   return (
-    <DemoShell
+    <DashboardLayout
       title="Müşteri Paneli"
       subtitle="Profiliniz ve etkinlik talepleriniz."
+      navItems={navItems}
+      toolbar={toolbar}
     >
-      <div className="mb-6 flex flex-wrap gap-3">
-        <button
-          type="button"
-          className={btnSecondary}
-          onClick={() => {
-            logout();
-            window.location.href = "/login";
-          }}
-        >
-          Çıkış
-        </button>
-        <Link href="/account" className={btnSecondary}>
-          Profil düzenle
-        </Link>
-        <Link href="/marketplace" className={btnSecondary}>
-          Marketplace
-        </Link>
-      </div>
-
-      <CustomerOverview key={reservationsKey} />
-
-      <MessagingPanel
-        viewerRole="Customer"
-        initialConversationId={conversationId}
-      />
-
-      <CustomerOfferRequestsPanel
-        onAfterAccept={() => setReservationsKey((k) => k + 1)}
-      />
-
-      <div className={`${glassCard} mb-8`}>
-        <h2 className="text-lg font-semibold text-white">Hesabım</h2>
+      <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (
           <dl className="mt-4 space-y-2 text-sm text-zinc-400">
             <div>
@@ -269,10 +276,13 @@ function DashboardContent() {
         ) : (
           <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
         )}
-      </div>
+        <div className="mt-6 border-t border-white/10 pt-6">
+          <h3 className="mb-3 text-sm font-semibold text-violet-200/90">Özet</h3>
+          <CustomerSummarySection />
+        </div>
+      </DashboardSection>
 
-      <div className={`${glassCard} mb-8`}>
-        <h2 className="text-lg font-semibold text-white">Etkinlik talepleri</h2>
+      <DashboardSection id="dashboard-events" title="Etkinlik talepleri">
         {loadingList ? (
           <p className="mt-3 text-sm text-zinc-500">Talepler yükleniyor…</p>
         ) : null}
@@ -325,14 +335,13 @@ function DashboardContent() {
             </p>
           )
         )}
-      </div>
 
-      <form onSubmit={handleSubmit} className={`${glassCard} space-y-4`}>
-        <h2 className="text-lg font-semibold text-white">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4 border-t border-white/10 pt-8">
+        <h3 className="text-base font-semibold text-white">
           {editingId != null
             ? "Etkinlik talebi düzenle"
             : "Etkinlik talebi oluştur"}
-        </h2>
+        </h3>
         {(
           [
             ["title", "Başlık"],
@@ -466,7 +475,33 @@ function DashboardContent() {
           ) : null}
         </div>
       </form>
-    </DemoShell>
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-favorites" title="Favoriler">
+        <CustomerFavoritesSection />
+      </DashboardSection>
+
+      <section id="dashboard-offers" className="scroll-mt-24 mb-8">
+        <CustomerOfferRequestsPanel
+          onAfterAccept={() => setReservationsKey((k) => k + 1)}
+        />
+      </section>
+
+      <DashboardSection id="dashboard-reservations" title="Rezervasyonlarım">
+        <CustomerReservationsSection key={reservationsKey} />
+      </DashboardSection>
+
+      <section id="dashboard-messages" className="scroll-mt-24 mb-8">
+        <MessagingPanel
+          viewerRole="Customer"
+          initialConversationId={conversationId}
+        />
+      </section>
+
+      <DashboardSection id="dashboard-notifications" title="Bildirimler">
+        <NotificationsPanel />
+      </DashboardSection>
+    </DashboardLayout>
   );
 }
 

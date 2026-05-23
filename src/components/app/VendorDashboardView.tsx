@@ -10,7 +10,10 @@ import {
 import { VendorAvailabilityPanel } from "@/src/components/availability/VendorAvailabilityPanel";
 import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { VendorOfferRequestsPanel } from "@/src/components/offers/VendorOfferRequestsPanel";
-import { DemoShell } from "@/src/components/app/DemoShell";
+import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
+import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
+import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
+import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createVendorService,
@@ -211,35 +214,50 @@ function DashboardContent() {
 
   const isApproved = profile?.isApproved !== false;
 
+  const navItems: DashboardNavItem[] = [
+    { id: "dashboard-account", label: "Hesabım" },
+    { id: "dashboard-profile", label: "İşletme Profili" },
+    { id: "dashboard-services", label: "Hizmetlerim" },
+    { id: "dashboard-offers", label: "Gelen Teklifler" },
+    { id: "dashboard-reservations", label: "Rezervasyonlar" },
+    { id: "dashboard-availability", label: "Müsaitlik Takvimi" },
+    { id: "dashboard-messages", label: "Mesajlar" },
+    { id: "dashboard-notifications", label: "Bildirimler" },
+  ];
+
+  const toolbar = (
+    <>
+      <button
+        type="button"
+        className={btnSecondary}
+        onClick={() => {
+          logout();
+          window.location.href = "/login";
+        }}
+      >
+        Çıkış
+      </button>
+      <Link href="/account" className={btnSecondary}>
+        Profil düzenle
+      </Link>
+      <Link href="/marketplace" className={btnSecondary}>
+        Marketplace
+      </Link>
+      {!showForm ? (
+        <button type="button" className={btnPrimary} onClick={openCreate}>
+          Yeni Hizmet Ekle
+        </button>
+      ) : null}
+    </>
+  );
+
   return (
-    <DemoShell
+    <DashboardLayout
       title="İşletme Paneli"
       subtitle="Hizmetlerinizi yönetin ve marketplace'te yayınlayın."
+      navItems={navItems}
+      toolbar={toolbar}
     >
-      <div className="mb-6 flex flex-wrap gap-3">
-        <button
-          type="button"
-          className={btnSecondary}
-          onClick={() => {
-            logout();
-            window.location.href = "/login";
-          }}
-        >
-          Çıkış
-        </button>
-        <Link href="/account" className={btnSecondary}>
-          Profil düzenle
-        </Link>
-        <Link href="/marketplace" className={btnSecondary}>
-          Marketplace
-        </Link>
-        {!showForm ? (
-          <button type="button" className={btnPrimary} onClick={openCreate}>
-            Yeni Hizmet Ekle
-          </button>
-        ) : null}
-      </div>
-
       {!profileLoading && profile && profile.isApproved === false ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           İşletme profiliniz henüz doğrulanmadı. Hizmetleriniz marketplace&apos;te
@@ -254,14 +272,11 @@ function DashboardContent() {
         </div>
       ) : null}
 
-      <VendorSummaryCards />
-      <VendorAvailabilityPanel />
-      <MessagingPanel viewerRole="Vendor" />
-      <VendorOfferRequestsPanel />
-      <VendorReservationsPanel />
+      <section id="dashboard-summary" className="scroll-mt-24 mb-8">
+        <VendorSummaryCards />
+      </section>
 
-      <div className={`${glassCard} mb-8`}>
-        <h2 className="text-lg font-semibold text-white">Hesabım</h2>
+      <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (
           <p className="mt-3 text-sm text-zinc-400">
             {user.fullName ?? user.name ?? user.email}
@@ -269,10 +284,9 @@ function DashboardContent() {
         ) : (
           <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
         )}
-      </div>
+      </DashboardSection>
 
-      <div className={`${glassCard} mb-8`}>
-        <h2 className="text-lg font-semibold text-white">İşletme profili</h2>
+      <DashboardSection id="dashboard-profile" title="İşletme profili">
         {profileLoading ? (
           <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
         ) : profile ? (
@@ -304,11 +318,10 @@ function DashboardContent() {
         ) : (
           <p className="mt-3 text-sm text-zinc-500">Profil yüklenemedi.</p>
         )}
-      </div>
+      </DashboardSection>
 
-      <div className={`${glassCard} mb-8`}>
+      <DashboardSection id="dashboard-services" title="Hizmetlerim">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Hizmetlerim</h2>
           {!showForm ? (
             <button type="button" className={`${btnSecondary} text-xs`} onClick={openCreate}>
               Yeni Hizmet Ekle
@@ -372,7 +385,27 @@ function DashboardContent() {
             ))}
           </ul>
         )}
-      </div>
+      </DashboardSection>
+
+      <section id="dashboard-offers" className="scroll-mt-24 mb-8">
+        <VendorOfferRequestsPanel />
+      </section>
+
+      <section id="dashboard-reservations" className="scroll-mt-24 mb-8">
+        <VendorReservationsPanel />
+      </section>
+
+      <section id="dashboard-availability" className="scroll-mt-24 mb-8">
+        <VendorAvailabilityPanel />
+      </section>
+
+      <section id="dashboard-messages" className="scroll-mt-24 mb-8">
+        <MessagingPanel viewerRole="Vendor" />
+      </section>
+
+      <DashboardSection id="dashboard-notifications" title="Bildirimler">
+        <NotificationsPanel />
+      </DashboardSection>
 
       {showForm ? (
         <form onSubmit={handleSubmit} className={`${glassCard} space-y-4`}>
@@ -532,7 +565,7 @@ function DashboardContent() {
           ) : null}
         </form>
       ) : null}
-    </DemoShell>
+    </DashboardLayout>
   );
 }
 

@@ -14,7 +14,6 @@ import {
   buildQuery,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
-import { formatCityForApi } from "@/src/lib/turkish";
 import {
   normalizeEventRequest,
   type AdminSummary,
@@ -234,7 +233,7 @@ export function buildMarketplaceQueryParams(
 ): Record<string, string | number> {
   const params: Record<string, string | number> = {};
   const city = filters.city?.trim();
-  if (city) params.city = formatCityForApi(city);
+  if (city) params.city = city;
   const district = filters.district?.trim();
   if (district) params.district = district;
   const categoryId = filters.categoryId?.trim();

@@ -1,0 +1,75 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { cancelReservation, fetchMyReservations } from "@/src/lib/api";
+import { isApiNotFound, logApiError } from "@/src/lib/api/client";
+import type { Reservation } from "@/src/lib/api/types";
+import { useToast } from "@/src/contexts/ToastContext";
+import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
+import { btnSecondary } from "@/src/lib/ui";
+
+export function CustomerReservationsSection() {
+  const toast = useToast();
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setReservations(await fetchMyReservations());
+    } catch (e) {
+      logApiError("Customer reservations", e);
+      setReservations([]);
+      if (!isApiNotFound(e)) toast.error("Rezervasyonlar yüklenemedi.");
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) return <p className="text-sm text-zinc-500">Yükleniyor…</p>;
+  if (reservations.length === 0) {
+    return (
+      <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
+    );
+  }
+
+  return (
+    <ul className="space-y-2 text-sm">
+      {reservations.map((r) => (
+        <li
+          key={String(r.id)}
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
+        >
+          <div>
+            <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
+            <p className="text-zinc-400">
+              {r.eventDate} · {r.status}
+            </p>
+          </div>
+          {r.id != null && r.status !== "Cancelled" ? (
+            <button
+              type="button"
+              className={`${btnSecondary} text-xs`}
+              onClick={async () => {
+                try {
+                  await cancelReservation(r.id!);
+                  toast.success("Rezervasyon iptal edildi.");
+                  load();
+                } catch (err) {
+                  logApiError("Cancel reservation", err);
+                  if (!isApiNotFound(err)) toast.error("İptal edilemedi.");
+                }
+              }}
+            >
+              İptal
+            </button>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}

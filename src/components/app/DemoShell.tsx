@@ -9,10 +9,17 @@ import { NotificationBell } from "@/src/components/nav/NotificationBell";
 type DemoShellProps = {
   title: string;
   subtitle?: string;
+  /** Center the page title block (e.g. login). */
+  centerHeader?: boolean;
   children: ReactNode;
 };
 
-export function DemoShell({ title, subtitle, children }: DemoShellProps) {
+export function DemoShell({
+  title,
+  subtitle,
+  centerHeader = false,
+  children,
+}: DemoShellProps) {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#06040c] text-zinc-100">
       <div
@@ -49,7 +56,9 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
         </nav>
       </header>
       <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-        <div className="mb-8">
+        <div
+          className={`mb-8 ${centerHeader ? "mx-auto max-w-md text-center" : ""}`}
+        >
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
             ORIVONA
           </p>
@@ -57,7 +66,11 @@ export function DemoShell({ title, subtitle, children }: DemoShellProps) {
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-3 max-w-2xl text-sm text-zinc-400 sm:text-base">
+            <p
+              className={`mt-3 text-sm text-zinc-400 sm:text-base ${
+                centerHeader ? "mx-auto" : "max-w-2xl"
+              }`}
+            >
               {subtitle}
             </p>
           ) : null}
