@@ -19,6 +19,7 @@ import {
   sendGuestInvite,
   sendGuestInvitesBulk,
 } from "@/src/lib/api/invites";
+import { withTimeout } from "@/src/lib/promiseTimeout";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type {
   EventGuest,
@@ -34,6 +35,8 @@ import {
 import {
   formatRespondedAt,
   guestDisplayName,
+  INVITE_SEND_TIMEOUT_MESSAGE,
+  INVITE_SEND_TIMEOUT_MS,
   isInviteSent,
   isTicketSent,
   planDisplayTitle,
@@ -188,30 +191,54 @@ function GuestsPanel({ planId }: { planId: string | number }) {
       throw new Error("Davetli seçilmedi.");
     }
     const payload = { message, customMessage: message };
+    const modalSnapshot = inviteModal;
+
     let result: SendInviteResult;
     try {
-      if (inviteModal.mode === "single") {
-        const id = inviteModal.guest.id;
-        if (id == null) throw new Error("Davetli kimliği bulunamadı.");
-        result = await sendGuestInvite(planId, id, payload);
-      } else {
-        const ids = inviteModal.guests
-          .map((g) => g.id)
-          .filter((id): id is string | number => id != null);
-        if (ids.length === 0) throw new Error("Davetli seçilmedi.");
-        result = await sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
-      }
-      await load();
-      bumpDataRefresh();
-      setSelectedIds(new Set());
-      setInviteModal(null);
-      return result;
+      const sendPromise =
+        modalSnapshot.mode === "single"
+          ? (() => {
+              const id = modalSnapshot.guest.id;
+              if (id == null) throw new Error("Davetli kimliği bulunamadı.");
+              return sendGuestInvite(planId, id, payload);
+            })()
+          : (() => {
+              const ids = modalSnapshot.guests
+                .map((g) => g.id)
+                .filter((id): id is string | number => id != null);
+              if (ids.length === 0) throw new Error("Davetli seçilmedi.");
+              return sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
+            })();
+
+      result = await withTimeout(
+        sendPromise,
+        INVITE_SEND_TIMEOUT_MS,
+        INVITE_SEND_TIMEOUT_MESSAGE,
+      );
     } catch (err) {
       logApiError("Send invite", err);
       throw err instanceof Error
         ? err
         : new Error(formatUiErrorMessage(err, "Davetiye gönderilemedi."));
     }
+
+    setSelectedIds(new Set());
+    setInviteModal(null);
+
+    if (result.inviteUrl?.trim()) {
+      setLastInviteUrl(result.inviteUrl.trim());
+      setCopyDone(false);
+    }
+
+    void load()
+      .then(() => {
+        bumpDataRefresh();
+      })
+      .catch((err) => {
+        logApiError("Refresh guests after invite", err);
+      });
+
+    return result;
   }
 
   function handleInviteSuccess(result: SendInviteResult) {
@@ -219,10 +246,6 @@ function GuestsPanel({ planId }: { planId: string | number }) {
       ? "Demo modda davetiye bağlantısı oluşturuldu."
       : "Davetiye gönderildi.";
     toast.success(msg);
-    if (result.inviteUrl?.trim()) {
-      setLastInviteUrl(result.inviteUrl.trim());
-      setCopyDone(false);
-    }
   }
 
   async function copyInviteLink() {

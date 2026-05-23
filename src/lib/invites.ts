@@ -1,5 +1,10 @@
 import type { EventGuest, EventPlan } from "@/src/lib/api/types";
 
+export const INVITE_SEND_TIMEOUT_MS = 25_000;
+
+export const INVITE_SEND_TIMEOUT_MESSAGE =
+  "Mail gönderimi uzun sürdü. Lütfen tekrar deneyin veya davet linkini kopyalayın.";
+
 export function defaultInviteMessage(
   guestName: string,
   eventTitle: string,

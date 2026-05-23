@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
-import { defaultInviteMessage } from "@/src/lib/invites";
+import {
+  defaultInviteMessage,
+  INVITE_SEND_TIMEOUT_MESSAGE,
+  INVITE_SEND_TIMEOUT_MS,
+} from "@/src/lib/invites";
 import type { SendInviteResult } from "@/src/lib/api/types";
+import { withTimeout } from "@/src/lib/promiseTimeout";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 type SendInviteModalProps = {
@@ -28,6 +33,14 @@ export function SendInviteModal({
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -40,20 +53,32 @@ export function SendInviteModal({
     setSending(false);
   }, [open, guestName, eventTitle]);
 
+  function stopSending() {
+    if (mountedRef.current) {
+      setSending(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (sending) return;
     setSending(true);
     setError(null);
     try {
-      const result = await onSend(message.trim());
+      const result = await withTimeout(
+        onSend(message.trim()),
+        INVITE_SEND_TIMEOUT_MS,
+        INVITE_SEND_TIMEOUT_MESSAGE,
+      );
       onSuccess?.(result);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Davetiye gönderilemedi.",
-      );
+      if (mountedRef.current) {
+        setError(
+          err instanceof Error ? err.message : "Davetiye gönderilemedi.",
+        );
+      }
     } finally {
-      setSending(false);
+      stopSending();
     }
   }
 
