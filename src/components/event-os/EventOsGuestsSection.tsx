@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEventOs } from "@/src/components/event-os/EventOsContext";
 import {
   EventOsError,
   EventOsNeedPlan,
   EventOsPlanPicker,
 } from "@/src/components/event-os/EventOsShared";
+import { SendInviteModal } from "@/src/components/invites/SendInviteModal";
 import {
   createEventPlanGuest,
   deleteEventPlanGuest,
@@ -13,6 +15,10 @@ import {
   importDemoEventPlanGuests,
   updateEventPlanGuest,
 } from "@/src/lib/api/eventPlans";
+import {
+  sendGuestInvite,
+  sendGuestInvitesBulk,
+} from "@/src/lib/api/invites";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventGuest, EventGuestFormPayload } from "@/src/lib/api/types";
 import {
@@ -20,6 +26,13 @@ import {
   normalizeGuestRsvpForForm,
   rsvpStatusLabel,
 } from "@/src/lib/eventOs";
+import {
+  formatRespondedAt,
+  guestDisplayName,
+  isInviteSent,
+  isTicketSent,
+  planDisplayTitle,
+} from "@/src/lib/invites";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 function defaultGuest(): EventGuestFormPayload {
@@ -46,7 +59,15 @@ function guestToForm(g: EventGuest): EventGuestFormPayload {
   };
 }
 
+type InviteModalState =
+  | { mode: "single"; guest: EventGuest }
+  | { mode: "bulk"; guests: EventGuest[] }
+  | null;
+
 function GuestsPanel({ planId }: { planId: string | number }) {
+  const { selectedPlan, bumpDataRefresh } = useEventOs();
+  const eventTitle = planDisplayTitle(selectedPlan);
+
   const [guests, setGuests] = useState<EventGuest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +75,8 @@ function GuestsPanel({ planId }: { planId: string | number }) {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [inviteModal, setInviteModal] = useState<InviteModalState>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,6 +96,44 @@ function GuestsPanel({ planId }: { planId: string | number }) {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [planId]);
+
+  const selectableGuests = useMemo(
+    () => guests.filter((g) => g.id != null),
+    [guests],
+  );
+
+  const allSelected =
+    selectableGuests.length > 0 &&
+    selectableGuests.every((g) => selectedIds.has(String(g.id)));
+
+  function toggleSelect(id: string | number) {
+    const key = String(id);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+      return;
+    }
+    setSelectedIds(
+      new Set(selectableGuests.map((g) => String(g.id))),
+    );
+  }
+
+  const selectedGuests = useMemo(
+    () => guests.filter((g) => g.id != null && selectedIds.has(String(g.id))),
+    [guests, selectedIds],
+  );
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -85,6 +146,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
       setForm(defaultGuest());
       setEditingId(null);
       await load();
+      bumpDataRefresh();
     } catch (err) {
       logApiError("Save guest", err);
       setError(formatUiErrorMessage(err, "Davetli kaydedilemedi."));
@@ -98,6 +160,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
     try {
       await importDemoEventPlanGuests(planId);
       await load();
+      bumpDataRefresh();
     } catch (err) {
       logApiError("Import demo guests", err);
       setError(formatUiErrorMessage(err, "Demo davetliler yüklenemedi."));
@@ -105,6 +168,35 @@ function GuestsPanel({ planId }: { planId: string | number }) {
       setImporting(false);
     }
   }
+
+  async function handleSendInvite(message: string) {
+    if (!inviteModal) return;
+    const payload = { message, customMessage: message };
+    if (inviteModal.mode === "single") {
+      const id = inviteModal.guest.id;
+      if (id == null) throw new Error("Davetli kimliği bulunamadı.");
+      await sendGuestInvite(planId, id, payload);
+    } else {
+      const ids = inviteModal.guests
+        .map((g) => g.id)
+        .filter((id): id is string | number => id != null);
+      if (ids.length === 0) throw new Error("Davetli seçilmedi.");
+      await sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
+    }
+    await load();
+    bumpDataRefresh();
+    setSelectedIds(new Set());
+  }
+
+  const modalGuestName =
+    inviteModal?.mode === "single"
+      ? guestDisplayName(inviteModal.guest)
+      : inviteModal?.mode === "bulk"
+        ? guestDisplayName(inviteModal.guests[0] ?? {})
+        : "";
+
+  const modalGuestCount =
+    inviteModal?.mode === "bulk" ? inviteModal.guests.length : 1;
 
   return (
     <div className="space-y-4">
@@ -121,6 +213,17 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         <button type="button" className={btnSecondary} onClick={() => void load()}>
           Yenile
         </button>
+        <button
+          type="button"
+          className={btnPrimary}
+          disabled={selectedGuests.length === 0}
+          onClick={() =>
+            setInviteModal({ mode: "bulk", guests: selectedGuests })
+          }
+        >
+          Seçili davetlilere davetiye gönder
+          {selectedGuests.length > 0 ? ` (${selectedGuests.length})` : ""}
+        </button>
       </div>
       {error ? <EventOsError message={error} onRetry={() => void load()} /> : null}
       {loading ? (
@@ -130,55 +233,133 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           Henüz davetli yok.
         </p>
       ) : (
-        <ul className="divide-y divide-white/[0.06] rounded-xl border border-white/[0.08]">
-          {guests.map((g) => (
-            <li
-              key={String(g.id)}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
-              <div>
-                <p className="font-medium text-white">
-                  {g.fullName ?? g.name ?? "—"}
-                </p>
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  {(g.groupName ?? g.group)
-                    ? `${g.groupName ?? g.group} · `
-                    : ""}
-                  {rsvpStatusLabel(g.rsvpStatus)}
-                  {g.plusOneCount ? ` · +${g.plusOneCount}` : ""}
-                  {g.tableName ? ` · ${g.tableName}` : ""}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className={`${btnSecondary} px-3 py-1 text-xs`}
-                  onClick={() => {
-                    setEditingId(g.id ?? null);
-                    setForm(guestToForm(g));
-                  }}
-                >
-                  Düzenle
-                </button>
-                <button
-                  type="button"
-                  className="text-xs text-zinc-600 hover:text-red-300"
-                  onClick={async () => {
-                    if (g.id == null) return;
-                    try {
-                      await deleteEventPlanGuest(planId, g.id);
-                      await load();
-                    } catch (err) {
-                      setError(formatUiErrorMessage(err, "Silinemedi."));
-                    }
-                  }}
-                >
-                  Sil
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-white/[0.08] bg-white/[0.02] text-xs text-zinc-500">
+                <th className="px-3 py-2.5">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    aria-label="Tümünü seç"
+                  />
+                </th>
+                <th className="px-3 py-2.5 font-medium">Davetli</th>
+                <th className="px-3 py-2.5 font-medium">Davetiye</th>
+                <th className="px-3 py-2.5 font-medium">RSVP</th>
+                <th className="px-3 py-2.5 font-medium">Bilet</th>
+                <th className="px-3 py-2.5 font-medium">Yanıt tarihi</th>
+                <th className="px-3 py-2.5 font-medium text-right">İşlem</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.06]">
+              {guests.map((g) => {
+                const id = g.id;
+                const responded = formatRespondedAt(
+                  g.respondedAt ?? g.rsvpRespondedAt,
+                );
+                return (
+                  <tr key={String(id)} className="hover:bg-white/[0.02]">
+                    <td className="px-3 py-3">
+                      {id != null ? (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(String(id))}
+                          onChange={() => toggleSelect(id)}
+                          aria-label={`${guestDisplayName(g)} seç`}
+                        />
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-3">
+                      <p className="font-medium text-white">
+                        {guestDisplayName(g)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {g.email ?? g.phone ?? "—"}
+                        {(g.groupName ?? g.group)
+                          ? ` · ${g.groupName ?? g.group}`
+                          : ""}
+                      </p>
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={
+                          isInviteSent(g)
+                            ? "text-emerald-300/90"
+                            : "text-zinc-500"
+                        }
+                      >
+                        {isInviteSent(g) ? "Gönderildi" : "Gönderilmedi"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-violet-100/90">
+                      {rsvpStatusLabel(g.rsvpStatus)}
+                      {g.plusOneCount ? (
+                        <span className="text-zinc-500"> · +{g.plusOneCount}</span>
+                      ) : null}
+                    </td>
+                    <td className="px-3 py-3">
+                      <span
+                        className={
+                          isTicketSent(g)
+                            ? "text-emerald-300/90"
+                            : "text-zinc-500"
+                        }
+                      >
+                        {isTicketSent(g) ? "Gönderildi" : "Gönderilmedi"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 text-xs text-zinc-500">
+                      {responded ?? "—"}
+                    </td>
+                    <td className="px-3 py-3">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {id != null ? (
+                          <button
+                            type="button"
+                            className={`${btnSecondary} px-3 py-1 text-xs`}
+                            onClick={() =>
+                              setInviteModal({ mode: "single", guest: g })
+                            }
+                          >
+                            Davetiye Gönder
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className={`${btnSecondary} px-3 py-1 text-xs`}
+                          onClick={() => {
+                            setEditingId(id ?? null);
+                            setForm(guestToForm(g));
+                          }}
+                        >
+                          Düzenle
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs text-zinc-600 hover:text-red-300"
+                          onClick={async () => {
+                            if (id == null) return;
+                            try {
+                              await deleteEventPlanGuest(planId, id);
+                              await load();
+                              bumpDataRefresh();
+                            } catch (err) {
+                              setError(formatUiErrorMessage(err, "Silinemedi."));
+                            }
+                          }}
+                        >
+                          Sil
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       <form
         onSubmit={handleSubmit}
@@ -283,6 +464,15 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           ) : null}
         </div>
       </form>
+
+      <SendInviteModal
+        open={inviteModal != null}
+        guestName={modalGuestName}
+        eventTitle={eventTitle}
+        guestCount={modalGuestCount}
+        onClose={() => setInviteModal(null)}
+        onSend={handleSendInvite}
+      />
     </div>
   );
 }

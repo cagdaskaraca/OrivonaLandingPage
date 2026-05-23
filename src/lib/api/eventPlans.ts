@@ -5,7 +5,7 @@ import {
   apiPutRaw,
 } from "@/src/lib/api/client";
 import { mapGuestRsvpToApi } from "@/src/lib/eventOs";
-import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
+import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   EventGuest,
@@ -128,6 +128,18 @@ export function normalizeEventGuest(raw: unknown): EventGuest {
       recordStr(o, "assignedTableName", "AssignedTableName"),
     note,
     notes: note,
+    inviteSent:
+      recordBool(o, "inviteSent", "InviteSent") ??
+      recordBool(o, "isInviteSent", "IsInviteSent"),
+    isInviteSent: recordBool(o, "isInviteSent", "IsInviteSent"),
+    ticketSent:
+      recordBool(o, "ticketSent", "TicketSent") ??
+      recordBool(o, "isTicketSent", "IsTicketSent"),
+    isTicketSent: recordBool(o, "isTicketSent", "IsTicketSent"),
+    respondedAt:
+      recordStr(o, "respondedAt", "RespondedAt") ??
+      recordStr(o, "rsvpRespondedAt", "RsvpRespondedAt"),
+    rsvpRespondedAt: recordStr(o, "rsvpRespondedAt", "RsvpRespondedAt"),
   };
 }
 

@@ -6,6 +6,7 @@ import {
   EventOsNeedPlan,
   EventOsPlanPicker,
 } from "@/src/components/event-os/EventOsShared";
+import { useEventOs } from "@/src/components/event-os/EventOsContext";
 import { fetchRsvpSummary } from "@/src/lib/api/eventPlans";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { RsvpSummary } from "@/src/lib/api/types";
@@ -19,6 +20,7 @@ const RSVP_CARDS = [
 ];
 
 function RsvpPanel({ planId }: { planId: string | number }) {
+  const { dataRefreshKey } = useEventOs();
   const [summary, setSummary] = useState<RsvpSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +41,7 @@ function RsvpPanel({ planId }: { planId: string | number }) {
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, dataRefreshKey]);
 
   return (
     <div className="space-y-4">

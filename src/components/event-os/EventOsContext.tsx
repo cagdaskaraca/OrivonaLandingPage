@@ -19,8 +19,10 @@ type EventOsContextValue = {
   selectedPlan: EventPlan | null;
   loadingPlans: boolean;
   plansError: string | null;
+  dataRefreshKey: number;
   selectPlan: (id: string | number | null) => void;
   refreshPlans: () => Promise<void>;
+  bumpDataRefresh: () => void;
 };
 
 const EventOsContext = createContext<EventOsContextValue | null>(null);
@@ -32,6 +34,11 @@ export function EventOsProvider({ children }: { children: ReactNode }) {
   );
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
+  const [dataRefreshKey, setDataRefreshKey] = useState(0);
+
+  const bumpDataRefresh = useCallback(() => {
+    setDataRefreshKey((k) => k + 1);
+  }, []);
 
   const refreshPlans = useCallback(async () => {
     setLoadingPlans(true);
@@ -70,8 +77,10 @@ export function EventOsProvider({ children }: { children: ReactNode }) {
       selectedPlan,
       loadingPlans,
       plansError,
+      dataRefreshKey,
       selectPlan: setSelectedPlanId,
       refreshPlans,
+      bumpDataRefresh,
     }),
     [
       plans,
@@ -79,7 +88,9 @@ export function EventOsProvider({ children }: { children: ReactNode }) {
       selectedPlan,
       loadingPlans,
       plansError,
+      dataRefreshKey,
       refreshPlans,
+      bumpDataRefresh,
     ],
   );
 

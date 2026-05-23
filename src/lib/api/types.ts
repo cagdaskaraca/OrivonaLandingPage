@@ -819,6 +819,57 @@ export type EventGuest = {
   tableName?: string;
   note?: string;
   notes?: string;
+  inviteSent?: boolean;
+  isInviteSent?: boolean;
+  ticketSent?: boolean;
+  isTicketSent?: boolean;
+  respondedAt?: string;
+  rsvpRespondedAt?: string;
+};
+
+export type InviteDetails = {
+  token?: string;
+  eventTitle?: string;
+  guestName?: string;
+  hostName?: string;
+  eventDate?: string;
+  eventLocation?: string;
+  city?: string;
+  district?: string;
+  customMessage?: string;
+  message?: string;
+  plusOneAllowed?: boolean;
+  maxPlusOne?: number;
+  allowPlusOne?: boolean;
+  rsvpStatus?: string;
+  alreadyResponded?: boolean;
+  hasResponded?: boolean;
+};
+
+export type InviteTicket = {
+  eventTitle?: string;
+  guestName?: string;
+  ticketCode?: string;
+  qrText?: string;
+  qrCodeUrl?: string;
+  qrImageUrl?: string;
+};
+
+export type SendInvitePayload = {
+  message?: string;
+  customMessage?: string;
+};
+
+export type SendInvitesBulkPayload = {
+  guestIds: (string | number)[];
+  message?: string;
+  customMessage?: string;
+};
+
+export type PublicInviteRsvpPayload = {
+  rsvpStatus: "Accepted" | "Declined" | "Maybe";
+  plusOneCount?: number;
+  note?: string;
 };
 
 export type EventGuestFormPayload = {
