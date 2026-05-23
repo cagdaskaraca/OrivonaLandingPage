@@ -21,7 +21,7 @@ import {
   toDateKey,
   todayIso,
 } from "@/src/lib/availability";
-import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
+import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
 
 function slotsFromSaved(item?: VendorAvailability): AvailabilityTimeSlot[] {
   if (!item?.timeSlots?.length) return [];
@@ -60,7 +60,7 @@ export function VendorAvailabilityPanel() {
   const [items, setItems] = useState<VendorAvailability[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | number | null>(null);
+  const [resettingId, setResettingId] = useState<string | number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(todayIso());
@@ -165,9 +165,10 @@ export function VendorAvailabilityPanel() {
     }
   }
 
-  async function handleDelete(id: string | number, date?: string) {
-    setDeletingId(id);
+  async function handleReset(id: string | number, date?: string) {
+    setResettingId(id);
     setError(null);
+    setSuccess(null);
     try {
       await deleteVendorAvailability(id);
       const key = toDateKey(date);
@@ -178,7 +179,7 @@ export function VendorAvailabilityPanel() {
           return next;
         });
       }
-      setSuccess("Kayıt silindi.");
+      setSuccess("Tarih sıfırlandı — müsaitlik kaydı kaldırıldı.");
       await load();
       if (key && toDateKey(selectedDate) === key) {
         setIsAvailable(true);
@@ -186,10 +187,10 @@ export function VendorAvailabilityPanel() {
         setTimeSlots([]);
       }
     } catch (err) {
-      logApiError("Vendor availability delete failed", err);
-      setError(formatUiErrorMessage(err, "Silinemedi."));
+      logApiError("Vendor availability reset failed", err);
+      setError(formatUiErrorMessage(err, "Sıfırlanamadı."));
     } finally {
-      setDeletingId(null);
+      setResettingId(null);
     }
   }
 
@@ -205,8 +206,9 @@ export function VendorAvailabilityPanel() {
     <div className={`${glassCard} mb-8`}>
       <h2 className="text-lg font-semibold text-white">Müsaitlik takvimi</h2>
       <p className="mt-1 text-sm text-zinc-400">
-        Tarihleri müsait veya dolu olarak işaretleyin; müşteri hizmet detayında
-        aynı takvimi görür.
+        Takvimden bir tarih seçin, müsait veya dolu olarak kaydedin. Aynı tarihi
+        tekrar kaydettiğinizde kayıt güncellenir; müşteri hizmet detayında
+        güncel durumu görür.
       </p>
 
       {loading ? (
@@ -287,24 +289,27 @@ export function VendorAvailabilityPanel() {
       ) : null}
       {error ? <p className="mt-4 text-sm text-red-300/90">{error}</p> : null}
 
-      <div className="mt-8 border-t border-white/10 pt-6">
+      <div className="mt-8 border-t border-violet-500/15 pt-6">
         <h3 className="text-sm font-semibold text-white">Kayıtlı tarihler</h3>
+        <p className="mt-1 text-xs text-zinc-500">
+          Durumu değiştirmek için tarihe tıklayın ve Müsait veya Dolu olarak
+          kaydedin.
+        </p>
         {loading ? null : sortedItems.length === 0 ? (
           <p className="mt-3 text-sm text-zinc-500">Henüz müsaitlik kaydı yok.</p>
         ) : (
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-3 divide-y divide-white/[0.06] rounded-xl border border-white/[0.08] bg-white/[0.02]">
             {sortedItems.map((item) => {
               if (item.id == null || !item.date) return null;
               const key = toDateKey(item.date) ?? item.date;
               const available = isAvailabilityEntryAvailable(item);
               const isSelected = toDateKey(selectedDate) === key;
+              const isResetting = resettingId === item.id;
               return (
                 <li
                   key={String(item.id)}
-                  className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 transition ${
-                    isSelected
-                      ? "border-violet-400/40 bg-violet-500/10"
-                      : "border-white/10 bg-white/[0.03] hover:border-violet-400/20"
+                  className={`group flex items-center gap-3 px-3 py-2.5 transition first:rounded-t-xl last:rounded-b-xl ${
+                    isSelected ? "bg-violet-500/[0.08]" : "hover:bg-white/[0.03]"
                   }`}
                 >
                   <button
@@ -312,27 +317,35 @@ export function VendorAvailabilityPanel() {
                     className="min-w-0 flex-1 text-left"
                     onClick={() => handleSelectDate(key)}
                   >
-                    <p className="text-sm font-medium text-white">
-                      {formatShortAvailabilityDate(key)} —{" "}
-                      <span
-                        className={
-                          available ? "text-emerald-300" : "text-red-300"
-                        }
-                      >
-                        {available ? "Müsait" : "Dolu"}
-                      </span>
+                    <p className="text-sm font-medium text-zinc-100">
+                      {formatShortAvailabilityDate(key)}
                     </p>
                     {item.notes?.trim() ? (
-                      <p className="mt-1 text-xs text-zinc-400">{item.notes}</p>
+                      <p className="mt-0.5 truncate text-xs text-zinc-500">
+                        {item.notes}
+                      </p>
                     ) : null}
                   </button>
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      available
+                        ? "bg-emerald-500/15 text-emerald-200/90 ring-1 ring-emerald-400/25"
+                        : "bg-red-500/12 text-red-200/90 ring-1 ring-red-400/20"
+                    }`}
+                  >
+                    {available ? "Müsait" : "Dolu"}
+                  </span>
                   <button
                     type="button"
-                    className={`${btnSecondary} shrink-0 px-3 py-1.5 text-xs`}
-                    disabled={deletingId === item.id}
-                    onClick={() => void handleDelete(item.id!, key)}
+                    className="shrink-0 text-[11px] text-zinc-600 transition hover:text-zinc-300 disabled:opacity-40 sm:opacity-60 sm:group-hover:opacity-100"
+                    disabled={isResetting}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleReset(item.id!, key);
+                    }}
+                    title="Bu tarih için müsaitlik kaydını kaldır"
                   >
-                    {deletingId === item.id ? "…" : "Sil"}
+                    {isResetting ? "…" : "Sıfırla"}
                   </button>
                 </li>
               );
