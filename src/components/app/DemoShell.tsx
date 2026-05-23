@@ -11,6 +11,8 @@ type DemoShellProps = {
   subtitle?: string;
   /** Center the page title block (e.g. login). */
   centerHeader?: boolean;
+  /** Sticky top nav for customer/vendor/admin dashboards. */
+  stickyNav?: boolean;
   children: ReactNode;
 };
 
@@ -18,15 +20,26 @@ export function DemoShell({
   title,
   subtitle,
   centerHeader = false,
+  stickyNav = false,
   children,
 }: DemoShellProps) {
   return (
-    <div className="relative min-h-screen overflow-x-hidden bg-[#06040c] text-zinc-100">
+    <div
+      className={`relative min-h-screen overflow-x-hidden bg-[#06040c] text-zinc-100 ${
+        stickyNav ? "orivona-dashboard-shell" : ""
+      }`}
+    >
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-15%,rgba(167,139,250,0.18),transparent_55%)]"
         aria-hidden
       />
-      <header className="relative z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+      <header
+        className={
+          stickyNav
+            ? "sticky top-0 z-50 border-b border-white/10 bg-[#06040c]/85 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/75"
+            : "relative z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl"
+        }
+      >
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <Link
             href="/"

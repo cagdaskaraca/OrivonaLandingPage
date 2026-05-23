@@ -114,7 +114,7 @@ export function VendorCrmSection() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,320px)]">
-      <div className="overflow-x-auto rounded-xl border border-white/10">
+      <div className="orivona-scroll-x mt-0 rounded-xl border border-white/10 pb-0.5">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-zinc-500">

@@ -26,7 +26,7 @@ export function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <DemoShell title={title} subtitle={subtitle}>
+    <DemoShell title={title} subtitle={subtitle} stickyNav>
       {toolbar ? <div className="mb-6 flex flex-wrap gap-3">{toolbar}</div> : null}
       <div className="flex flex-col gap-0 lg:flex-row lg:items-start lg:gap-8">
         <DashboardSidebar

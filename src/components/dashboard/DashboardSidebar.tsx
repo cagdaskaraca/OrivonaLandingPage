@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { orivonaScrollY } from "@/src/lib/ui";
 
 export type DashboardNavItem = {
   id: string;
@@ -52,7 +53,10 @@ export function DashboardSidebar({
           setActiveId(visible[0].target.id);
         }
       },
-      { rootMargin: "-15% 0px -55% 0px", threshold: [0, 0.25, 0.5] },
+      {
+        rootMargin: "calc(-1 * var(--orivona-dashboard-nav-h) - 12%) 0px -50% 0px",
+        threshold: [0, 0.25, 0.5],
+      },
     );
 
     for (const el of elements) observer.observe(el);
@@ -107,11 +111,13 @@ export function DashboardSidebar({
       ) : null}
 
       <aside
-        className={`hidden shrink-0 lg:sticky lg:top-6 lg:block lg:self-start ${
+        className={`hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${
           collapsed ? "lg:w-14" : "lg:w-56"
-        }`}
+        } lg:top-[calc(var(--orivona-dashboard-nav-h)+1rem)] lg:max-h-[calc(100dvh-var(--orivona-dashboard-nav-h)-1.25rem)]`}
       >
-        <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/95 to-[#08050f]/90 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)]">
+        <div
+          className={`rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/95 to-[#08050f]/90 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY} lg:max-h-[inherit] lg:overflow-y-auto`}
+        >
           <div
             className={`flex items-center border-b border-violet-500/15 px-2 py-2 ${
               collapsed ? "justify-center" : "justify-between"

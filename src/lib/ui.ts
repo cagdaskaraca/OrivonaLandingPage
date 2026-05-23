@@ -27,3 +27,12 @@ export const marketplaceFeaturedGlow =
 
 export const skeletonClass =
   "animate-pulse rounded-xl bg-white/[0.06]";
+
+/** Themed horizontal scroll for dashboard tables (see globals.css). */
+export const orivonaScrollX = "orivona-scroll-x";
+
+/** Themed vertical scroll for sticky sidebar nav. */
+export const orivonaScrollY = "orivona-scroll-y";
+
+/** Wrapper for wide tables inside dashboard content. */
+export const dashboardTableWrap = `${orivonaScrollX} rounded-xl border border-white/[0.08] pb-0.5`;

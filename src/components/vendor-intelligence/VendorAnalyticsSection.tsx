@@ -181,7 +181,7 @@ export function VendorAnalyticsSection() {
             Performans verisi bulunamadı.
           </p>
         ) : (
-          <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
+          <div className="orivona-scroll-x mt-4 rounded-xl border border-white/10 pb-0.5">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-zinc-500">

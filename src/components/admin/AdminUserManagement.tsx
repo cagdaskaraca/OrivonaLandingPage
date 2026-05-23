@@ -110,7 +110,7 @@ export function AdminUserManagement({
       ) : users.length === 0 ? (
         <p className="mt-4 text-sm text-zinc-500">Kayıtlı kullanıcı bulunamadı.</p>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
+        <div className="orivona-scroll-x mt-4 rounded-xl border border-white/10 pb-0.5">
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-white/10 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-zinc-500">
               <tr>

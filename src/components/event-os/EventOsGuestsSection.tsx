@@ -33,7 +33,13 @@ import {
   isTicketSent,
   planDisplayTitle,
 } from "@/src/lib/invites";
-import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
+import {
+  btnPrimary,
+  btnSecondary,
+  dashboardTableWrap,
+  inputClass,
+  selectClass,
+} from "@/src/lib/ui";
 
 function defaultGuest(): EventGuestFormPayload {
   return {
@@ -233,8 +239,8 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           Henüz davetli yok.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
-          <table className="w-full min-w-[720px] text-left text-sm">
+        <div className={dashboardTableWrap}>
+          <table className="w-full min-w-[38rem] text-left text-sm xl:min-w-full">
             <thead>
               <tr className="border-b border-white/[0.08] bg-white/[0.02] text-xs text-zinc-500">
                 <th className="px-3 py-2.5">

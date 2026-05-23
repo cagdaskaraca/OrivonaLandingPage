@@ -176,6 +176,7 @@ function DashboardContent() {
     <DemoShell
       title="Yönetici Paneli"
       subtitle="Kategori, işletme, kullanıcı ve hizmet yönetimi."
+      stickyNav
     >
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <button

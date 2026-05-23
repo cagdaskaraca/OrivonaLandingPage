@@ -17,7 +17,7 @@ export function DashboardSection({
   return (
     <section
       id={id}
-      className={`scroll-mt-24 ${className}`}
+      className={`scroll-mt-[calc(var(--orivona-dashboard-nav-h)+5rem)] ${className}`}
       aria-labelledby={title ? `${id}-heading` : undefined}
     >
       <div className={`${glassCard} mb-8`}>
