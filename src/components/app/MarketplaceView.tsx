@@ -270,7 +270,7 @@ export function MarketplaceView() {
       ) : null}
 
       {!loading && mergedItems.length > 0 ? (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {mergedItems.map((item, i) => (
             <MarketplaceServiceCard
               key={serviceId(item) || i}

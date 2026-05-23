@@ -7,6 +7,9 @@ import type { VendorAvailability } from "@/src/lib/api/types";
 import {
   availabilityStatusMap,
   findAvailabilityOnDate,
+  formatShortAvailabilityDate,
+  isAvailabilityEntryAvailable,
+  toDateKey,
   todayIso,
   upcomingAvailability,
 } from "@/src/lib/availability";
@@ -46,9 +49,17 @@ export function ServiceAvailabilityPanel({
 
   const datesWithStatus = useMemo(() => availabilityStatusMap(items), [items]);
   const selected = findAvailabilityOnDate(items, checkDate);
+  const selectedAvailable =
+    selected == null ? undefined : isAvailabilityEntryAvailable(selected);
+  const isUnavailable = selected != null && selectedAvailable === false;
   const availableUpcoming = upcomingAvailability(items)
-    .filter((a) => a.isAvailable !== false)
+    .filter((a) => isAvailabilityEntryAvailable(a))
     .slice(0, 6);
+
+  function handleSelectDate(date: string) {
+    const key = toDateKey(date) ?? date;
+    setCheckDate(key);
+  }
 
   return (
     <div className={`${glassCard} space-y-4`}>
@@ -67,26 +78,37 @@ export function ServiceAvailabilityPanel({
         <>
           <OrivonaAvailabilityCalendar
             selectedDate={checkDate}
-            onSelectDate={setCheckDate}
+            onSelectDate={handleSelectDate}
             datesWithStatus={datesWithStatus}
           />
+
+          {isUnavailable ? (
+            <div className="rounded-xl border border-red-400/35 bg-red-500/10 px-4 py-3">
+              <p className="text-sm font-semibold text-red-200">
+                Bu tarih dolu — rezervasyon veya teklif için uygun olmayabilir.
+              </p>
+              <p className="mt-1.5 text-xs text-red-200/80">
+                Lütfen başka bir tarih seçin veya işletme ile iletişime geçin.
+              </p>
+            </div>
+          ) : null}
 
           {selected ? (
             <div
               className={`rounded-xl border px-4 py-3 ${
-                selected.isAvailable !== false
+                selectedAvailable !== false
                   ? "border-emerald-400/30 bg-emerald-500/10"
                   : "border-red-400/30 bg-red-500/10"
               }`}
             >
               <p
                 className={`text-sm font-semibold ${
-                  selected.isAvailable !== false
+                  selectedAvailable !== false
                     ? "text-emerald-200"
                     : "text-red-200"
                 }`}
               >
-                {selected.isAvailable !== false
+                {selectedAvailable !== false
                   ? "Bu tarih müsait"
                   : "Bu tarih dolu"}
               </p>
@@ -111,7 +133,7 @@ export function ServiceAvailabilityPanel({
                     key={a.id != null ? String(a.id) : a.date}
                     className="rounded-lg border border-emerald-400/20 bg-emerald-500/[0.06] px-3 py-2 text-xs text-emerald-100/95"
                   >
-                    {a.date}
+                    {formatShortAvailabilityDate(a.date)}
                     {a.notes?.trim() ? ` · ${a.notes}` : ""}
                   </li>
                 ))}

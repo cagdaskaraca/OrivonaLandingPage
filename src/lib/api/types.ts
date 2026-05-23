@@ -552,19 +552,30 @@ export type SendChatMessagePayload = {
   messageText?: string;
 };
 
+export type AvailabilityTimeSlotPayload = {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  status?: string;
+};
+
 export type VendorAvailability = {
   id?: string | number;
   date?: string;
   isAvailable?: boolean;
+  status?: string;
   notes?: string;
   vendorServiceId?: string | number;
+  timeSlots?: AvailabilityTimeSlotPayload[];
 };
 
 export type CreateVendorAvailabilityPayload = {
   date: string;
   isAvailable: boolean;
+  status?: string;
   notes?: string;
   vendorServiceId?: string | number;
+  timeSlots?: AvailabilityTimeSlotPayload[];
 };
 
 export type ServiceReview = {

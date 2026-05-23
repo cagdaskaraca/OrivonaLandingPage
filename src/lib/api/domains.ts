@@ -1132,8 +1132,88 @@ export async function sendConversationMessage(
 
 function normalizeAvailabilityDate(raw?: string): string | undefined {
   if (!raw?.trim()) return undefined;
-  const slice = raw.trim().slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(slice) ? slice : undefined;
+  const s = raw.trim();
+  const slice = s.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(slice)) return slice;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseAvailabilityBool(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const lower = value.trim().toLowerCase();
+    if (lower === "true" || lower === "1") return true;
+    if (lower === "false" || lower === "0") return false;
+  }
+  if (typeof value === "number") {
+    if (value === 1) return true;
+    if (value === 0) return false;
+  }
+  return undefined;
+}
+
+function resolveAvailabilityIsAvailable(
+  o: Record<string, unknown>,
+): boolean | undefined {
+  const status =
+    recordStr(o, "status", "Status") ??
+    recordStr(o, "availabilityStatus", "AvailabilityStatus");
+  const statusLower = status?.trim().toLowerCase();
+  if (
+    statusLower === "unavailable" ||
+    statusLower === "full" ||
+    statusLower === "dolu" ||
+    statusLower === "busy" ||
+    statusLower === "closed"
+  ) {
+    return false;
+  }
+  if (
+    statusLower === "available" ||
+    statusLower === "müsait" ||
+    statusLower === "musait" ||
+    statusLower === "open"
+  ) {
+    return true;
+  }
+
+  const explicit =
+    parseAvailabilityBool(o.isAvailable ?? o.IsAvailable) ??
+    recordBool(o, "isAvailable", "IsAvailable");
+  const unavailable = parseAvailabilityBool(o.isUnavailable ?? o.IsUnavailable);
+  if (explicit !== undefined) return explicit;
+  if (unavailable === true) return false;
+  if (unavailable === false) return true;
+  return undefined;
+}
+
+function normalizeTimeSlots(raw: unknown): VendorAvailability["timeSlots"] {
+  if (!Array.isArray(raw)) return undefined;
+  const slots = raw
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const s = item as Record<string, unknown>;
+      const startTime =
+        recordStr(s, "startTime", "StartTime") ??
+        recordStr(s, "start", "Start");
+      const endTime =
+        recordStr(s, "endTime", "EndTime") ?? recordStr(s, "end", "End");
+      if (!startTime || !endTime) return null;
+      const slotAvailable = resolveAvailabilityIsAvailable(s);
+      return {
+        startTime,
+        endTime,
+        isAvailable: slotAvailable !== false,
+        status: recordStr(s, "status", "Status"),
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x != null);
+  return slots.length > 0 ? slots : undefined;
 }
 
 function normalizeVendorAvailability(raw: unknown): VendorAvailability {
@@ -1143,20 +1223,26 @@ function normalizeVendorAvailability(raw: unknown): VendorAvailability {
     recordStr(o, "date", "Date") ??
     recordStr(o, "availabilityDate", "AvailabilityDate") ??
     recordStr(o, "eventDate", "EventDate");
-  const availableExplicit = recordBool(o, "isAvailable", "IsAvailable");
-  const unavailable = recordBool(o, "isUnavailable", "IsUnavailable");
-  let isAvailable = availableExplicit;
-  if (isAvailable === undefined && unavailable === true) isAvailable = false;
-  if (isAvailable === undefined && unavailable === false) isAvailable = true;
+  const isAvailable = resolveAvailabilityIsAvailable(o);
+  const status = recordStr(o, "status", "Status");
 
   return {
     id: recordId(o),
     date: normalizeAvailabilityDate(dateRaw),
     isAvailable,
+    status:
+      status ??
+      (isAvailable === false
+        ? "unavailable"
+        : isAvailable === true
+          ? "available"
+          : undefined),
     notes: recordStr(o, "notes", "Notes") ?? recordStr(o, "note", "Note"),
     vendorServiceId:
       recordId(o, "vendorServiceId", "VendorServiceId") ??
       recordId(o, "serviceId", "ServiceId"),
+    timeSlots:
+      normalizeTimeSlots(o.timeSlots ?? o.TimeSlots ?? o.slots ?? o.Slots),
   };
 }
 
@@ -1172,14 +1258,27 @@ export async function fetchVendorAvailability(): Promise<VendorAvailability[]> {
 export async function createVendorAvailability(
   payload: CreateVendorAvailabilityPayload,
 ): Promise<VendorAvailability> {
-  const body = await apiPostRaw<ApiEnvelope>("/vendor/availability", {
+  const requestBody: Record<string, unknown> = {
     date: payload.date,
     isAvailable: payload.isAvailable,
+    status:
+      payload.status ??
+      (payload.isAvailable ? "available" : "unavailable"),
     notes: payload.notes?.trim() ?? "",
     ...(payload.vendorServiceId != null
       ? { vendorServiceId: payload.vendorServiceId }
       : {}),
-  });
+  };
+  if (payload.timeSlots && payload.timeSlots.length > 0) {
+    requestBody.timeSlots = payload.timeSlots.map((slot) => ({
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isAvailable: slot.isAvailable,
+      status:
+        slot.status ?? (slot.isAvailable ? "available" : "unavailable"),
+    }));
+  }
+  const body = await apiPostRaw<ApiEnvelope>("/vendor/availability", requestBody);
   assertSuccess(body);
   const data = body.data;
   if (data && typeof data === "object" && !Array.isArray(data)) {

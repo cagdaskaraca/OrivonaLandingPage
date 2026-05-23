@@ -80,9 +80,17 @@ export function MarketplaceServiceCard({
     (b) => !b.toLowerCase().includes("premium") && b !== "Öne Çıkan",
   );
 
+  const actionBtnBase =
+    "flex min-h-[2.5rem] w-full min-w-0 flex-1 basis-0 items-center justify-center rounded-full px-3 py-2 text-center text-xs font-semibold sm:text-sm";
+  const hasMeta = price != null || rating != null || capacity != null;
+  const showActions =
+    detailHref != null ||
+    showMessageButton ||
+    showOfferButton;
+
   return (
     <article
-      className={`${glassCard} ${cardHover} ${featuredCardClasses(featured)} group relative flex flex-col overflow-hidden p-0`}
+      className={`${glassCard} ${cardHover} ${featuredCardClasses(featured)} group relative flex h-full flex-col overflow-hidden p-0`}
     >
       {featured ? (
         <div
@@ -136,89 +144,120 @@ export function MarketplaceServiceCard({
           </button>
         ) : null}
       </div>
-      <div className="relative z-[2] flex flex-1 flex-col gap-3 p-5">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
-            {categoryName ?? "Kategori"}
-          </p>
-          {detailHref ? (
-            <Link href={detailHref}>
+      <div className="relative z-[2] flex min-h-0 flex-1 flex-col p-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
+              {categoryName ?? "Kategori"}
+            </p>
+            {detailHref ? (
+              <Link href={detailHref}>
+                <h3
+                  className={`mt-1 line-clamp-2 text-lg font-semibold transition hover:text-violet-100 ${
+                    featured ? "text-amber-50" : "text-white"
+                  }`}
+                >
+                  {title}
+                </h3>
+              </Link>
+            ) : (
               <h3
-                className={`mt-1 text-lg font-semibold transition hover:text-violet-100 ${
+                className={`mt-1 line-clamp-2 text-lg font-semibold ${
                   featured ? "text-amber-50" : "text-white"
                 }`}
               >
                 {title}
               </h3>
-            </Link>
-          ) : (
-            <h3
-              className={`mt-1 text-lg font-semibold ${
-                featured ? "text-amber-50" : "text-white"
-              }`}
-            >
-              {title}
-            </h3>
+            )}
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
+              <span className="line-clamp-1">{vendor}</span>
+              {premium && !featured ? (
+                <span className={premiumBadgeClass}>Premium</span>
+              ) : null}
+            </p>
+          </div>
+          {(item.city || item.district) && (
+            <p className="text-xs text-zinc-500">
+              {[item.city, item.district].filter(Boolean).join(" · ")}
+            </p>
           )}
-          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400">
-            <span>{vendor}</span>
-            {premium && !featured ? (
-              <span className={premiumBadgeClass}>Premium</span>
+          <div className="min-h-[2.75rem]">
+            {item.description ? (
+              <p className="line-clamp-2 text-sm leading-relaxed text-zinc-400">
+                {item.description}
+              </p>
             ) : null}
-          </p>
+          </div>
         </div>
-        {(item.city || item.district) && (
-          <p className="text-xs text-zinc-500">
-            {[item.city, item.district].filter(Boolean).join(" · ")}
-          </p>
-        )}
-        {item.description ? (
-          <p className="line-clamp-2 text-sm leading-relaxed text-zinc-400">
-            {item.description}
-          </p>
+
+        {hasMeta ? (
+          <div className="mt-4 shrink-0 border-t border-white/10 pt-3">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-zinc-300">
+              {price != null && (
+                <span>
+                  Fiyat:{" "}
+                  <strong className="text-white">
+                    {price.toLocaleString("tr-TR")} ₺
+                  </strong>
+                </span>
+              )}
+              {rating != null && (
+                <span>
+                  ★ {rating}
+                  {item.reviewCount != null ? ` (${item.reviewCount})` : ""}
+                </span>
+              )}
+              {capacity != null && <span>Kapasite: {capacity} kişi</span>}
+            </div>
+          </div>
         ) : null}
-        <div className="mt-auto flex flex-wrap gap-3 border-t border-white/10 pt-3 text-xs text-zinc-300">
-          {price != null && (
-            <span>
-              Fiyat:{" "}
-              <strong className="text-white">
-                {price.toLocaleString("tr-TR")} ₺
-              </strong>
-            </span>
-          )}
-          {rating != null && (
-            <span>
-              ★ {rating}
-              {item.reviewCount != null ? ` (${item.reviewCount})` : ""}
-            </span>
-          )}
-          {capacity != null && <span>Kapasite: {capacity} kişi</span>}
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          {detailHref ? (
-            <Link href={detailHref} className={`${btnSecondary} text-center`}>
-              Detayları gör
-            </Link>
-          ) : null}
-          {showMessageButton && onMessageSend ? (
-            <button type="button" className={btnSecondary} onClick={onMessageSend}>
-              Mesaj Gönder
-            </button>
-          ) : showMessageButton ? (
-            <span className={`${btnSecondary} pointer-events-none text-center opacity-60`}>
-              Mesaj için giriş yapın
-            </span>
-          ) : null}
-          {showOfferButton && onOfferRequest ? (
-            <button type="button" className={btnPrimary} onClick={onOfferRequest}>
-              Teklif İste
-            </button>
-          ) : showOfferButton ? (
-            <span className={`${btnSecondary} pointer-events-none text-center opacity-60`}>
-              Giriş yaparak teklif isteyin
-            </span>
-          ) : null}
-        </div>
+
+        {showActions ? (
+          <div
+            className={`flex w-full shrink-0 flex-col gap-2 sm:flex-row sm:items-stretch sm:justify-center ${
+              hasMeta ? "mt-3" : "mt-4 border-t border-white/10 pt-3"
+            }`}
+          >
+            {detailHref ? (
+              <Link
+                href={detailHref}
+                className={`${btnSecondary} ${actionBtnBase}`}
+              >
+                Detayları gör
+              </Link>
+            ) : null}
+            {showMessageButton && onMessageSend ? (
+              <button
+                type="button"
+                className={`${btnSecondary} ${actionBtnBase}`}
+                onClick={onMessageSend}
+              >
+                Mesaj Gönder
+              </button>
+            ) : showMessageButton ? (
+              <span
+                className={`${btnSecondary} ${actionBtnBase} pointer-events-none opacity-60`}
+              >
+                Mesaj için giriş yapın
+              </span>
+            ) : null}
+            {showOfferButton && onOfferRequest ? (
+              <button
+                type="button"
+                className={`${btnPrimary} ${actionBtnBase}`}
+                onClick={onOfferRequest}
+              >
+                Teklif İste
+              </button>
+            ) : showOfferButton ? (
+              <span
+                className={`${btnSecondary} ${actionBtnBase} pointer-events-none opacity-60`}
+              >
+                Giriş yaparak teklif isteyin
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </article>
   );
