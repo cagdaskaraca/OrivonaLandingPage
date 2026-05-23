@@ -16,7 +16,10 @@ import type {
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
-import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
+import {
+  CUSTOMER_DEFAULT_ZERO_SUMMARY,
+  CUSTOMER_EMPTY_DATA_MESSAGE,
+} from "@/src/lib/customerDashboard";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type Tab = "summary" | "favorites" | "reservations";
@@ -25,7 +28,6 @@ export function CustomerOverview() {
   const toast = useToast();
   const [tab, setTab] = useState<Tab>("summary");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [summaryUnavailable, setSummaryUnavailable] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loadingSummary, setLoadingSummary] = useState(true);
@@ -34,19 +36,16 @@ export function CustomerOverview() {
 
   const loadSummary = useCallback(async () => {
     setLoadingSummary(true);
-    setSummaryUnavailable(false);
     try {
-      const data = await fetchCustomerDashboardSummary();
-      setSummary(data);
-      const hasMetrics = Object.keys(data).length > 0;
-      setSummaryUnavailable(!hasMetrics);
+      setSummary(await fetchCustomerDashboardSummary());
     } catch (e) {
-      logApiError("Customer dashboard summary", e);
-      setSummary({});
-      setSummaryUnavailable(true);
-      if (!isApiNotFound(e)) {
+      if (isApiNotFound(e)) {
+        console.warn("Customer dashboard summary unavailable (404).");
+      } else {
+        logApiError("Customer dashboard summary", e);
         toast.error("Özet verisi yüklenemedi.");
       }
+      setSummary(CUSTOMER_DEFAULT_ZERO_SUMMARY);
     } finally {
       setLoadingSummary(false);
     }
@@ -128,11 +127,9 @@ export function CustomerOverview() {
       {tab === "summary" ? (
         loadingSummary ? (
           <div className={`${skeletonClass} h-24`} />
-        ) : summaryUnavailable ? (
-          <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
         ) : (
           <SummaryCards
-            summary={summary}
+            summary={summary ?? CUSTOMER_DEFAULT_ZERO_SUMMARY}
             loading={false}
             className="mb-0"
             emptyMessage={CUSTOMER_EMPTY_DATA_MESSAGE}

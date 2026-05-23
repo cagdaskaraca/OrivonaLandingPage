@@ -41,14 +41,20 @@ export function AnimatedMetrics() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ob = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) setActive(true);
-      },
-      { threshold: 0.15 },
-    );
-    ob.observe(el);
-    return () => ob.disconnect();
+    let ob: IntersectionObserver | null = null;
+    try {
+      ob = new IntersectionObserver(
+        ([e]) => {
+          if (e.isIntersecting) setActive(true);
+        },
+        { rootMargin: "0px 0px 0px 0px", threshold: 0.15 },
+      );
+      ob.observe(el);
+    } catch {
+      setActive(true);
+      return;
+    }
+    return () => ob?.disconnect();
   }, []);
 
   const v0 = useCountUp(items[0].target, 2200, active);

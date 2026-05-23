@@ -15,14 +15,20 @@ export function ScrollReveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ob = new IntersectionObserver(
-      ([e]) => {
-        if (e?.isIntersecting) setVisible(true);
-      },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
-    );
-    ob.observe(el);
-    return () => ob.disconnect();
+    let ob: IntersectionObserver | null = null;
+    try {
+      ob = new IntersectionObserver(
+        ([e]) => {
+          if (e?.isIntersecting) setVisible(true);
+        },
+        { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
+      );
+      ob.observe(el);
+    } catch {
+      setVisible(true);
+      return;
+    }
+    return () => ob?.disconnect();
   }, []);
 
   return (

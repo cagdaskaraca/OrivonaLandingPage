@@ -8,6 +8,9 @@ export type DashboardNavItem = {
   label: string;
 };
 
+/** IntersectionObserver only accepts px/% — no calc(), rem, or CSS variables. */
+const DASHBOARD_SECTION_ROOT_MARGIN = "-120px 0px -60% 0px";
+
 type DashboardSidebarProps = {
   items: DashboardNavItem[];
   collapsed: boolean;
@@ -44,23 +47,32 @@ export function DashboardSidebar({
 
     if (elements.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible[0]?.target.id) {
-          setActiveId(visible[0].target.id);
-        }
-      },
-      {
-        rootMargin: "calc(-1 * var(--orivona-dashboard-nav-h) - 12%) 0px -50% 0px",
-        threshold: [0, 0.25, 0.5],
-      },
-    );
+    let observer: IntersectionObserver | null = null;
+    try {
+      observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+          if (visible[0]?.target.id) {
+            setActiveId(visible[0].target.id);
+          }
+        },
+        {
+          rootMargin: DASHBOARD_SECTION_ROOT_MARGIN,
+          threshold: [0, 0.25, 0.5],
+        },
+      );
+      for (const el of elements) observer.observe(el);
+    } catch (err) {
+      console.warn(
+        "Dashboard sidebar section tracking disabled:",
+        err instanceof Error ? err.message : err,
+      );
+      return;
+    }
 
-    for (const el of elements) observer.observe(el);
-    return () => observer.disconnect();
+    return () => observer?.disconnect();
   }, [items]);
 
   const navButtons = (

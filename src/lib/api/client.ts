@@ -42,7 +42,7 @@ export async function withOptionalNotFound<T>(
     return await fn();
   } catch (err) {
     if (isApiNotFound(err)) {
-      if (notFoundLog) console.log(notFoundLog);
+      if (notFoundLog) console.warn(notFoundLog);
       return fallback;
     }
     throw err;

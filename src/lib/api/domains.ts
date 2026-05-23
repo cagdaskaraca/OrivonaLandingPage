@@ -7,6 +7,7 @@ import {
   withOptionalNotFound,
 } from "@/src/lib/api/client";
 import { flattenAvailabilityPayload } from "@/src/lib/availability";
+import { CUSTOMER_DEFAULT_ZERO_SUMMARY } from "@/src/lib/customerDashboard";
 import {
   recordBool,
   recordId,
@@ -109,7 +110,7 @@ export async function fetchCustomerDashboardSummary(): Promise<DashboardSummary>
       assertSuccess(body);
       return normalizeSummary(body.data);
     },
-    {},
+    CUSTOMER_DEFAULT_ZERO_SUMMARY,
     "Customer summary endpoint not available yet",
   );
 }
