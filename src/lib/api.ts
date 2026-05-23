@@ -122,6 +122,17 @@ export {
   normalizeInviteTicket,
 } from "@/src/lib/api/invites";
 export {
+  fetchEventPlanPublicInvite,
+  createEventPlanPublicInvite,
+  disableEventPlanPublicInvite,
+  fetchEventInviteByToken,
+  verifyEventInviteGuest,
+  submitEventInviteRsvp,
+  fetchEventInviteTicket,
+  normalizePublicEventInvite,
+  normalizeEventInviteInfo,
+} from "@/src/lib/api/publicEventInvite";
+export {
   fetchVendorLeads,
   fetchVendorLeadById,
   updateVendorLeadStatus,

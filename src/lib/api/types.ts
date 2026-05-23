@@ -850,6 +850,7 @@ export type InviteTicket = {
   eventTitle?: string;
   guestName?: string;
   ticketCode?: string;
+  plusOneCount?: number;
   qrText?: string;
   qrCodeUrl?: string;
   qrImageUrl?: string;
@@ -925,4 +926,55 @@ export type QrInvite = {
   qrCodeUrl?: string;
   message?: string;
   demoText?: string;
+};
+
+export type PublicEventInvite = {
+  token?: string;
+  inviteUrl?: string;
+  welcomeMessage?: string;
+  isActive?: boolean;
+  disabled?: boolean;
+};
+
+export type EventInviteInfo = {
+  token?: string;
+  eventTitle?: string;
+  eventType?: string;
+  eventDate?: string;
+  city?: string;
+  district?: string;
+  eventLocation?: string;
+  hostName?: string;
+  welcomeMessage?: string;
+  message?: string;
+  plusOneAllowed?: boolean;
+  maxPlusOne?: number;
+  isActive?: boolean;
+};
+
+export type VerifyGuestPayload = {
+  fullName: string;
+  phone?: string;
+  email?: string;
+};
+
+export type VerifyGuestResult = {
+  matched?: boolean;
+  guestAccessToken?: string;
+  guestName?: string;
+  maskedName?: string;
+  maskedPhone?: string;
+  maskedEmail?: string;
+  requiresEmail?: boolean;
+  requiresPhone?: boolean;
+  multipleMatches?: boolean;
+  rsvpStatus?: string;
+  alreadyResponded?: boolean;
+};
+
+export type EventInviteRsvpPayload = {
+  guestAccessToken: string;
+  rsvpStatus: "Accepted" | "Declined" | "Maybe";
+  plusOneCount?: number;
+  note?: string;
 };

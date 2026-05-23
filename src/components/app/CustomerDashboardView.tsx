@@ -14,7 +14,7 @@ import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPane
 import { EventOsProvider } from "@/src/components/event-os/EventOsContext";
 import { EventOsChecklistSection } from "@/src/components/event-os/EventOsChecklistSection";
 import { EventOsGuestsSection } from "@/src/components/event-os/EventOsGuestsSection";
-import { EventOsQrSection } from "@/src/components/event-os/EventOsQrSection";
+import { EventOsPublicInviteSection } from "@/src/components/event-os/EventOsPublicInviteSection";
 import { EventOsRemindersSection } from "@/src/components/event-os/EventOsRemindersSection";
 import { EventOsRsvpSection } from "@/src/components/event-os/EventOsRsvpSection";
 import { EventOsSeatingSection } from "@/src/components/event-os/EventOsSeatingSection";
@@ -226,7 +226,7 @@ function DashboardContent() {
     { id: "event-os-guests", label: "Davetliler" },
     { id: "event-os-rsvp", label: "RSVP" },
     { id: "event-os-seating", label: "Masa Planı" },
-    { id: "event-os-qr", label: "QR Davetiye" },
+    { id: "event-os-public-invite", label: "Ortak Davet Linki" },
     { id: "event-os-reminders", label: "Hatırlatmalar" },
     { id: "dashboard-events", label: "Etkinlik Talepleri" },
     { id: "dashboard-favorites", label: "Favoriler" },
@@ -318,8 +318,8 @@ function DashboardContent() {
         <EventOsSeatingSection />
       </DashboardSection>
 
-      <DashboardSection id="event-os-qr" title="QR Davetiye">
-        <EventOsQrSection />
+      <DashboardSection id="event-os-public-invite" title="Ortak Davet Linki">
+        <EventOsPublicInviteSection />
       </DashboardSection>
 
       <DashboardSection id="event-os-reminders" title="Hatırlatmalar">

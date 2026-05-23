@@ -116,6 +116,7 @@ export function normalizeInviteTicket(raw: unknown): InviteTicket {
       recordStr(o, "qrCodeUrl", "QrCodeUrl") ??
       recordStr(o, "qrImageUrl", "QrImageUrl"),
     qrImageUrl: recordStr(o, "qrImageUrl", "QrImageUrl"),
+    plusOneCount: recordNum(o, "plusOneCount", "PlusOneCount"),
   };
 }
 

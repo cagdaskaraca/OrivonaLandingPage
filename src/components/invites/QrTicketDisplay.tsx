@@ -60,6 +60,11 @@ export function QrTicketDisplay({ ticket, className = "" }: QrTicketDisplayProps
         {ticket.eventTitle ?? "Etkinlik"}
       </h3>
       <p className="mt-1 text-sm text-zinc-400">{ticket.guestName}</p>
+      {ticket.plusOneCount != null && ticket.plusOneCount > 0 ? (
+        <p className="mt-1 text-xs text-violet-300/80">
+          +{ticket.plusOneCount} misafir
+        </p>
+      ) : null}
 
       <div className="mx-auto mt-6 flex h-[260px] w-[260px] max-w-full items-center justify-center rounded-2xl border border-white/15 bg-white p-3 shadow-[0_0_40px_rgba(139,92,246,0.25)]">
         {qrDataUrl ? (

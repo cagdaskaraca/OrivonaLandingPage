@@ -1,4 +1,5 @@
 import type { EventGuest, EventPlan } from "@/src/lib/api/types";
+import { SITE_URL } from "@/src/lib/site";
 
 export const INVITE_SEND_TIMEOUT_MS = 25_000;
 
@@ -43,6 +44,43 @@ export function formatEventLocation(invite: {
 }): string {
   if (invite.eventLocation?.trim()) return invite.eventLocation.trim();
   return [invite.city, invite.district].filter(Boolean).join(" · ");
+}
+
+export function buildPublicEventInvitePath(token: string): string {
+  return `/invite/event/${encodeURIComponent(token)}`;
+}
+
+export function buildPublicEventInviteUrl(token: string): string {
+  const path = buildPublicEventInvitePath(token);
+  if (typeof window !== "undefined") {
+    return `${window.location.origin}${path}`;
+  }
+  return `${SITE_URL.replace(/\/$/, "")}${path}`;
+}
+
+/** Prefer API inviteUrl; otherwise build from token. */
+export function resolvePublicInviteUrl(data: {
+  inviteUrl?: string;
+  token?: string;
+}): string {
+  const raw = data.inviteUrl?.trim();
+  if (raw) {
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}${raw.startsWith("/") ? raw : `/${raw}`}`;
+    }
+    return `${SITE_URL.replace(/\/$/, "")}${raw.startsWith("/") ? raw : `/${raw}`}`;
+  }
+  if (data.token?.trim()) {
+    return buildPublicEventInviteUrl(data.token.trim());
+  }
+  return "";
+}
+
+export function shareInviteViaWhatsApp(inviteUrl: string, eventTitle?: string): void {
+  const label = eventTitle?.trim() || "ORIVONA etkinliği";
+  const text = encodeURIComponent(`${label} — davet linki:\n${inviteUrl}`);
+  window.open(`https://wa.me/?text=${text}`, "_blank", "noopener,noreferrer");
 }
 
 export function formatRespondedAt(iso?: string): string | null {

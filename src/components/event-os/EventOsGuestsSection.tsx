@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useEventOs } from "@/src/components/event-os/EventOsContext";
 import {
   EventOsError,
   EventOsNeedPlan,
   EventOsPlanPicker,
 } from "@/src/components/event-os/EventOsShared";
-import { SendInviteModal } from "@/src/components/invites/SendInviteModal";
 import {
   createEventPlanGuest,
   deleteEventPlanGuest,
@@ -15,17 +14,9 @@ import {
   importDemoEventPlanGuests,
   updateEventPlanGuest,
 } from "@/src/lib/api/eventPlans";
-import {
-  sendGuestInvite,
-  sendGuestInvitesBulk,
-} from "@/src/lib/api/invites";
-import { withTimeout } from "@/src/lib/promiseTimeout";
+import { fetchEventPlanPublicInvite } from "@/src/lib/api/publicEventInvite";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
-import type {
-  EventGuest,
-  EventGuestFormPayload,
-  SendInviteResult,
-} from "@/src/lib/api/types";
+import type { EventGuest, EventGuestFormPayload } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
 import {
   RSVP_STATUS_OPTIONS,
@@ -35,11 +26,10 @@ import {
 import {
   formatRespondedAt,
   guestDisplayName,
-  INVITE_SEND_TIMEOUT_MESSAGE,
-  INVITE_SEND_TIMEOUT_MS,
-  isInviteSent,
   isTicketSent,
   planDisplayTitle,
+  resolvePublicInviteUrl,
+  shareInviteViaWhatsApp,
 } from "@/src/lib/invites";
 import {
   btnPrimary,
@@ -73,11 +63,6 @@ function guestToForm(g: EventGuest): EventGuestFormPayload {
   };
 }
 
-type InviteModalState =
-  | { mode: "single"; guest: EventGuest }
-  | { mode: "bulk"; guests: EventGuest[] }
-  | null;
-
 function GuestsPanel({ planId }: { planId: string | number }) {
   const { selectedPlan, bumpDataRefresh } = useEventOs();
   const toast = useToast();
@@ -90,10 +75,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [inviteModal, setInviteModal] = useState<InviteModalState>(null);
-  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
-  const [copyDone, setCopyDone] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,43 +95,26 @@ function GuestsPanel({ planId }: { planId: string | number }) {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    setSelectedIds(new Set());
-  }, [planId]);
-
-  const selectableGuests = useMemo(
-    () => guests.filter((g) => g.id != null),
-    [guests],
-  );
-
-  const allSelected =
-    selectableGuests.length > 0 &&
-    selectableGuests.every((g) => selectedIds.has(String(g.id)));
-
-  function toggleSelect(id: string | number) {
-    const key = String(id);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
-  function toggleSelectAll() {
-    if (allSelected) {
-      setSelectedIds(new Set());
-      return;
+  async function handleShareLink() {
+    setSharing(true);
+    try {
+      const invite = await fetchEventPlanPublicInvite(planId);
+      const url = resolvePublicInviteUrl(invite);
+      if (!url) {
+        toast.error("Önce «Ortak Davet Linki» bölümünden link oluşturun.");
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Ortak davet linki kopyalandı.");
+    } catch (err) {
+      logApiError("Share public invite", err);
+      toast.error(
+        formatUiErrorMessage(err, "Link paylaşılamadı. Ortak Davet Linki bölümünü kontrol edin."),
+      );
+    } finally {
+      setSharing(false);
     }
-    setSelectedIds(
-      new Set(selectableGuests.map((g) => String(g.id))),
-    );
   }
-
-  const selectedGuests = useMemo(
-    () => guests.filter((g) => g.id != null && selectedIds.has(String(g.id))),
-    [guests, selectedIds],
-  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -186,113 +151,30 @@ function GuestsPanel({ planId }: { planId: string | number }) {
     }
   }
 
-  async function handleSendInvite(message: string): Promise<SendInviteResult> {
-    if (!inviteModal) {
-      throw new Error("Davetli seçilmedi.");
-    }
-    const payload = { message, customMessage: message };
-    const modalSnapshot = inviteModal;
-
-    let result: SendInviteResult;
+  async function handleWhatsAppShare() {
+    setSharing(true);
     try {
-      const sendPromise =
-        modalSnapshot.mode === "single"
-          ? (() => {
-              const id = modalSnapshot.guest.id;
-              if (id == null) throw new Error("Davetli kimliği bulunamadı.");
-              return sendGuestInvite(planId, id, payload);
-            })()
-          : (() => {
-              const ids = modalSnapshot.guests
-                .map((g) => g.id)
-                .filter((id): id is string | number => id != null);
-              if (ids.length === 0) throw new Error("Davetli seçilmedi.");
-              return sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
-            })();
-
-      result = await withTimeout(
-        sendPromise,
-        INVITE_SEND_TIMEOUT_MS,
-        INVITE_SEND_TIMEOUT_MESSAGE,
-      );
+      const invite = await fetchEventPlanPublicInvite(planId);
+      let url = resolvePublicInviteUrl(invite);
+      if (!url) {
+        toast.error("Önce ortak davet linki oluşturun.");
+        return;
+      }
+      shareInviteViaWhatsApp(url, eventTitle);
     } catch (err) {
-      logApiError("Send invite", err);
-      throw err instanceof Error
-        ? err
-        : new Error(formatUiErrorMessage(err, "Davetiye gönderilemedi."));
-    }
-
-    setSelectedIds(new Set());
-    setInviteModal(null);
-
-    if (result.inviteUrl?.trim()) {
-      setLastInviteUrl(result.inviteUrl.trim());
-      setCopyDone(false);
-    }
-
-    void load()
-      .then(() => {
-        bumpDataRefresh();
-      })
-      .catch((err) => {
-        logApiError("Refresh guests after invite", err);
-      });
-
-    return result;
-  }
-
-  function handleInviteSuccess(result: SendInviteResult) {
-    const msg = result.demoMode
-      ? "Demo modda davetiye bağlantısı oluşturuldu."
-      : "Davetiye gönderildi.";
-    toast.success(msg);
-  }
-
-  async function copyInviteLink() {
-    if (!lastInviteUrl) return;
-    try {
-      await navigator.clipboard.writeText(lastInviteUrl);
-      setCopyDone(true);
-      toast.success("Davet linki panoya kopyalandı.");
-    } catch {
-      toast.error("Link kopyalanamadı.");
+      toast.error(formatUiErrorMessage(err, "Paylaşılamadı."));
+    } finally {
+      setSharing(false);
     }
   }
-
-  const modalGuestName =
-    inviteModal?.mode === "single"
-      ? guestDisplayName(inviteModal.guest)
-      : inviteModal?.mode === "bulk"
-        ? guestDisplayName(inviteModal.guests[0] ?? {})
-        : "";
-
-  const modalGuestCount =
-    inviteModal?.mode === "bulk" ? inviteModal.guests.length : 1;
 
   return (
     <div className="space-y-4">
       <EventOsPlanPicker />
-      {lastInviteUrl ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm">
-          <span className="min-w-0 flex-1 truncate text-violet-100/90">
-            {lastInviteUrl}
-          </span>
-          <button
-            type="button"
-            className={btnSecondary}
-            onClick={() => void copyInviteLink()}
-          >
-            {copyDone ? "Kopyalandı" : "Davet linkini kopyala"}
-          </button>
-          <button
-            type="button"
-            className="text-xs text-zinc-500 hover:text-zinc-300"
-            onClick={() => setLastInviteUrl(null)}
-          >
-            Kapat
-          </button>
-        </div>
-      ) : null}
+      <p className="text-sm text-zinc-500">
+        Misafirler ortak davet linkinden kendilerini doğrular. E-posta gönderimi
+        gerekmez — linki WhatsApp veya mesajla paylaşın.
+      </p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -308,13 +190,18 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         <button
           type="button"
           className={btnPrimary}
-          disabled={selectedGuests.length === 0}
-          onClick={() =>
-            setInviteModal({ mode: "bulk", guests: selectedGuests })
-          }
+          disabled={sharing}
+          onClick={() => void handleShareLink()}
         >
-          Seçili davetlilere davetiye gönder
-          {selectedGuests.length > 0 ? ` (${selectedGuests.length})` : ""}
+          {sharing ? "…" : "Linki paylaş"}
+        </button>
+        <button
+          type="button"
+          className={btnSecondary}
+          disabled={sharing}
+          onClick={() => void handleWhatsAppShare()}
+        >
+          WhatsApp
         </button>
       </div>
       {error ? <EventOsError message={error} onRetry={() => void load()} /> : null}
@@ -326,19 +213,11 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         </p>
       ) : (
         <div className={dashboardTableWrap}>
-          <table className="w-full min-w-[38rem] text-left text-sm xl:min-w-full">
+          <table className="w-full min-w-[34rem] text-left text-sm xl:min-w-full">
             <thead>
               <tr className="border-b border-white/[0.08] bg-white/[0.02] text-xs text-zinc-500">
-                <th className="px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                    aria-label="Tümünü seç"
-                  />
-                </th>
-                <th className="px-3 py-2.5 font-medium">Davetli</th>
-                <th className="px-3 py-2.5 font-medium">Davetiye</th>
+                <th className="px-3 py-2.5 font-medium">Ad Soyad</th>
+                <th className="px-3 py-2.5 font-medium">İletişim</th>
                 <th className="px-3 py-2.5 font-medium">RSVP</th>
                 <th className="px-3 py-2.5 font-medium">Bilet</th>
                 <th className="px-3 py-2.5 font-medium">Yanıt tarihi</th>
@@ -351,39 +230,19 @@ function GuestsPanel({ planId }: { planId: string | number }) {
                 const responded = formatRespondedAt(
                   g.respondedAt ?? g.rsvpRespondedAt,
                 );
+                const contact = [g.phone, g.email].filter(Boolean).join(" · ");
                 return (
                   <tr key={String(id)} className="hover:bg-white/[0.02]">
-                    <td className="px-3 py-3">
-                      {id != null ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(String(id))}
-                          onChange={() => toggleSelect(id)}
-                          aria-label={`${guestDisplayName(g)} seç`}
-                        />
+                    <td className="px-3 py-3 font-medium text-white">
+                      {guestDisplayName(g)}
+                      {(g.groupName ?? g.group) ? (
+                        <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+                          {g.groupName ?? g.group}
+                        </span>
                       ) : null}
                     </td>
-                    <td className="px-3 py-3">
-                      <p className="font-medium text-white">
-                        {guestDisplayName(g)}
-                      </p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
-                        {g.email ?? g.phone ?? "—"}
-                        {(g.groupName ?? g.group)
-                          ? ` · ${g.groupName ?? g.group}`
-                          : ""}
-                      </p>
-                    </td>
-                    <td className="px-3 py-3">
-                      <span
-                        className={
-                          isInviteSent(g)
-                            ? "text-emerald-300/90"
-                            : "text-zinc-500"
-                        }
-                      >
-                        {isInviteSent(g) ? "Gönderildi" : "Gönderilmedi"}
-                      </span>
+                    <td className="px-3 py-3 text-xs text-zinc-400">
+                      {contact || "—"}
                     </td>
                     <td className="px-3 py-3 text-violet-100/90">
                       {rsvpStatusLabel(g.rsvpStatus)}
@@ -399,7 +258,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
                             : "text-zinc-500"
                         }
                       >
-                        {isTicketSent(g) ? "Gönderildi" : "Gönderilmedi"}
+                        {isTicketSent(g) ? "Oluşturuldu" : "Bekliyor"}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-xs text-zinc-500">
@@ -407,17 +266,14 @@ function GuestsPanel({ planId }: { planId: string | number }) {
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex flex-wrap justify-end gap-2">
-                        {id != null ? (
-                          <button
-                            type="button"
-                            className={`${btnSecondary} px-3 py-1 text-xs`}
-                            onClick={() =>
-                              setInviteModal({ mode: "single", guest: g })
-                            }
-                          >
-                            Davetiye Gönder
-                          </button>
-                        ) : null}
+                        <button
+                          type="button"
+                          className={`${btnSecondary} px-3 py-1 text-xs`}
+                          disabled={sharing}
+                          onClick={() => void handleShareLink()}
+                        >
+                          Linki paylaş
+                        </button>
                         <button
                           type="button"
                           className={`${btnSecondary} px-3 py-1 text-xs`}
@@ -461,7 +317,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           {editingId != null ? "Davetli düzenle" : "Davetli ekle"}
         </h3>
         <label className="block text-sm sm:col-span-2">
-          <span className="mb-1 block text-xs text-zinc-400">Ad</span>
+          <span className="mb-1 block text-xs text-zinc-400">Ad Soyad</span>
           <input
             className={inputClass}
             value={form.fullName}
@@ -520,7 +376,6 @@ function GuestsPanel({ planId }: { planId: string | number }) {
             className={inputClass}
             value={form.note ?? ""}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            placeholder="Örn. Vejetaryen menü…"
           />
         </label>
         <label className="block text-sm">
@@ -556,16 +411,6 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           ) : null}
         </div>
       </form>
-
-      <SendInviteModal
-        open={inviteModal != null}
-        guestName={modalGuestName}
-        eventTitle={eventTitle}
-        guestCount={modalGuestCount}
-        onClose={() => setInviteModal(null)}
-        onSend={handleSendInvite}
-        onSuccess={handleInviteSuccess}
-      />
     </div>
   );
 }
