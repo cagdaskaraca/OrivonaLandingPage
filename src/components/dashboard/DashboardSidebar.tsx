@@ -125,13 +125,13 @@ export function DashboardSidebar({
       <aside
         className={`hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${
           collapsed ? "lg:w-14" : "lg:w-56"
-        } lg:top-[calc(var(--orivona-dashboard-nav-h)+1rem)] lg:max-h-[calc(100dvh-var(--orivona-dashboard-nav-h)-1.25rem)]`}
+        } lg:top-24 lg:h-[calc(100vh-120px)]`}
       >
         <div
-          className={`rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/95 to-[#08050f]/90 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY} lg:max-h-[inherit] lg:overflow-y-auto`}
+          className={`flex h-full flex-col rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/95 to-[#08050f]/90 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY}`}
         >
           <div
-            className={`flex items-center border-b border-violet-500/15 px-2 py-2 ${
+            className={`flex shrink-0 items-center border-b border-violet-500/15 px-2 py-2 ${
               collapsed ? "justify-center" : "justify-between"
             }`}
           >
@@ -149,7 +149,7 @@ export function DashboardSidebar({
               {collapsed ? "›" : "‹"}
             </button>
           </div>
-          {navButtons}
+          <div className="min-h-0 flex-1 overflow-y-auto">{navButtons}</div>
         </div>
       </aside>
     </>

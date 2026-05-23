@@ -860,6 +860,12 @@ export type SendInvitePayload = {
   customMessage?: string;
 };
 
+export type SendInviteResult = {
+  demoMode?: boolean;
+  inviteUrl?: string;
+  message?: string;
+};
+
 export type SendInvitesBulkPayload = {
   guestIds: (string | number)[];
   message?: string;

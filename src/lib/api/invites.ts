@@ -10,6 +10,7 @@ import type {
   InviteTicket,
   PublicInviteRsvpPayload,
   SendInvitePayload,
+  SendInviteResult,
   SendInvitesBulkPayload,
 } from "@/src/lib/api/types";
 
@@ -29,6 +30,29 @@ function extractPayload(data: unknown): unknown {
   const inner = o.data ?? o.Data;
   if (inner != null && inner !== data) return extractPayload(inner);
   return data;
+}
+
+function parseSendInviteResult(envelope: ApiEnvelope): SendInviteResult {
+  const payload = extractPayload(envelope.data ?? envelope);
+  const o =
+    payload && typeof payload === "object" && !Array.isArray(payload)
+      ? (payload as Record<string, unknown>)
+      : {};
+  const demoMode =
+    recordBool(o, "demoMode", "DemoMode") ??
+    (typeof envelope.message === "string" &&
+    envelope.message.toLowerCase().includes("demo")
+      ? true
+      : undefined);
+  const inviteUrl =
+    recordStr(o, "inviteUrl", "InviteUrl") ??
+    recordStr(o, "inviteLink", "InviteLink");
+  return {
+    demoMode: demoMode ?? false,
+    inviteUrl,
+    message:
+      typeof envelope.message === "string" ? envelope.message : undefined,
+  };
 }
 
 export function normalizeInviteDetails(raw: unknown): InviteDetails {
@@ -108,18 +132,19 @@ export async function sendGuestInvite(
   planId: string | number,
   guestId: string | number,
   payload: SendInvitePayload,
-): Promise<void> {
+): Promise<SendInviteResult> {
   const body = await apiPostRaw<ApiEnvelope>(
     `/event-plans/${planId}/guests/${guestId}/send-invite`,
     inviteMessageBody(payload),
   );
   assertSuccess(body);
+  return parseSendInviteResult(body);
 }
 
 export async function sendGuestInvitesBulk(
   planId: string | number,
   payload: SendInvitesBulkPayload,
-): Promise<void> {
+): Promise<SendInviteResult> {
   const message =
     payload.customMessage?.trim() ?? payload.message?.trim() ?? "";
   const body = await apiPostRaw<ApiEnvelope>(
@@ -131,6 +156,7 @@ export async function sendGuestInvitesBulk(
     },
   );
   assertSuccess(body);
+  return parseSendInviteResult(body);
 }
 
 export async function fetchInviteByToken(token: string): Promise<InviteDetails> {

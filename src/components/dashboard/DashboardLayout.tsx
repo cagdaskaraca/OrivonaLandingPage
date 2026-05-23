@@ -36,7 +36,7 @@ export function DashboardLayout({
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
         />
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1 overflow-x-clip">{children}</div>
       </div>
     </DemoShell>
   );

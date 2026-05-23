@@ -3,7 +3,7 @@
 :root {
   --background: #07060b;
   --foreground: #f4f4f8;
-  --orivona-dashboard-nav-h: 4rem;
+  --orivona-dashboard-nav-h: 6rem;
 }
 
 @theme inline {
@@ -123,7 +123,7 @@ html {
 
 /* Dashboard: sticky nav height + ORIVONA scrollbars */
 .orivona-dashboard-shell {
-  --orivona-dashboard-nav-h: 4rem;
+  --orivona-dashboard-nav-h: 6rem;
 }
 
 .orivona-scroll-x {

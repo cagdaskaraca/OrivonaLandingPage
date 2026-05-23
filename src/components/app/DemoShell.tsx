@@ -11,10 +11,13 @@ type DemoShellProps = {
   subtitle?: string;
   /** Center the page title block (e.g. login). */
   centerHeader?: boolean;
-  /** Sticky top nav for customer/vendor/admin dashboards. */
+  /** Fixed top nav for customer/vendor/admin dashboards. */
   stickyNav?: boolean;
   children: ReactNode;
 };
+
+const DASHBOARD_HEADER_CLASS =
+  "fixed top-0 left-0 right-0 z-[100] w-full border-b border-white/10 bg-[#06040c]/90 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
 
 export function DemoShell({
   title,
@@ -25,8 +28,8 @@ export function DemoShell({
 }: DemoShellProps) {
   return (
     <div
-      className={`relative min-h-screen overflow-x-hidden bg-[#06040c] text-zinc-100 ${
-        stickyNav ? "orivona-dashboard-shell" : ""
+      className={`relative min-h-screen bg-[#06040c] text-zinc-100 ${
+        stickyNav ? "orivona-dashboard-shell" : "overflow-x-hidden"
       }`}
     >
       <div
@@ -36,7 +39,7 @@ export function DemoShell({
       <header
         className={
           stickyNav
-            ? "sticky top-0 z-50 border-b border-white/10 bg-[#06040c]/85 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.65)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/75"
+            ? DASHBOARD_HEADER_CLASS
             : "relative z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl"
         }
       >
@@ -54,7 +57,6 @@ export function DemoShell({
                 className="h-8 w-auto object-contain"
               />
             </span>
-            
           </Link>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-zinc-400 sm:gap-x-4 sm:text-sm">
             <Link href="/marketplace" className="hover:text-violet-200">
@@ -68,7 +70,13 @@ export function DemoShell({
           </div>
         </nav>
       </header>
-      <main className="relative z-10 mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <main
+        className={`relative z-10 mx-auto max-w-6xl px-4 sm:px-6 ${
+          stickyNav
+            ? "pt-[calc(var(--orivona-dashboard-nav-h)+1.5rem)] pb-10 sm:pb-14"
+            : "py-10 sm:py-14"
+        }`}
+      >
         <div
           className={`mb-8 ${centerHeader ? "mx-auto max-w-md text-center" : ""}`}
         >

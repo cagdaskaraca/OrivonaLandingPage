@@ -20,7 +20,12 @@ import {
   sendGuestInvitesBulk,
 } from "@/src/lib/api/invites";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
-import type { EventGuest, EventGuestFormPayload } from "@/src/lib/api/types";
+import type {
+  EventGuest,
+  EventGuestFormPayload,
+  SendInviteResult,
+} from "@/src/lib/api/types";
+import { useToast } from "@/src/contexts/ToastContext";
 import {
   RSVP_STATUS_OPTIONS,
   normalizeGuestRsvpForForm,
@@ -72,6 +77,7 @@ type InviteModalState =
 
 function GuestsPanel({ planId }: { planId: string | number }) {
   const { selectedPlan, bumpDataRefresh } = useEventOs();
+  const toast = useToast();
   const eventTitle = planDisplayTitle(selectedPlan);
 
   const [guests, setGuests] = useState<EventGuest[]>([]);
@@ -83,6 +89,8 @@ function GuestsPanel({ planId }: { planId: string | number }) {
   const [importing, setImporting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [inviteModal, setInviteModal] = useState<InviteModalState>(null);
+  const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null);
+  const [copyDone, setCopyDone] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -175,23 +183,57 @@ function GuestsPanel({ planId }: { planId: string | number }) {
     }
   }
 
-  async function handleSendInvite(message: string) {
-    if (!inviteModal) return;
-    const payload = { message, customMessage: message };
-    if (inviteModal.mode === "single") {
-      const id = inviteModal.guest.id;
-      if (id == null) throw new Error("Davetli kimliği bulunamadı.");
-      await sendGuestInvite(planId, id, payload);
-    } else {
-      const ids = inviteModal.guests
-        .map((g) => g.id)
-        .filter((id): id is string | number => id != null);
-      if (ids.length === 0) throw new Error("Davetli seçilmedi.");
-      await sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
+  async function handleSendInvite(message: string): Promise<SendInviteResult> {
+    if (!inviteModal) {
+      throw new Error("Davetli seçilmedi.");
     }
-    await load();
-    bumpDataRefresh();
-    setSelectedIds(new Set());
+    const payload = { message, customMessage: message };
+    let result: SendInviteResult;
+    try {
+      if (inviteModal.mode === "single") {
+        const id = inviteModal.guest.id;
+        if (id == null) throw new Error("Davetli kimliği bulunamadı.");
+        result = await sendGuestInvite(planId, id, payload);
+      } else {
+        const ids = inviteModal.guests
+          .map((g) => g.id)
+          .filter((id): id is string | number => id != null);
+        if (ids.length === 0) throw new Error("Davetli seçilmedi.");
+        result = await sendGuestInvitesBulk(planId, { guestIds: ids, ...payload });
+      }
+      await load();
+      bumpDataRefresh();
+      setSelectedIds(new Set());
+      setInviteModal(null);
+      return result;
+    } catch (err) {
+      logApiError("Send invite", err);
+      throw err instanceof Error
+        ? err
+        : new Error(formatUiErrorMessage(err, "Davetiye gönderilemedi."));
+    }
+  }
+
+  function handleInviteSuccess(result: SendInviteResult) {
+    const msg = result.demoMode
+      ? "Demo modda davetiye bağlantısı oluşturuldu."
+      : "Davetiye gönderildi.";
+    toast.success(msg);
+    if (result.inviteUrl?.trim()) {
+      setLastInviteUrl(result.inviteUrl.trim());
+      setCopyDone(false);
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!lastInviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(lastInviteUrl);
+      setCopyDone(true);
+      toast.success("Davet linki panoya kopyalandı.");
+    } catch {
+      toast.error("Link kopyalanamadı.");
+    }
   }
 
   const modalGuestName =
@@ -207,6 +249,27 @@ function GuestsPanel({ planId }: { planId: string | number }) {
   return (
     <div className="space-y-4">
       <EventOsPlanPicker />
+      {lastInviteUrl ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm">
+          <span className="min-w-0 flex-1 truncate text-violet-100/90">
+            {lastInviteUrl}
+          </span>
+          <button
+            type="button"
+            className={btnSecondary}
+            onClick={() => void copyInviteLink()}
+          >
+            {copyDone ? "Kopyalandı" : "Davet linkini kopyala"}
+          </button>
+          <button
+            type="button"
+            className="text-xs text-zinc-500 hover:text-zinc-300"
+            onClick={() => setLastInviteUrl(null)}
+          >
+            Kapat
+          </button>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -478,6 +541,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         guestCount={modalGuestCount}
         onClose={() => setInviteModal(null)}
         onSend={handleSendInvite}
+        onSuccess={handleInviteSuccess}
       />
     </div>
   );

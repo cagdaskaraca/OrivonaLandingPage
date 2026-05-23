@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import { defaultInviteMessage } from "@/src/lib/invites";
-import { btnPrimary, inputClass } from "@/src/lib/ui";
+import type { SendInviteResult } from "@/src/lib/api/types";
+import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 type SendInviteModalProps = {
   open: boolean;
@@ -11,7 +12,8 @@ type SendInviteModalProps = {
   eventTitle: string;
   guestCount?: number;
   onClose: () => void;
-  onSend: (message: string) => Promise<void>;
+  onSend: (message: string) => Promise<SendInviteResult>;
+  onSuccess?: (result: SendInviteResult) => void;
 };
 
 export function SendInviteModal({
@@ -21,31 +23,37 @@ export function SendInviteModal({
   guestCount = 1,
   onClose,
   onSend,
+  onSuccess,
 }: SendInviteModalProps) {
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
-      setMessage(defaultInviteMessage(guestName, eventTitle));
+    if (!open) {
+      setSending(false);
       setError(null);
+      return;
     }
+    setMessage(defaultInviteMessage(guestName, eventTitle));
+    setError(null);
+    setSending(false);
   }, [open, guestName, eventTitle]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
+    if (sending) return;
+    setSending(true);
     setError(null);
     try {
-      await onSend(message.trim());
-      onClose();
+      const result = await onSend(message.trim());
+      onSuccess?.(result);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Davetiye gönderilemedi.",
       );
     } finally {
-      setLoading(false);
+      setSending(false);
     }
   }
 
@@ -55,7 +63,7 @@ export function SendInviteModal({
       : undefined;
 
   return (
-    <Modal open={open} title="Davetiye mesajı" onClose={onClose}>
+    <Modal open={open} title="Davetiye mesajı" onClose={sending ? undefined : onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         {subtitle ? (
           <p className="text-sm text-zinc-400">{subtitle}</p>
@@ -67,16 +75,26 @@ export function SendInviteModal({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             required
-            disabled={loading}
+            disabled={sending}
           />
         </label>
         <p className="text-xs text-zinc-500">
           E-posta sunucu tarafından gönderilir. Davet linki misafire iletilir.
         </p>
         {error ? <p className="text-sm text-red-300/90">{error}</p> : null}
-        <button type="submit" className={btnPrimary} disabled={loading}>
-          {loading ? "Gönderiliyor…" : "Davetiye gönder"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" className={btnPrimary} disabled={sending}>
+            {sending ? "Gönderiliyor…" : "Davetiye gönder"}
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={sending}
+            onClick={onClose}
+          >
+            İptal
+          </button>
+        </div>
       </form>
     </Modal>
   );
