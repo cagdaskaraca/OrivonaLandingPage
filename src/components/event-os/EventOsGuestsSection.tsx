@@ -15,31 +15,34 @@ import {
 } from "@/src/lib/api/eventPlans";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventGuest, EventGuestFormPayload } from "@/src/lib/api/types";
-import { RSVP_STATUS_OPTIONS, rsvpStatusLabel } from "@/src/lib/eventOs";
+import {
+  RSVP_STATUS_OPTIONS,
+  normalizeGuestRsvpForForm,
+  rsvpStatusLabel,
+} from "@/src/lib/eventOs";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 function defaultGuest(): EventGuestFormPayload {
   return {
-    name: "",
+    fullName: "",
     email: "",
     phone: "",
-    group: "",
+    groupName: "",
+    note: "",
     rsvpStatus: "Pending",
     plusOneCount: 0,
-    notes: "",
   };
 }
 
 function guestToForm(g: EventGuest): EventGuestFormPayload {
   return {
-    name: g.name ?? "",
+    fullName: g.fullName ?? g.name ?? "",
     email: g.email ?? "",
     phone: g.phone ?? "",
-    group: g.group ?? "",
-    rsvpStatus: g.rsvpStatus ?? "Pending",
+    groupName: g.groupName ?? g.group ?? "",
+    note: g.note ?? g.notes ?? "",
+    rsvpStatus: normalizeGuestRsvpForForm(g.rsvpStatus),
     plusOneCount: g.plusOneCount ?? 0,
-    tableId: g.tableId,
-    notes: g.notes ?? "",
   };
 }
 
@@ -134,9 +137,13 @@ function GuestsPanel({ planId }: { planId: string | number }) {
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
             >
               <div>
-                <p className="font-medium text-white">{g.name ?? "—"}</p>
+                <p className="font-medium text-white">
+                  {g.fullName ?? g.name ?? "—"}
+                </p>
                 <p className="mt-0.5 text-xs text-zinc-500">
-                  {g.group ? `${g.group} · ` : ""}
+                  {(g.groupName ?? g.group)
+                    ? `${g.groupName ?? g.group} · `
+                    : ""}
                   {rsvpStatusLabel(g.rsvpStatus)}
                   {g.plusOneCount ? ` · +${g.plusOneCount}` : ""}
                   {g.tableName ? ` · ${g.tableName}` : ""}
@@ -184,8 +191,10 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           <span className="mb-1 block text-xs text-zinc-400">Ad</span>
           <input
             className={inputClass}
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            value={form.fullName}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, fullName: e.target.value }))
+            }
             required
           />
         </label>
@@ -209,8 +218,10 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           <span className="mb-1 block text-xs text-zinc-400">Grup</span>
           <input
             className={inputClass}
-            value={form.group ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, group: e.target.value }))}
+            value={form.groupName ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, groupName: e.target.value }))
+            }
             placeholder="Aile, İş…"
           />
         </label>
@@ -229,6 +240,15 @@ function GuestsPanel({ planId }: { planId: string | number }) {
               </option>
             ))}
           </select>
+        </label>
+        <label className="block text-sm sm:col-span-2">
+          <span className="mb-1 block text-xs text-zinc-400">Not</span>
+          <input
+            className={inputClass}
+            value={form.note ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            placeholder="Örn. Vejetaryen menü…"
+          />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-zinc-400">+1 sayısı</span>

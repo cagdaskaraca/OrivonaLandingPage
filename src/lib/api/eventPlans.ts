@@ -4,6 +4,7 @@ import {
   apiPostRaw,
   apiPutRaw,
 } from "@/src/lib/api/client";
+import { mapGuestRsvpToApi } from "@/src/lib/eventOs";
 import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
@@ -99,12 +100,20 @@ export function normalizeEventTask(raw: unknown): EventTask {
 export function normalizeEventGuest(raw: unknown): EventGuest {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const fullName =
+    recordStr(o, "fullName", "FullName") ?? recordStr(o, "name", "Name");
+  const groupName =
+    recordStr(o, "groupName", "GroupName") ?? recordStr(o, "group", "Group");
+  const note =
+    recordStr(o, "note", "Note") ?? recordStr(o, "notes", "Notes");
   return {
     id: recordId(o),
-    name: recordStr(o, "name", "Name"),
+    fullName,
+    name: fullName,
     email: recordStr(o, "email", "Email"),
     phone: recordStr(o, "phone", "Phone"),
-    group: recordStr(o, "group", "Group"),
+    groupName,
+    group: groupName,
     rsvpStatus:
       recordStr(o, "rsvpStatus", "RsvpStatus") ??
       recordStr(o, "status", "Status"),
@@ -117,7 +126,8 @@ export function normalizeEventGuest(raw: unknown): EventGuest {
     tableName:
       recordStr(o, "tableName", "TableName") ??
       recordStr(o, "assignedTableName", "AssignedTableName"),
-    notes: recordStr(o, "notes", "Notes"),
+    note,
+    notes: note,
   };
 }
 
@@ -224,14 +234,13 @@ function buildTaskBody(payload: EventTaskFormPayload): Record<string, unknown> {
 
 function buildGuestBody(payload: EventGuestFormPayload): Record<string, unknown> {
   return {
-    name: payload.name.trim(),
+    fullName: payload.fullName.trim(),
     email: payload.email?.trim() ?? "",
     phone: payload.phone?.trim() ?? "",
-    group: payload.group?.trim() ?? "",
-    rsvpStatus: payload.rsvpStatus ?? "Pending",
+    groupName: payload.groupName?.trim() ?? "",
+    note: payload.note?.trim() ?? "",
     plusOneCount: payload.plusOneCount ?? 0,
-    tableId: payload.tableId,
-    notes: payload.notes?.trim() ?? "",
+    rsvpStatus: mapGuestRsvpToApi(payload.rsvpStatus),
   };
 }
 
@@ -369,9 +378,11 @@ export async function createEventPlanGuest(
   planId: string | number,
   payload: EventGuestFormPayload,
 ): Promise<EventGuest> {
+  const requestBody = buildGuestBody(payload);
+  console.log("Guest payload", requestBody);
   const body = await apiPostRaw<ApiEnvelope>(
     `/event-plans/${planId}/guests`,
-    buildGuestBody(payload),
+    requestBody,
   );
   assertSuccess(body);
   const data = extractPayload(body.data);
@@ -385,9 +396,11 @@ export async function updateEventPlanGuest(
   guestId: string | number,
   payload: EventGuestFormPayload,
 ): Promise<EventGuest> {
+  const requestBody = buildGuestBody(payload);
+  console.log("Guest payload", requestBody);
   const body = await apiPutRaw<ApiEnvelope>(
     `/event-plans/${planId}/guests/${guestId}`,
-    buildGuestBody(payload),
+    requestBody,
   );
   assertSuccess(body);
   const data = extractPayload(body.data);
@@ -422,9 +435,10 @@ export async function updateGuestRsvp(
   guestId: string | number,
   rsvpStatus: string,
 ): Promise<EventGuest> {
+  const mapped = mapGuestRsvpToApi(rsvpStatus);
   const body = await apiPostRaw<ApiEnvelope>(
     `/event-plans/${planId}/guests/${guestId}/rsvp`,
-    { rsvpStatus, status: rsvpStatus },
+    { rsvpStatus: mapped },
   );
   assertSuccess(body);
   const data = extractPayload(body.data);

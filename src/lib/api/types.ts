@@ -807,26 +807,28 @@ export type EventTaskFormPayload = {
 
 export type EventGuest = {
   id?: string | number;
+  fullName?: string;
   name?: string;
   email?: string;
   phone?: string;
+  groupName?: string;
   group?: string;
   rsvpStatus?: string;
   plusOneCount?: number;
   tableId?: string | number;
   tableName?: string;
+  note?: string;
   notes?: string;
 };
 
 export type EventGuestFormPayload = {
-  name: string;
+  fullName: string;
   email?: string;
   phone?: string;
-  group?: string;
+  groupName?: string;
+  note?: string;
   rsvpStatus?: string;
   plusOneCount?: number;
-  tableId?: string | number;
-  notes?: string;
 };
 
 export type RsvpSummary = {

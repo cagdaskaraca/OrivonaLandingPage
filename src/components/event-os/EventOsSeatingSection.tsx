@@ -137,7 +137,9 @@ function SeatingPanel({ planId }: { planId: string | number }) {
                 {seated.length > 0 ? (
                   <ul className="mt-2 space-y-1 text-xs text-zinc-400">
                     {seated.map((g) => (
-                      <li key={String(g.id)}>· {g.name}</li>
+                      <li key={String(g.id)}>
+                        · {g.fullName ?? g.name}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -191,7 +193,7 @@ function SeatingPanel({ planId }: { planId: string | number }) {
             <option value="">Misafir seçin</option>
             {guests.map((g) => (
               <option key={String(g.id)} value={String(g.id)}>
-                {g.name}
+                {g.fullName ?? g.name}
               </option>
             ))}
           </select>

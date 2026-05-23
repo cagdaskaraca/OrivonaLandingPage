@@ -12,10 +12,44 @@ export const EVENT_TASK_STATUSES: {
 
 export const RSVP_STATUS_OPTIONS = [
   { value: "Pending", label: "Bekliyor" },
-  { value: "Attending", label: "Katılıyor" },
-  { value: "NotAttending", label: "Katılmıyor" },
+  { value: "Accepted", label: "Katılıyor" },
+  { value: "Declined", label: "Katılmıyor" },
   { value: "Maybe", label: "Kararsız" },
 ] as const;
+
+/** Map API/legacy RSVP values to form select value. */
+export function normalizeGuestRsvpForForm(status?: string): string {
+  const s = status?.trim().toLowerCase() ?? "";
+  if (s === "pending" || s === "bekliyor" || s === "waiting") return "Pending";
+  if (
+    s === "accepted" ||
+    s === "attending" ||
+    s === "yes" ||
+    s === "katılıyor" ||
+    s === "katiliyor"
+  ) {
+    return "Accepted";
+  }
+  if (
+    s === "declined" ||
+    s === "notattending" ||
+    s === "no" ||
+    s === "katılmıyor" ||
+    s === "katilmiyor"
+  ) {
+    return "Declined";
+  }
+  if (s === "maybe" || s === "kararsız" || s === "kararsiz" || s === "uncertain") {
+    return "Maybe";
+  }
+  return "Pending";
+}
+
+/** Send only Pending | Accepted | Declined | Maybe to API. */
+export function mapGuestRsvpToApi(status?: string): string {
+  const key = normalizeGuestRsvpForForm(status);
+  return key;
+}
 
 export function normalizeTaskStatus(raw?: string): EventTaskStatus {
   const s = raw?.trim();
