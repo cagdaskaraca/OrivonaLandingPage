@@ -6,6 +6,7 @@ import {
   apiPutRaw,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import { flattenAvailabilityPayload } from "@/src/lib/availability";
 import {
   recordBool,
   recordId,
@@ -62,6 +63,7 @@ function toList(data: unknown): unknown[] {
       "items",
       "results",
       "data",
+      "months",
       "favorites",
       "offerRequests",
       "reservations",
@@ -1246,13 +1248,17 @@ function normalizeVendorAvailability(raw: unknown): VendorAvailability {
   };
 }
 
-export async function fetchVendorAvailability(): Promise<VendorAvailability[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/availability");
-  assertSuccess(body);
-  return toList(body.data)
+function parseAvailabilityList(data: unknown): VendorAvailability[] {
+  return flattenAvailabilityPayload(data)
     .map(normalizeVendorAvailability)
     .filter((a) => a.date)
     .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+}
+
+export async function fetchVendorAvailability(): Promise<VendorAvailability[]> {
+  const body = await apiGetRaw<ApiEnvelope>("/vendor/availability");
+  assertSuccess(body);
+  return parseAvailabilityList(body.data);
 }
 
 export async function createVendorAvailability(
@@ -1301,10 +1307,7 @@ export async function fetchServiceAvailability(
     `/services/${serviceId}/availability`,
   );
   assertSuccess(body);
-  return toList(body.data)
-    .map(normalizeVendorAvailability)
-    .filter((a) => a.date)
-    .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+  return parseAvailabilityList(body.data);
 }
 
 function normalizeServiceReview(raw: unknown): ServiceReview {

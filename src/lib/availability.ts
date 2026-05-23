@@ -1,5 +1,12 @@
 import type { VendorAvailability } from "@/src/lib/api/types";
 
+export type AvailabilityMapEntry = {
+  isAvailable: boolean;
+  status?: string;
+  note?: string;
+  id?: string | number;
+};
+
 export type AvailabilityTimeSlot = {
   id: string;
   startTime: string;
@@ -73,7 +80,59 @@ export function isAvailabilityEntryAvailable(
   if (fromStatus === false) return false;
   if (fromBool === true) return true;
   if (fromStatus === true) return true;
-  return true;
+  return false;
+}
+
+/**
+ * Flattens GET availability payloads: { months: [{ days: [...] }] } or nested data.data.months.
+ * Also accepts a legacy flat day array.
+ */
+export function flattenAvailabilityPayload(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (!data || typeof data !== "object") return [];
+
+  const obj = data as Record<string, unknown>;
+  const inner = obj.data ?? obj.Data;
+  if (inner != null && inner !== data && typeof inner === "object") {
+    const fromInner = flattenAvailabilityPayload(inner);
+    if (fromInner.length > 0) return fromInner;
+  }
+
+  const months = obj.months ?? obj.Months;
+  if (Array.isArray(months)) {
+    const days: unknown[] = [];
+    for (const month of months) {
+      if (!month || typeof month !== "object") continue;
+      const m = month as Record<string, unknown>;
+      const monthDays = m.days ?? m.Days;
+      if (Array.isArray(monthDays)) days.push(...monthDays);
+    }
+    return days;
+  }
+
+  for (const key of ["availability", "items", "days", "Days"]) {
+    const arr = obj[key];
+    if (Array.isArray(arr)) return arr as unknown[];
+  }
+  return [];
+}
+
+/** YYYY-MM-DD -> müsaitlik row from normalized list. */
+export function buildAvailabilityMap(
+  list: VendorAvailability[],
+): Map<string, AvailabilityMapEntry> {
+  const map = new Map<string, AvailabilityMapEntry>();
+  for (const item of list) {
+    const key = toDateKey(item.date);
+    if (!key) continue;
+    map.set(key, {
+      isAvailable: isAvailabilityEntryAvailable(item),
+      status: item.status,
+      note: item.notes,
+      id: item.id,
+    });
+  }
+  return map;
 }
 
 export function formatAvailabilityDate(date?: string): string {
@@ -130,12 +189,24 @@ export function availabilityStatusMap(
   list: VendorAvailability[],
 ): Map<string, boolean> {
   const map = new Map<string, boolean>();
-  for (const item of list) {
-    const key = toDateKey(item.date);
-    if (!key) continue;
-    map.set(key, isAvailabilityEntryAvailable(item));
+  for (const [key, entry] of buildAvailabilityMap(list)) {
+    map.set(key, entry.isAvailable);
   }
   return map;
+}
+
+export function getAvailabilityMapEntry(
+  list: VendorAvailability[],
+  date: string,
+): AvailabilityMapEntry | undefined {
+  const item = findAvailabilityOnDate(list, date);
+  if (!item) return undefined;
+  return {
+    isAvailable: isAvailabilityEntryAvailable(item),
+    status: item.status,
+    note: item.notes,
+    id: item.id,
+  };
 }
 
 export function mergeAvailabilityItem(

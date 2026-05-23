@@ -51,7 +51,6 @@ export function ServiceAvailabilityPanel({
   const selected = findAvailabilityOnDate(items, checkDate);
   const selectedAvailable =
     selected == null ? undefined : isAvailabilityEntryAvailable(selected);
-  const isUnavailable = selected != null && selectedAvailable === false;
   const availableUpcoming = upcomingAvailability(items)
     .filter((a) => isAvailabilityEntryAvailable(a))
     .slice(0, 6);
@@ -82,35 +81,20 @@ export function ServiceAvailabilityPanel({
             datesWithStatus={datesWithStatus}
           />
 
-          {isUnavailable ? (
-            <div className="rounded-xl border border-red-400/35 bg-red-500/10 px-4 py-3">
-              <p className="text-sm font-semibold text-red-200">
-                Bu tarih dolu — rezervasyon veya teklif için uygun olmayabilir.
-              </p>
-              <p className="mt-1.5 text-xs text-red-200/80">
-                Lütfen başka bir tarih seçin veya işletme ile iletişime geçin.
-              </p>
-            </div>
-          ) : null}
-
           {selected ? (
             <div
               className={`rounded-xl border px-4 py-3 ${
-                selectedAvailable !== false
+                selectedAvailable
                   ? "border-emerald-400/30 bg-emerald-500/10"
                   : "border-red-400/30 bg-red-500/10"
               }`}
             >
               <p
                 className={`text-sm font-semibold ${
-                  selectedAvailable !== false
-                    ? "text-emerald-200"
-                    : "text-red-200"
+                  selectedAvailable ? "text-emerald-200" : "text-red-200"
                 }`}
               >
-                {selectedAvailable !== false
-                  ? "Bu tarih müsait"
-                  : "Bu tarih dolu"}
+                {selectedAvailable ? "Bu tarih müsait." : "Bu tarih dolu."}
               </p>
               {selected.notes?.trim() ? (
                 <p className="mt-1.5 text-xs text-zinc-400">{selected.notes}</p>

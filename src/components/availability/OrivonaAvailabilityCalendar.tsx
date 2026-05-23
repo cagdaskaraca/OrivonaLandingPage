@@ -73,6 +73,7 @@ export function OrivonaAvailabilityCalendar({
             return <span key={`pad-${i}`} className="h-10" />;
           }
           const status = datesWithStatus.get(cell.date);
+          const hasStatus = status !== undefined;
           const isSelected = cell.date === selectedDate;
           const isToday = cell.date === today;
           return (
@@ -81,16 +82,18 @@ export function OrivonaAvailabilityCalendar({
               type="button"
               onClick={() => onSelectDate(cell.date)}
               className={`relative flex h-10 flex-col items-center justify-center rounded-lg border text-xs font-medium transition ${
-                isSelected
-                  ? "border-violet-400/60 bg-violet-500/30 text-white shadow-[0_0_12px_rgba(139,92,246,0.35)] ring-2 ring-violet-400/50"
-                  : isToday
-                    ? "border-violet-400/35 bg-violet-500/10 text-violet-100"
-                    : "border-transparent text-zinc-300 hover:border-violet-400/20 hover:bg-white/[0.04]"
-              } ${
                 status === true
-                  ? "bg-emerald-500/15"
+                  ? "bg-emerald-500/15 text-emerald-50/95"
                   : status === false
                     ? "bg-red-500/12 text-red-100/95"
+                    : isToday
+                      ? "border-violet-400/35 bg-violet-500/10 text-violet-100"
+                      : "border-transparent text-zinc-300 hover:border-violet-400/20 hover:bg-white/[0.04]"
+              } ${
+                isSelected
+                  ? "z-[1] border-violet-400/70 text-white shadow-[0_0_12px_rgba(139,92,246,0.35)] ring-2 ring-violet-400/55 ring-offset-1 ring-offset-[#08050f]"
+                  : isToday && hasStatus
+                    ? "border-violet-400/25"
                     : ""
               }`}
             >
