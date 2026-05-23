@@ -13,6 +13,9 @@ import { VendorOfferRequestsPanel } from "@/src/components/offers/VendorOfferReq
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
 import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
+import { VendorAnalyticsSection } from "@/src/components/vendor-intelligence/VendorAnalyticsSection";
+import { VendorCrmSection } from "@/src/components/vendor-intelligence/VendorCrmSection";
+import { VendorReviewIntelligenceSection } from "@/src/components/vendor-intelligence/VendorReviewIntelligenceSection";
 import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -216,6 +219,9 @@ function DashboardContent() {
 
   const navItems: DashboardNavItem[] = [
     { id: "dashboard-account", label: "Hesabım" },
+    { id: "dashboard-analytics", label: "Analitik" },
+    { id: "dashboard-crm", label: "CRM / Leadler" },
+    { id: "dashboard-review-intel", label: "Yorum Özeti" },
     { id: "dashboard-profile", label: "İşletme Profili" },
     { id: "dashboard-services", label: "Hizmetlerim" },
     { id: "dashboard-offers", label: "Gelen Teklifler" },
@@ -275,6 +281,24 @@ function DashboardContent() {
       <section id="dashboard-summary" className="scroll-mt-24 mb-8">
         <VendorSummaryCards />
       </section>
+
+      <DashboardSection id="dashboard-analytics" title="Analitik">
+        <p className="mb-4 text-sm text-zinc-400">
+          Marketplace Intelligence — görüntülenme, dönüşüm ve hizmet performansı.
+        </p>
+        <VendorAnalyticsSection />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-crm" title="Vendor CRM">
+        <p className="mb-4 text-sm text-zinc-400">
+          Lead listesi, durum güncelleme ve notlar. Müşteri adları gizlidir.
+        </p>
+        <VendorCrmSection />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-review-intel" title="Yorum özeti">
+        <VendorReviewIntelligenceSection />
+      </DashboardSection>
 
       <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (

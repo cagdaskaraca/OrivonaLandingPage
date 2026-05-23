@@ -19,8 +19,10 @@ import type {
   AdminService,
   AdminUser,
   AdminVendor,
+  AiDetectedEvent,
   AiEventPlanRequest,
   AiEventPlanResult,
+  AiRecommendationItem,
   ApiEnvelope,
   AcceptCustomerOfferPayload,
   AppNotification,
@@ -470,6 +472,83 @@ export async function deleteServiceImage(
   assertSuccess(body);
 }
 
+function normalizeAiRecommendation(raw: unknown): AiRecommendationItem {
+  if (!raw || typeof raw !== "object") return {};
+  const item = raw as Record<string, unknown>;
+  const serviceId =
+    recordId(item, "serviceId", "ServiceId") ??
+    recordId(item, "vendorServiceId", "VendorServiceId");
+  const reasonsRaw = item.reasons ?? item.Reasons;
+  const title =
+    recordStr(item, "serviceTitle", "ServiceTitle") ??
+    recordStr(item, "title", "Title");
+  const price =
+    recordNum(item, "price", "Price") ??
+    recordNum(item, "basePrice", "BasePrice") ??
+    recordNum(item, "estimatedPrice", "EstimatedPrice");
+  return {
+    vendorName: recordStr(item, "vendorName", "VendorName"),
+    serviceTitle: title,
+    title,
+    categoryName:
+      recordStr(item, "categoryName", "CategoryName") ??
+      recordStr(item, "category", "Category"),
+    category: recordStr(item, "category", "Category"),
+    city: recordStr(item, "city", "City"),
+    district: recordStr(item, "district", "District"),
+    price,
+    basePrice: price,
+    estimatedPrice: recordNum(item, "estimatedPrice", "EstimatedPrice") ?? price,
+    rating:
+      recordNum(item, "rating", "Rating") ??
+      recordNum(item, "averageRating", "AverageRating"),
+    averageRating: recordNum(item, "averageRating", "AverageRating"),
+    reviewCount: recordNum(item, "reviewCount", "ReviewCount"),
+    score: recordNum(item, "score", "Score"),
+    serviceId,
+    vendorServiceId: serviceId,
+    vendorId: recordId(item, "vendorId", "VendorId"),
+    coverImageUrl: recordStr(item, "coverImageUrl", "CoverImageUrl"),
+    imageUrl: recordStr(item, "imageUrl", "ImageUrl"),
+    reasons: Array.isArray(reasonsRaw)
+      ? reasonsRaw.map(String)
+      : typeof reasonsRaw === "string"
+        ? reasonsRaw
+        : undefined,
+  };
+}
+
+function normalizeAiDetected(raw: unknown): AiDetectedEvent | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const d = raw as Record<string, unknown>;
+  const guest =
+    recordNum(d, "guestCount", "GuestCount") ??
+    recordNum(d, "guests", "Guests");
+  const budgetMin =
+    recordNum(d, "budgetMin", "BudgetMin") ??
+    recordNum(d, "minBudget", "MinBudget");
+  const budgetMax =
+    recordNum(d, "budgetMax", "BudgetMax") ??
+    recordNum(d, "maxBudget", "MaxBudget");
+  const budget =
+    recordNum(d, "budget", "Budget") ?? recordNum(d, "totalBudget", "TotalBudget");
+  return {
+    eventType:
+      recordStr(d, "eventType", "EventType") ??
+      recordStr(d, "type", "Type"),
+    city: recordStr(d, "city", "City"),
+    district: recordStr(d, "district", "District"),
+    guestCount: guest,
+    budgetMin: budgetMin ?? budget,
+    budgetMax: budgetMax ?? budget,
+    budget,
+    style:
+      recordStr(d, "style", "Style") ?? recordStr(d, "eventStyle", "EventStyle"),
+    theme:
+      recordStr(d, "theme", "Theme") ?? recordStr(d, "eventTheme", "EventTheme"),
+  };
+}
+
 function normalizeAiPlan(raw: unknown): AiEventPlanResult {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
@@ -477,32 +556,59 @@ function normalizeAiPlan(raw: unknown): AiEventPlanResult {
   const budget = o.budgetBreakdown ?? o.BudgetBreakdown;
   const timeline = o.timeline ?? o.Timeline ?? o.planningTimeline;
   const concepts = o.conceptIdeas ?? o.ConceptIdeas ?? o.concepts;
+  const checklist = o.checklist ?? o.Checklist ?? o.planningChecklist;
+  const tipsRaw = o.aiTips ?? o.AiTips ?? o.tips ?? o.Tips;
+  const detectedRaw =
+    o.detected ??
+    o.Detected ??
+    o.parsedEvent ??
+    o.ParsedEvent ??
+    o.eventDetails ??
+    o.EventDetails;
+
+  const detected = normalizeAiDetected(detectedRaw);
+  const guestCount =
+    detected?.guestCount ??
+    recordNum(o, "guestCount", "GuestCount") ??
+    recordNum(o, "guests", "Guests");
+  const budgetMin =
+    detected?.budgetMin ??
+    recordNum(o, "budgetMin", "BudgetMin") ??
+    recordNum(o, "minBudget", "MinBudget");
+  const budgetMax =
+    detected?.budgetMax ??
+    recordNum(o, "budgetMax", "BudgetMax") ??
+    recordNum(o, "maxBudget", "MaxBudget");
 
   return {
     summary: recordStr(o, "summary", "Summary"),
+    detected,
+    eventType:
+      detected?.eventType ??
+      recordStr(o, "eventType", "EventType"),
+    city: detected?.city ?? recordStr(o, "city", "City"),
+    district: detected?.district ?? recordStr(o, "district", "District"),
+    guestCount,
+    budgetMin,
+    budgetMax,
+    style:
+      detected?.style ??
+      recordStr(o, "style", "Style") ??
+      recordStr(o, "eventStyle", "EventStyle"),
+    theme:
+      detected?.theme ??
+      recordStr(o, "theme", "Theme") ??
+      recordStr(o, "eventTheme", "EventTheme"),
+    totalEstimatedMin:
+      recordNum(o, "totalEstimatedMin", "TotalEstimatedMin") ??
+      recordNum(o, "totalMin", "TotalMin"),
+    totalEstimatedMax:
+      recordNum(o, "totalEstimatedMax", "TotalEstimatedMax") ??
+      recordNum(o, "totalMax", "TotalMax"),
+    budgetStatus: recordStr(o, "budgetStatus", "BudgetStatus"),
+    budgetWarning: recordStr(o, "budgetWarning", "BudgetWarning"),
     recommendations: Array.isArray(recs)
-      ? (recs as unknown[]).map((r) => {
-          if (!r || typeof r !== "object") return {};
-          const item = r as Record<string, unknown>;
-          const serviceId =
-            recordId(item, "serviceId", "ServiceId") ??
-            recordId(item, "vendorServiceId", "VendorServiceId");
-          const reasonsRaw = item.reasons ?? item.Reasons;
-          return {
-            vendorName: recordStr(item, "vendorName", "VendorName"),
-            serviceTitle: recordStr(item, "serviceTitle", "ServiceTitle"),
-            score: recordNum(item, "score", "Score"),
-            estimatedPrice: recordNum(item, "estimatedPrice", "EstimatedPrice"),
-            serviceId,
-            vendorServiceId: serviceId,
-            vendorId: recordId(item, "vendorId", "VendorId"),
-            reasons: Array.isArray(reasonsRaw)
-              ? reasonsRaw.map(String)
-              : typeof reasonsRaw === "string"
-                ? reasonsRaw
-                : undefined,
-          };
-        })
+      ? recs.map(normalizeAiRecommendation)
       : undefined,
     budgetBreakdown: Array.isArray(budget)
       ? budget.map((b) => {
@@ -511,24 +617,59 @@ function normalizeAiPlan(raw: unknown): AiEventPlanResult {
             recordStr(line, "categoryName", "CategoryName") ??
             recordStr(line, "name", "Name");
           const category = recordStr(line, "category", "Category");
+          const estimatedMin =
+            recordNum(line, "estimatedMin", "EstimatedMin") ??
+            recordNum(line, "min", "Min");
+          const estimatedMax =
+            recordNum(line, "estimatedMax", "EstimatedMax") ??
+            recordNum(line, "max", "Max");
+          const suggestedBudget =
+            recordNum(line, "suggestedBudget", "SuggestedBudget") ??
+            recordNum(line, "amount", "Amount");
           return {
             categoryName,
             category: category ?? categoryName,
-            amount: recordNum(line, "amount", "Amount"),
+            amount: recordNum(line, "amount", "Amount") ?? suggestedBudget,
+            estimatedMin,
+            estimatedMax,
+            suggestedBudget,
             percentage: recordNum(line, "percentage", "Percentage"),
+          };
+        })
+      : undefined,
+    checklist: Array.isArray(checklist)
+      ? checklist.map((c) => {
+          const row = c as Record<string, unknown>;
+          return {
+            categoryName:
+              recordStr(row, "categoryName", "CategoryName") ??
+              recordStr(row, "category", "Category"),
+            title: recordStr(row, "title", "Title"),
+            description: recordStr(row, "description", "Description"),
+            priority: recordStr(row, "priority", "Priority"),
+            status: recordStr(row, "status", "Status"),
           };
         })
       : undefined,
     timeline: Array.isArray(timeline)
       ? timeline.map((t) => {
           const step = t as Record<string, unknown>;
+          const monthOffset =
+            recordNum(step, "monthOffset", "MonthOffset") ??
+            recordNum(step, "monthsBefore", "MonthsBefore");
           return {
             title: recordStr(step, "title", "Title"),
             description: recordStr(step, "description", "Description"),
             timing: recordStr(step, "timing", "Timing"),
+            monthOffset,
           };
         })
       : undefined,
+    aiTips: Array.isArray(tipsRaw)
+      ? tipsRaw.map(String)
+      : typeof tipsRaw === "string"
+        ? [tipsRaw]
+        : undefined,
     conceptIdeas: Array.isArray(concepts)
       ? concepts.map(String)
       : typeof concepts === "string"

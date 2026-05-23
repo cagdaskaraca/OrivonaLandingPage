@@ -1,5 +1,10 @@
 import type { AiBudgetLine } from "@/src/lib/api/types";
-import { budgetPercent, budgetTotal, resolveBudgetLineLabel } from "@/src/lib/aiPlanner";
+import {
+  budgetLineAmountTotal,
+  budgetPercent,
+  formatTry,
+  resolveBudgetLineLabel,
+} from "@/src/lib/aiPlanner";
 
 const BAR_COLORS = [
   "from-violet-400 to-violet-500",
@@ -12,29 +17,34 @@ const BAR_COLORS = [
 
 type AiBudgetBreakdownProps = {
   lines: AiBudgetLine[];
-  preferredCategories: string[];
 };
 
-export function AiBudgetBreakdown({
-  lines,
-  preferredCategories,
-}: AiBudgetBreakdownProps) {
-  const total = budgetTotal(lines) || 1;
+function formatLineBudget(line: AiBudgetLine): string {
+  if (line.estimatedMin != null && line.estimatedMax != null) {
+    return `${formatTry(line.estimatedMin)} – ${formatTry(line.estimatedMax)}`;
+  }
+  if (line.suggestedBudget != null) return formatTry(line.suggestedBudget);
+  if (line.amount != null) return formatTry(line.amount);
+  if (line.estimatedMin != null) return formatTry(line.estimatedMin);
+  if (line.estimatedMax != null) return formatTry(line.estimatedMax);
+  return "—";
+}
+
+export function AiBudgetBreakdown({ lines }: AiBudgetBreakdownProps) {
+  const total = budgetLineAmountTotal(lines) || 1;
 
   return (
     <div className="space-y-4">
       {lines.map((line, i) => {
         const pct = budgetPercent(line, total);
         const color = BAR_COLORS[i % BAR_COLORS.length];
-        const label = resolveBudgetLineLabel(line, i, preferredCategories);
+        const label = resolveBudgetLineLabel(line);
         return (
           <div key={`${label}-${i}`}>
             <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-2 text-sm">
               <span className="font-medium text-zinc-200">{label}</span>
               <span className="text-zinc-400">
-                {line.amount != null
-                  ? `${line.amount.toLocaleString("tr-TR")} ₺`
-                  : "—"}
+                {formatLineBudget(line)}
                 <span className="ml-2 text-violet-200/90">%{pct}</span>
               </span>
             </div>
@@ -44,17 +54,16 @@ export function AiBudgetBreakdown({
                 style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
               />
             </div>
+            {line.suggestedBudget != null &&
+            line.estimatedMin != null &&
+            line.estimatedMax != null ? (
+              <p className="mt-1 text-[11px] text-zinc-500">
+                Önerilen: {formatTry(line.suggestedBudget)}
+              </p>
+            ) : null}
           </div>
         );
       })}
-      {budgetTotal(lines) > 0 ? (
-        <p className="border-t border-white/10 pt-3 text-right text-sm text-zinc-400">
-          Toplam tahmini bütçe:{" "}
-          <span className="font-semibold text-white">
-            {budgetTotal(lines).toLocaleString("tr-TR")} ₺
-          </span>
-        </p>
-      ) : null}
     </div>
   );
 }

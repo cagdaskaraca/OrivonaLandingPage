@@ -193,35 +193,108 @@ export type ServiceImagePayload = {
   sortOrder?: number;
 };
 
-export type AiEventPlanRequest = {
-  eventType: string;
-  city: string;
-  district: string;
-  guestCount: number;
-  budgetMin: number;
-  budgetMax: number;
-  preferredCategories: string[];
+export type AiPromptRequest = {
+  prompt: string;
+};
+
+export type AiEventPlanRequest = AiPromptRequest;
+
+export type AiMoodboardResult = {
+  themeTitle?: string;
+  colorPalette?: string[];
+  decorationIdeas?: string[];
+  musicIdeas?: string[];
+  dressCodeIdeas?: string[];
+  foodIdeas?: string[];
+  photoStyleIdeas?: string[];
+};
+
+export type AiBudgetOptimizerResult = {
+  currentTotal?: number;
+  budget?: number;
+  overBudget?: boolean;
+  budgetWarning?: string;
+  savingSuggestions?: string[];
+  estimatedSavings?: number;
+};
+
+export type AiMissingServicesResult = {
+  selectedCategories?: string[];
+  missingCategories?: string[];
+  recommendedNextSteps?: string[];
+};
+
+export type AiStyleMatchResult = {
+  styleScore?: number;
+  explanation?: string;
+  matchedServices?: AiRecommendationItem[];
+};
+
+export type AiSimilarEventsResult = {
+  averageBudget?: number;
+  popularCategories?: string[];
+  commonChecklist?: string[];
+  insights?: string[];
+};
+
+export type AiDetectedEvent = {
+  eventType?: string;
+  city?: string;
+  district?: string;
+  guestCount?: number;
+  budgetMin?: number;
+  budgetMax?: number;
+  budget?: number;
+  style?: string;
+  theme?: string;
 };
 
 export type AiBudgetLine = {
   categoryName?: string;
   category?: string;
   amount?: number;
+  estimatedMin?: number;
+  estimatedMax?: number;
+  suggestedBudget?: number;
   percentage?: number;
+};
+
+export type AiChecklistItem = {
+  categoryName?: string;
+  title?: string;
+  description?: string;
+  priority?: string;
+  status?: string;
 };
 
 export type AiTimelineStep = {
   title?: string;
   description?: string;
   timing?: string;
+  monthOffset?: number;
 };
 
 export type AiEventPlanResult = {
-  recommendations?: AiRecommendationItem[];
-  budgetBreakdown?: AiBudgetLine[];
-  timeline?: AiTimelineStep[];
-  conceptIdeas?: string[];
   summary?: string;
+  detected?: AiDetectedEvent;
+  eventType?: string;
+  city?: string;
+  district?: string;
+  guestCount?: number;
+  budgetMin?: number;
+  budgetMax?: number;
+  style?: string;
+  theme?: string;
+  budgetBreakdown?: AiBudgetLine[];
+  totalEstimatedMin?: number;
+  totalEstimatedMax?: number;
+  budgetStatus?: string;
+  budgetWarning?: string;
+  checklist?: AiChecklistItem[];
+  timeline?: AiTimelineStep[];
+  recommendations?: AiRecommendationItem[];
+  aiTips?: string[];
+  conceptIdeas?: string[];
 };
 
 export type AdminVendor = {
@@ -284,16 +357,28 @@ export type AiRecommendationRequest = {
   preferredCategories: string[];
 };
 
-/** Single AI recommendation from POST /ai/recommendations */
+/** Single AI recommendation from event-plan or POST /ai/recommendations */
 export interface AiRecommendationItem {
   vendorName?: string;
   serviceTitle?: string;
+  title?: string;
+  categoryName?: string;
+  category?: string;
+  city?: string;
+  district?: string;
+  price?: number;
+  basePrice?: number;
+  rating?: number;
+  averageRating?: number;
+  reviewCount?: number;
   score?: number;
   estimatedPrice?: number;
   reasons?: string[] | string;
   vendorId?: string | number;
   serviceId?: string | number;
   vendorServiceId?: string | number;
+  coverImageUrl?: string;
+  imageUrl?: string;
 }
 
 /** @deprecated Use AiRecommendationItem */
@@ -596,4 +681,189 @@ export type ServiceReviewsData = {
 export type CreateServiceReviewPayload = {
   rating: number;
   comment: string;
+};
+
+/** Vendor CRM lead */
+export type VendorLeadStatus =
+  | "New"
+  | "Contacted"
+  | "OfferSent"
+  | "Won"
+  | "Lost"
+  | string;
+
+export type VendorLead = {
+  id?: string | number;
+  customerName?: string;
+  customerEmail?: string;
+  serviceTitle?: string;
+  serviceId?: string | number;
+  vendorServiceId?: string | number;
+  status?: VendorLeadStatus;
+  score?: number;
+  lastActivityAt?: string;
+  lastActivity?: string;
+  notes?: string;
+  note?: string;
+  createdAt?: string;
+};
+
+export type VendorAnalyticsSummary = {
+  totalViews?: number;
+  totalMessages?: number;
+  totalOffers?: number;
+  reservations?: number;
+  totalReservations?: number;
+  conversionRate?: number;
+  estimatedRevenue?: number;
+  averageResponseTime?: string;
+  averageResponseTimeMinutes?: number;
+};
+
+export type VendorServicePerformance = {
+  serviceId?: string | number;
+  vendorServiceId?: string | number;
+  serviceTitle?: string;
+  title?: string;
+  views?: number;
+  messages?: number;
+  offers?: number;
+  conversionRate?: number;
+};
+
+export type VendorLeadFunnelStage = {
+  status?: string;
+  count?: number;
+  label?: string;
+};
+
+export type VendorMonthlyAnalytics = {
+  month?: string;
+  year?: number;
+  views?: number;
+  messages?: number;
+  offers?: number;
+  reservations?: number;
+  revenue?: number;
+};
+
+export type ReviewIntelligenceSummary = {
+  aiSummary?: string;
+  summary?: string;
+  positives?: string[];
+  strengths?: string[];
+  improvements?: string[];
+  areasToImprove?: string[];
+};
+
+/** Smart Event OS — customer event plans */
+export type EventTaskStatus = "Todo" | "InProgress" | "Done" | "Skipped";
+
+export type EventPlan = {
+  id?: string | number;
+  title?: string;
+  eventType?: string;
+  eventDate?: string;
+  city?: string;
+  district?: string;
+  guestCount?: number;
+  budgetMin?: number;
+  budgetMax?: number;
+  notes?: string;
+  status?: string;
+  progressPercent?: number;
+  createdAt?: string;
+};
+
+export type EventPlanFormPayload = {
+  title: string;
+  eventType: string;
+  eventDate: string;
+  city: string;
+  district: string;
+  guestCount: number;
+  budgetMin: number;
+  budgetMax: number;
+  notes?: string;
+};
+
+export type EventTask = {
+  id?: string | number;
+  title?: string;
+  description?: string;
+  status?: string;
+  categoryName?: string;
+  priority?: string;
+  sortOrder?: number;
+};
+
+export type EventTaskFormPayload = {
+  title: string;
+  description?: string;
+  status?: EventTaskStatus;
+  categoryName?: string;
+  priority?: string;
+};
+
+export type EventGuest = {
+  id?: string | number;
+  name?: string;
+  email?: string;
+  phone?: string;
+  group?: string;
+  rsvpStatus?: string;
+  plusOneCount?: number;
+  tableId?: string | number;
+  tableName?: string;
+  notes?: string;
+};
+
+export type EventGuestFormPayload = {
+  name: string;
+  email?: string;
+  phone?: string;
+  group?: string;
+  rsvpStatus?: string;
+  plusOneCount?: number;
+  tableId?: string | number;
+  notes?: string;
+};
+
+export type RsvpSummary = {
+  total?: number;
+  attending?: number;
+  notAttending?: number;
+  maybe?: number;
+  pending?: number;
+};
+
+export type SeatingTable = {
+  id?: string | number;
+  name?: string;
+  capacity?: number;
+  assignedGuestIds?: (string | number)[];
+  guests?: EventGuest[];
+};
+
+export type SeatingTableFormPayload = {
+  name: string;
+  capacity: number;
+};
+
+export type EventReminder = {
+  id?: string | number;
+  title?: string;
+  message?: string;
+  description?: string;
+  dueDate?: string;
+  scheduledAt?: string;
+  type?: string;
+  channel?: string;
+};
+
+export type QrInvite = {
+  inviteUrl?: string;
+  qrCodeUrl?: string;
+  message?: string;
+  demoText?: string;
 };

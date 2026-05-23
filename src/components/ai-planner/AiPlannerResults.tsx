@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { AiBudgetBreakdown } from "@/src/components/ai-planner/AiBudgetBreakdown";
+import { AiBudgetTotal } from "@/src/components/ai-planner/AiBudgetTotal";
 import { AiConceptSuggestions } from "@/src/components/ai-planner/AiConceptSuggestions";
+import { AiDetectedSummary } from "@/src/components/ai-planner/AiDetectedSummary";
 import { AiPlannerSection } from "@/src/components/ai-planner/AiPlannerSection";
+import { AiPlanChecklist } from "@/src/components/ai-planner/AiPlanChecklist";
 import { AiPlanningTimeline } from "@/src/components/ai-planner/AiPlanningTimeline";
+import { AiPlanTips } from "@/src/components/ai-planner/AiPlanTips";
 import { AiRecommendedServices } from "@/src/components/ai-planner/AiRecommendedServices";
 import type {
   AiEventPlanResult,
@@ -14,37 +18,41 @@ import {
   buildPlanMarketplaceHref,
   planHasAnyContent,
   planHasBudget,
+  planHasChecklist,
   planHasConcepts,
+  planHasDetected,
+  planHasTips,
   planHasTimeline,
   recommendationServiceId,
-  type AiPlanFormSnapshot,
 } from "@/src/lib/aiPlanner";
 import { btnPrimary, btnSecondary, glassCard } from "@/src/lib/ui";
 
 type AiPlannerResultsProps = {
-  form: AiPlanFormSnapshot;
   plan: AiEventPlanResult | null;
   recommendations: AiRecommendationItem[];
   loading: boolean;
   hasSearched: boolean;
   error: string | null;
-  partialMode: boolean;
+  canOffer: boolean;
+  canMessage: boolean;
   onRetry: () => void;
   onRequestOffer: (rec: AiRecommendationItem) => void;
+  onMessageSend: (rec: AiRecommendationItem) => void;
 };
 
 export function AiPlannerResults({
-  form,
   plan,
   recommendations,
   loading,
   hasSearched,
   error,
-  partialMode,
+  canOffer,
+  canMessage,
   onRetry,
   onRequestOffer,
+  onMessageSend,
 }: AiPlannerResultsProps) {
-  const marketplaceHref = buildPlanMarketplaceHref(form);
+  const marketplaceHref = buildPlanMarketplaceHref(plan);
   const hasContent = planHasAnyContent(plan, recommendations);
 
   if (!hasSearched && !loading) {
@@ -54,8 +62,8 @@ export function AiPlannerResults({
       >
         <p className="text-base font-medium text-white">Planınız burada görünecek</p>
         <p className="mt-2 text-sm text-zinc-500">
-          Formu doldurup Plan Oluştur&apos;a basın; AI bütçe, zaman çizelgesi ve hizmet
-          önerileri üretir.
+          Etkinliğinizi doğal dille anlatın; AI bütçe, zaman çizelgesi, checklist ve
+          hizmet önerileri üretsin.
         </p>
       </div>
     );
@@ -65,14 +73,17 @@ export function AiPlannerResults({
     return (
       <div className="space-y-6" aria-busy="true" aria-label="Plan yükleniyor">
         <div className={`${glassCard} animate-pulse border-violet-400/20`}>
-          <p className="text-sm font-medium text-violet-200">AI planınız hazırlanıyor…</p>
+          <p className="text-sm font-medium text-violet-200">
+            ORIVONA Intelligence analiz ediyor...
+          </p>
           <p className="mt-1 text-xs text-zinc-500">
             Bütçe dağılımı, zaman çizelgesi ve hizmet önerileri oluşturuluyor.
           </p>
         </div>
-        <AiPlannerSection title="AI bütçe dağılımı" loading />
+        <AiPlannerSection title="Anlaşılan etkinlik" loading />
+        <AiPlannerSection title="Bütçe dağılımı" loading />
         <AiPlannerSection title="Planlama zaman çizelgesi" loading />
-        <AiPlannerSection title="Konsept önerileri" loading />
+        <AiPlannerSection title="Organizasyon checklist'i" loading />
         <AiPlannerSection title="Önerilen hizmetler" loading />
       </div>
     );
@@ -100,8 +111,8 @@ export function AiPlannerResults({
       <div className={`${glassCard} text-center`}>
         <p className="text-base font-medium text-white">Sonuç bulunamadı</p>
         <p className="mt-2 text-sm text-zinc-500">
-          Bu kriterlerle plan üretilemedi. Bütçe aralığını genişletmeyi veya farklı
-          kategoriler seçmeyi deneyin.
+          İsteğinizi biraz daha ayrıntılı yazmayı deneyin; şehir, kişi sayısı ve
+          bütçe eklemek sonuçları iyileştirir.
         </p>
         <button type="button" className={`${btnSecondary} mt-4`} onClick={onRetry}>
           Tekrar dene
@@ -112,12 +123,6 @@ export function AiPlannerResults({
 
   return (
     <div className="space-y-2">
-      {partialMode ? (
-        <div className="mb-6 rounded-xl border border-amber-400/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Tam etkinlik planı şu an alınamadı; yalnızca hizmet önerileri gösteriliyor.
-        </div>
-      ) : null}
-
       {plan?.summary?.trim() ? (
         <div className={`${glassCard} mb-6 border-violet-400/15`}>
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-300/90">
@@ -128,15 +133,28 @@ export function AiPlannerResults({
       ) : null}
 
       <AiPlannerSection
-        title="AI bütçe dağılımı"
-        subtitle="Kategorilere göre tahmini bütçe payları"
+        title="Anlaşılan etkinlik"
+        subtitle="İsteğinizden çıkarılan bilgiler"
+        empty={!planHasDetected(plan)}
+        emptyMessage="Etkinlik detayları bu planda yer almıyor."
+      >
+        {plan ? <AiDetectedSummary plan={plan} /> : null}
+      </AiPlannerSection>
+
+      <AiPlannerSection
+        title="Bütçe dağılımı"
+        subtitle="Kategorilere göre tahmini paylar"
         empty={!planHasBudget(plan)}
         emptyMessage="Bütçe dağılımı bu planda yer almıyor."
       >
-        <AiBudgetBreakdown
-          lines={plan!.budgetBreakdown!}
-          preferredCategories={form.preferredCategories}
-        />
+        {plan?.budgetBreakdown ? (
+          <>
+            <AiBudgetBreakdown lines={plan.budgetBreakdown} />
+            <AiBudgetTotal plan={plan} />
+          </>
+        ) : plan ? (
+          <AiBudgetTotal plan={plan} />
+        ) : null}
       </AiPlannerSection>
 
       <AiPlannerSection
@@ -145,16 +163,34 @@ export function AiPlannerResults({
         empty={!planHasTimeline(plan)}
         emptyMessage="Zaman çizelgesi bu planda yer almıyor."
       >
-        <AiPlanningTimeline steps={plan!.timeline!} />
+        {plan?.timeline ? <AiPlanningTimeline steps={plan.timeline} /> : null}
       </AiPlannerSection>
 
       <AiPlannerSection
-        title="Konsept önerileri"
-        subtitle="Tema ve atmosfer fikirleri"
-        empty={!planHasConcepts(plan)}
-        emptyMessage="Konsept önerisi bu planda yer almıyor."
+        title="Organizasyon checklist'i"
+        subtitle="Öncelikli yapılacaklar"
+        empty={!planHasChecklist(plan)}
+        emptyMessage="Checklist bu planda yer almıyor."
       >
-        <AiConceptSuggestions ideas={plan!.conceptIdeas!} />
+        {plan?.checklist ? <AiPlanChecklist items={plan.checklist} /> : null}
+      </AiPlannerSection>
+
+      {planHasConcepts(plan) ? (
+        <AiPlannerSection
+          title="Konsept önerileri"
+          subtitle="Tema ve atmosfer fikirleri"
+        >
+          <AiConceptSuggestions ideas={plan!.conceptIdeas!} />
+        </AiPlannerSection>
+      ) : null}
+
+      <AiPlannerSection
+        title="AI ipuçları"
+        subtitle="Tasarruf ve planlama önerileri"
+        empty={!planHasTips(plan)}
+        emptyMessage="Bu planda ek ipucu yok."
+      >
+        {plan?.aiTips ? <AiPlanTips tips={plan.aiTips} /> : null}
       </AiPlannerSection>
 
       <AiPlannerSection
@@ -166,7 +202,10 @@ export function AiPlannerResults({
       >
         <AiRecommendedServices
           recommendations={recommendations}
+          canOffer={canOffer}
+          canMessage={canMessage}
           onRequestOffer={onRequestOffer}
+          onMessageSend={onMessageSend}
         />
       </AiPlannerSection>
 
@@ -180,10 +219,11 @@ export function AiPlannerResults({
         </p>
         <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
           <Link href={marketplaceHref} className={btnPrimary}>
-            Bu plana göre teklif iste
+            Marketplace&apos;te ara
           </Link>
           {recommendations.length > 0 &&
-          recommendations.some((r) => recommendationServiceId(r) != null) ? (
+          recommendations.some((r) => recommendationServiceId(r) != null) &&
+          canOffer ? (
             <button
               type="button"
               className={btnSecondary}

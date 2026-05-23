@@ -1,12 +1,14 @@
 import type { MarketplaceItem } from "@/src/lib/api/types";
 
-/** Premium sort options for marketplace UI. */
+/** Premium sort options for marketplace UI (sent as API `sortBy`). */
 export const MARKETPLACE_SORT_OPTIONS = [
   { value: "", label: "Varsayılan" },
-  { value: "popular", label: "En popüler" },
+  { value: "aiScore", label: "AI skoru" },
+  { value: "popular", label: "Popüler" },
+  { value: "rating", label: "En yüksek puan" },
+  { value: "priceAsc", label: "En düşük fiyat" },
+  { value: "priceDesc", label: "En yüksek fiyat" },
   { value: "newest", label: "En yeni" },
-  { value: "rating_desc", label: "En yüksek puan" },
-  { value: "featured", label: "Öne çıkanlar" },
 ] as const;
 
 export function isPremiumVendor(item: MarketplaceItem): boolean {
@@ -53,13 +55,31 @@ function idNum(item: MarketplaceItem): number {
   return 0;
 }
 
-/** Client-side sort (API sortBy still sent when user searches). */
+function priceOf(item: MarketplaceItem): number {
+  return (
+    item.price ?? item.basePrice ?? item.minPrice ?? item.maxPrice ?? 0
+  );
+}
+
+function aiScoreOf(item: MarketplaceItem): number {
+  const raw = (item as MarketplaceItem & { aiScore?: number }).aiScore;
+  return typeof raw === "number" ? raw : 0;
+}
+
+/** Client-side sort fallback when API returns unsorted data. */
 export function sortMarketplaceItems(
   items: MarketplaceItem[],
   sortBy: string,
 ): MarketplaceItem[] {
   const list = [...items];
   switch (sortBy) {
+    case "aiScore":
+      return list.sort(
+        (a, b) =>
+          aiScoreOf(b) - aiScoreOf(a) ||
+          ratingOf(b) - ratingOf(a) ||
+          (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0),
+      );
     case "popular":
       return list.sort(
         (a, b) =>
@@ -71,8 +91,13 @@ export function sortMarketplaceItems(
       return list.sort(
         (a, b) => dateMs(b) - dateMs(a) || idNum(b) - idNum(a),
       );
+    case "rating":
     case "rating_desc":
       return list.sort((a, b) => ratingOf(b) - ratingOf(a));
+    case "priceAsc":
+      return list.sort((a, b) => priceOf(a) - priceOf(b));
+    case "priceDesc":
+      return list.sort((a, b) => priceOf(b) - priceOf(a));
     case "featured":
       return list.sort(
         (a, b) =>

@@ -11,6 +11,14 @@ import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOffe
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
 import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
+import { EventOsProvider } from "@/src/components/event-os/EventOsContext";
+import { EventOsChecklistSection } from "@/src/components/event-os/EventOsChecklistSection";
+import { EventOsGuestsSection } from "@/src/components/event-os/EventOsGuestsSection";
+import { EventOsQrSection } from "@/src/components/event-os/EventOsQrSection";
+import { EventOsRemindersSection } from "@/src/components/event-os/EventOsRemindersSection";
+import { EventOsRsvpSection } from "@/src/components/event-os/EventOsRsvpSection";
+import { EventOsSeatingSection } from "@/src/components/event-os/EventOsSeatingSection";
+import { EventPlansSection } from "@/src/components/event-os/EventPlansSection";
 import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -213,6 +221,13 @@ function DashboardContent() {
 
   const navItems: DashboardNavItem[] = [
     { id: "dashboard-account", label: "Hesabım" },
+    { id: "event-os-plans", label: "Etkinlik Planlarım" },
+    { id: "event-os-checklist", label: "Checklist" },
+    { id: "event-os-guests", label: "Davetliler" },
+    { id: "event-os-rsvp", label: "RSVP" },
+    { id: "event-os-seating", label: "Masa Planı" },
+    { id: "event-os-qr", label: "QR Davetiye" },
+    { id: "event-os-reminders", label: "Hatırlatmalar" },
     { id: "dashboard-events", label: "Etkinlik Talepleri" },
     { id: "dashboard-favorites", label: "Favoriler" },
     { id: "dashboard-offers", label: "Tekliflerim" },
@@ -243,9 +258,10 @@ function DashboardContent() {
   );
 
   return (
+    <EventOsProvider>
     <DashboardLayout
       title="Müşteri Paneli"
-      subtitle="Profiliniz ve etkinlik talepleriniz."
+      subtitle="Profiliniz, Smart Event OS ve etkinlik talepleriniz."
       navItems={navItems}
       toolbar={toolbar}
     >
@@ -280,6 +296,34 @@ function DashboardContent() {
           <h3 className="mb-3 text-sm font-semibold text-violet-200/90">Özet</h3>
           <CustomerSummarySection />
         </div>
+      </DashboardSection>
+
+      <DashboardSection id="event-os-plans" title="Etkinlik Planlarım">
+        <EventPlansSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-checklist" title="Checklist">
+        <EventOsChecklistSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-guests" title="Davetliler">
+        <EventOsGuestsSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-rsvp" title="RSVP">
+        <EventOsRsvpSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-seating" title="Masa Planı">
+        <EventOsSeatingSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-qr" title="QR Davetiye">
+        <EventOsQrSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-reminders" title="Hatırlatmalar">
+        <EventOsRemindersSection />
       </DashboardSection>
 
       <DashboardSection id="dashboard-events" title="Etkinlik talepleri">
@@ -502,6 +546,7 @@ function DashboardContent() {
         <NotificationsPanel />
       </DashboardSection>
     </DashboardLayout>
+    </EventOsProvider>
   );
 }
 

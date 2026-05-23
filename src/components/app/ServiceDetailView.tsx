@@ -19,6 +19,7 @@ import {
   fetchServiceById,
   removeFavorite,
 } from "@/src/lib/api";
+import { trackServiceView } from "@/src/lib/api/vendorIntelligence";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
 import { getServiceGalleryUrls } from "@/src/lib/serviceImage";
@@ -74,6 +75,9 @@ export function ServiceDetailView() {
       const gallery = getServiceGalleryUrls(detail);
       setActiveImage(gallery[0] ?? null);
       setIsFavorite(detail.isFavorite === true);
+      void trackServiceView(id).catch((e) => {
+        console.log("track-view failed", e);
+      });
     } catch (e) {
       if (e instanceof ApiError) console.log("Service detail failed", e.body);
       setService(null);
