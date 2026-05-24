@@ -5,8 +5,9 @@ import { useCallback } from "react";
 import { markNotificationRead } from "@/src/lib/api";
 import { logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
-import { resolveNotificationActionUrl } from "@/src/lib/notificationNavigation";
 import { isSyntheticNotification } from "@/src/lib/notificationMessages";
+import { resolveNotificationActionUrl } from "@/src/lib/notificationNavigation";
+import { navigateToResolvedLink } from "@/src/lib/scrollToDashboardSection";
 
 type UseNotificationActionOptions = {
   onAfterNavigate?: () => void;
@@ -45,7 +46,7 @@ export function useNotificationAction(options?: UseNotificationActionOptions) {
       if (!resolved) return;
 
       options?.onAfterNavigate?.();
-      router.push(resolved.href);
+      navigateToResolvedLink(router, resolved);
     },
     [router, options],
   );

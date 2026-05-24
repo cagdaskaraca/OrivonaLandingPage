@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchGlobalSearch, type GlobalSearchHit } from "@/src/lib/api/premiumSaas";
 import { logApiError } from "@/src/lib/api/client";
 import { searchGroupLabel } from "@/src/lib/premiumLabels";
-import { inputClass } from "@/src/lib/ui";
+import { inputClass, orivonaDropdownScroll } from "@/src/lib/ui";
 
 function groupHits(hits: GlobalSearchHit[]): Map<string, GlobalSearchHit[]> {
   const map = new Map<string, GlobalSearchHit[]>();
@@ -127,7 +127,7 @@ export function GlobalSearch() {
 
       {open && query.trim().length >= 2 ? (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[200] max-h-[min(24rem,70vh)] overflow-y-auto rounded-2xl border border-violet-200/15 bg-[#0c0814]/98 p-2 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] backdrop-blur-xl"
+          className={`${orivonaDropdownScroll} absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[200] max-h-[min(24rem,70vh)] overflow-y-auto overflow-x-hidden rounded-2xl border border-violet-200/15 bg-[#0c0814]/98 p-2 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)] backdrop-blur-xl`}
           role="listbox"
         >
           {hits.length === 0 && !loading ? (

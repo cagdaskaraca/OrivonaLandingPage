@@ -9,6 +9,9 @@ import {
   quickNavHref,
   type QuickNavItem,
 } from "@/src/lib/dashboardQuickNav";
+import { resolveNotificationActionUrl } from "@/src/lib/notificationNavigation";
+import { navigateToResolvedLink } from "@/src/lib/scrollToDashboardSection";
+import { orivonaDropdownScroll } from "@/src/lib/ui";
 
 type AccountQuickNavDropdownProps = {
   variant?: "landing" | "demo";
@@ -52,20 +55,16 @@ export function AccountQuickNavDropdown({
   function navigate(item: QuickNavItem) {
     setOpen(false);
     const href = quickNavHref(role, item);
-    if (item.external || !href.includes("#")) {
+    if (item.external || item.target.startsWith("/")) {
       router.push(href);
       return;
     }
-    const [path, hash] = href.split("#");
-    const sectionId = hash ?? "";
-    if (typeof window !== "undefined" && window.location.pathname === path) {
-      window.location.hash = sectionId;
-      window.setTimeout(() => {
-        document.getElementById(sectionId)?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 80);
+    const resolved = resolveNotificationActionUrl(
+      href,
+      typeof window !== "undefined" ? window.location.origin : undefined,
+    );
+    if (resolved) {
+      navigateToResolvedLink(router, resolved);
     } else {
       router.push(href);
     }
@@ -103,19 +102,28 @@ export function AccountQuickNavDropdown({
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-[70] mt-2 max-h-[min(24rem,70vh)] w-[min(16rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-violet-200/10 bg-[#0c0814]/98 py-2 shadow-[0_24px_64px_-16px_rgba(24,12,48,0.95)] backdrop-blur-xl"
+          className="absolute right-0 z-[70] mt-2 w-[min(16rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-violet-200/10 bg-[#0c0814]/98 shadow-[0_24px_64px_-16px_rgba(24,12,48,0.95)] backdrop-blur-xl"
         >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              role="menuitem"
-              className="block w-full px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-violet-500/10 hover:text-white"
-              onClick={() => navigate(item)}
-            >
-              {item.label}
-            </button>
-          ))}
+          <div className="sticky top-0 z-10 border-b border-white/10 bg-[#0c0814]/98 px-4 py-2.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Hızlı erişim
+            </p>
+          </div>
+          <div
+            className={`${orivonaDropdownScroll} max-h-[min(24rem,70vh)] overflow-y-auto overflow-x-hidden py-1`}
+          >
+            {items.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                className="block w-full px-4 py-2.5 text-left text-sm text-zinc-300 transition-colors hover:bg-violet-500/10 hover:text-white"
+                onClick={() => navigate(item)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>

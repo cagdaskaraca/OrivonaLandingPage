@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { scrollToDashboardSection } from "@/src/lib/scrollToDashboardSection";
 
 /** Scrolls to #section when landing on dashboard with hash. */
 export function useDashboardHashScroll() {
@@ -8,12 +9,10 @@ export function useDashboardHashScroll() {
     const scrollToHash = () => {
       const id = window.location.hash.replace(/^#/, "");
       if (!id) return;
-      window.setTimeout(() => {
-        document.getElementById(id)?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 350);
+      scrollToDashboardSection(id, {
+        highlight: false,
+        updateHash: false,
+      });
     };
     scrollToHash();
     window.addEventListener("hashchange", scrollToHash);

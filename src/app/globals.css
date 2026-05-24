@@ -162,40 +162,54 @@ html {
   );
 }
 
-.orivona-scroll-y {
+.orivona-scroll-y,
+.orivona-dropdown-scroll {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.5) rgba(10, 6, 18, 0.95);
+  scrollbar-color: rgba(139, 92, 246, 0.55) rgba(10, 6, 18, 0.98);
+  scrollbar-gutter: stable;
 }
 
-.orivona-scroll-y::-webkit-scrollbar {
+.orivona-scroll-y::-webkit-scrollbar,
+.orivona-dropdown-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
-.orivona-scroll-y::-webkit-scrollbar-track {
+.orivona-scroll-y::-webkit-scrollbar-track,
+.orivona-dropdown-scroll::-webkit-scrollbar-track {
   margin: 4px 2px;
-  background: rgba(10, 6, 18, 0.95);
+  background: rgba(10, 6, 18, 0.98);
   border-radius: 9999px;
 }
 
-.orivona-scroll-y::-webkit-scrollbar-thumb {
+.orivona-scroll-y::-webkit-scrollbar-thumb,
+.orivona-dropdown-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
-    rgba(109, 40, 217, 0.7),
-    rgba(167, 139, 250, 0.65)
+    rgba(109, 40, 217, 0.75),
+    rgba(168, 85, 247, 0.7)
   );
   border-radius: 9999px;
-  border: 1px solid rgba(167, 139, 250, 0.18);
+  border: 1px solid rgba(168, 85, 247, 0.22);
 }
 
-.orivona-scroll-y::-webkit-scrollbar-thumb:hover {
+.orivona-scroll-y::-webkit-scrollbar-thumb:hover,
+.orivona-dropdown-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(
     180deg,
-    rgba(139, 92, 246, 0.88),
-    rgba(192, 132, 252, 0.8)
+    rgba(139, 92, 246, 0.92),
+    rgba(192, 132, 252, 0.85)
   );
+}
+
+/* Brief highlight when navigating to a dashboard section via notification */
+.orivona-section-highlight {
+  outline: 2px solid rgba(168, 85, 247, 0.45);
+  outline-offset: 6px;
+  border-radius: 1rem;
+  transition: outline-color 0.35s ease;
 }
 
 /* Vendor CRM pipeline: 6 equal columns on desktop; themed scroll on smaller viewports */

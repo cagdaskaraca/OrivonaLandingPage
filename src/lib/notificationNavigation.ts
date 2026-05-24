@@ -19,6 +19,9 @@ const HASH_ALIASES: Record<string, string> = {
   notifications: "dashboard-notifications",
   services: "dashboard-services",
   hizmetler: "dashboard-services",
+  "event-plans": "event-os-plans",
+  eventplans: "event-os-plans",
+  etkinlikplanlari: "event-os-plans",
 };
 
 export type ResolvedNotificationLink = {

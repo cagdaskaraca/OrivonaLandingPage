@@ -34,5 +34,8 @@ export const orivonaScrollX = "orivona-scroll-x";
 /** Themed vertical scroll for sticky sidebar nav. */
 export const orivonaScrollY = "orivona-scroll-y";
 
+/** Themed vertical scroll for dropdowns / floating menus (see globals.css). */
+export const orivonaDropdownScroll = "orivona-dropdown-scroll";
+
 /** Wrapper for wide tables inside dashboard content. */
 export const dashboardTableWrap = `${orivonaScrollX} rounded-xl border border-white/[0.08] pb-0.5`;

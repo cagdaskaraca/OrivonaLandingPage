@@ -9,7 +9,7 @@ import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
 import { isSyntheticNotification } from "@/src/lib/notificationMessages";
 import { formatRelativeTime } from "@/src/lib/relativeTime";
-import { btnSecondary } from "@/src/lib/ui";
+import { btnSecondary, orivonaDropdownScroll } from "@/src/lib/ui";
 
 type NotificationBellProps = {
   variant?: "landing" | "demo";
@@ -154,7 +154,9 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
             </button>
           </div>
 
-          <div className="max-h-[min(24rem,60vh)] overflow-y-auto">
+          <div
+            className={`${orivonaDropdownScroll} max-h-[min(24rem,60vh)] overflow-y-auto overflow-x-hidden`}
+          >
             {loading && items.length === 0 ? (
               <div className="space-y-0 divide-y divide-white/[0.06]">
                 {[0, 1, 2].map((i) => (
