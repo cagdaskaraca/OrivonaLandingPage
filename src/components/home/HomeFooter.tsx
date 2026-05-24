@@ -43,6 +43,11 @@ export function HomeFooter() {
               </SmoothScrollToSection>
             </li>
             <li>
+              <SmoothScrollToSection sectionId="sss" className="hover:text-violet-200">
+                SSS
+              </SmoothScrollToSection>
+            </li>
+            <li>
               <SmoothScrollToSection sectionId="isletmeler" className="hover:text-violet-200">
                 İşletmeler
               </SmoothScrollToSection>

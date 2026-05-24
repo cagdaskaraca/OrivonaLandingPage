@@ -35,6 +35,7 @@ import type {
 } from "@/src/lib/api/types";
 import { formatCityForApi } from "@/src/lib/turkish";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { AvailabilityHeatmapPanel } from "@/src/components/premium/AvailabilityHeatmapPanel";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -225,6 +226,7 @@ function DashboardContent() {
   const isApproved = profile?.isApproved !== false;
 
   const navItems: DashboardNavItem[] = [
+    { id: "dashboard-help", label: "Başlarken" },
     { id: "dashboard-account", label: "Hesabım" },
     { id: "dashboard-activity", label: "Son Aktiviteler" },
     { id: "dashboard-pipeline", label: "CRM Pipeline" },
@@ -276,6 +278,8 @@ function DashboardContent() {
       toolbar={toolbar}
     >
       <MobileHomeSummary />
+
+      <DashboardHelpPanel role="vendor" />
 
       {!profileLoading && profile && profile.isApproved === false ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">

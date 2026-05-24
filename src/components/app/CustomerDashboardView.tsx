@@ -36,6 +36,7 @@ import {
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -224,6 +225,7 @@ function DashboardContent() {
   }
 
   const navItems: DashboardNavItem[] = [
+    { id: "dashboard-help", label: "Başlarken" },
     { id: "dashboard-account", label: "Hesabım" },
     { id: "dashboard-activity", label: "Son Aktiviteler" },
     { id: "event-os-plans", label: "Etkinlik Planlarım" },
@@ -276,6 +278,8 @@ function DashboardContent() {
       toolbar={toolbar}
     >
       <MobileHomeSummary />
+
+      <DashboardHelpPanel role="customer" />
 
       <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (

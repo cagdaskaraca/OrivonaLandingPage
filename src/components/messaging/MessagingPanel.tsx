@@ -17,6 +17,8 @@ import {
   resolveMessageFromMe,
 } from "@/src/lib/messaging";
 import { formatChatTimestamp, formatRelativeTime } from "@/src/lib/relativeTime";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
 const CONVERSATION_POLL_MS = 5000;
@@ -277,15 +279,30 @@ export function MessagingPanel({
               </button>
             </div>
           ) : conversations.length === 0 ? (
-            <div className="px-4 py-10 text-center">
-              <p className="text-sm font-medium text-zinc-200">
-                Henüz konuşma yok
-              </p>
-              <p className="mt-1.5 text-xs text-zinc-500">
-                {viewerRole === "Customer"
-                  ? "Marketplace'ten bir hizmete Mesaj Gönder ile başlayın."
-                  : "Müşteriler size yazdığında burada görünür."}
-              </p>
+            <div className="px-3 py-6">
+              <EmptyState
+                icon={EMPTY_STATE_PRESETS.messages.icon}
+                title={
+                  viewerRole === "Customer"
+                    ? EMPTY_STATE_PRESETS.messages.title
+                    : "Henüz konuşma yok"
+                }
+                description={
+                  viewerRole === "Customer"
+                    ? EMPTY_STATE_PRESETS.messages.description
+                    : "Müşteriler size yazdığında burada görünür."
+                }
+                actionLabel={
+                  viewerRole === "Customer"
+                    ? EMPTY_STATE_PRESETS.messages.actionLabel
+                    : undefined
+                }
+                href={
+                  viewerRole === "Customer"
+                    ? EMPTY_STATE_PRESETS.messages.href
+                    : undefined
+                }
+              />
             </div>
           ) : (
             <ul className="max-h-[min(420px,50vh)] divide-y divide-white/[0.06] overflow-y-auto lg:max-h-[480px]">

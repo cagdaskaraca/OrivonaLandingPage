@@ -5,7 +5,8 @@ import { cancelReservation, fetchMyReservations } from "@/src/lib/api";
 import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { Reservation } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
-import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnSecondary } from "@/src/lib/ui";
 
 export function CustomerReservationsSection() {
@@ -32,8 +33,19 @@ export function CustomerReservationsSection() {
 
   if (loading) return <p className="text-sm text-zinc-500">Yükleniyor…</p>;
   if (reservations.length === 0) {
+    const preset = EMPTY_STATE_PRESETS.reservationsCustomer;
     return (
-      <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
+      <EmptyState
+        icon={preset.icon}
+        title={preset.title}
+        description={preset.description}
+        actionLabel={preset.actionLabel}
+        onAction={() => {
+          document.getElementById(preset.sectionId ?? "")?.scrollIntoView({
+            behavior: "smooth",
+          });
+        }}
+      />
     );
   }
 

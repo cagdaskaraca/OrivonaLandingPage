@@ -15,6 +15,7 @@ import {
   canVendorActOnRequest,
   isPendingVendorResponse,
 } from "@/src/lib/offerRequest";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnPrimary, btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 const btnDanger =
@@ -107,8 +108,15 @@ export function VendorOfferRequestsPanel() {
 
       {!loading && !error && offers.length === 0 ? (
         <EmptyState
-          title="Gelen teklif talebi yok"
-          description="Müşteriler marketplace üzerinden teklif istediğinde burada görünür."
+          icon={EMPTY_STATE_PRESETS.offersVendor.icon}
+          title={EMPTY_STATE_PRESETS.offersVendor.title}
+          description={EMPTY_STATE_PRESETS.offersVendor.description}
+          actionLabel={EMPTY_STATE_PRESETS.offersVendor.actionLabel}
+          onAction={() => {
+            document
+              .getElementById(EMPTY_STATE_PRESETS.offersVendor.sectionId ?? "")
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
         />
       ) : null}
 

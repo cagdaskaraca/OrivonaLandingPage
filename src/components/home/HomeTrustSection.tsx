@@ -1,27 +1,6 @@
+import { HelpStepIcon } from "@/src/components/help/HelpStepIcon";
+import { TRUST_PILLARS } from "@/src/lib/helpContent";
 import { glassCard } from "@/src/lib/ui";
-
-const trustItems = [
-  {
-    title: "Doğrulanmış işletmeler",
-    body: "Profil ve belge kontrolleriyle güvenilir hizmet sağlayıcıları.",
-  },
-  {
-    title: "Teklif sistemi",
-    body: "Birden fazla teklifi karşılaştırın, en uygununu seçin.",
-  },
-  {
-    title: "QR davetiye sistemi",
-    body: "Misafirlerinize dijital davetiye ve QR bilet paylaşın.",
-  },
-  {
-    title: "Misafir yönetimi",
-    body: "RSVP, kontakt ve katılım durumunu tek panelden takip edin.",
-  },
-  {
-    title: "Organizasyon takvimi",
-    body: "Etkinlik tarihleri, görevler ve hizmetleri tek takvimde yönetin.",
-  },
-] as const;
 
 export function HomeTrustSection() {
   return (
@@ -32,23 +11,29 @@ export function HomeTrustSection() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
-            Güven ve kontrol
+            Güven ve profesyonellik
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Organizasyonunuz için eksiksiz araç seti
+            Neden ORIVONA?
           </h2>
           <p className="mt-4 text-sm text-zinc-400 sm:text-base">
-            Keşiften teklife, davetiyeden takvime — gerçek bir etkinlik platformu.
+            Doğrulanmış işletmeler, güvenli rezervasyon ve modern davetiye
+            deneyimi tek platformda.
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {trustItems.map((item) => (
+        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST_PILLARS.map((item) => (
             <div
               key={item.title}
-              className={`${glassCard} transition-[transform,border-color] hover:-translate-y-0.5 hover:border-violet-300/25`}
+              className={`${glassCard} flex flex-col transition-[transform,border-color] hover:-translate-y-0.5 hover:border-violet-300/25`}
             >
+              <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-violet-400/25 bg-violet-500/10">
+                <HelpStepIcon name={item.icon} className="h-5 w-5" />
+              </span>
               <h3 className="text-base font-semibold text-white">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{item.body}</p>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-400">
+                {item.body}
+              </p>
             </div>
           ))}
         </div>

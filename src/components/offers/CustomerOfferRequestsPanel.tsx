@@ -10,7 +10,7 @@ import {
   rejectCustomerOffer,
 } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage, logApiError } from "@/src/lib/api/client";
-import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
   canCustomerRespondToOffer,
@@ -138,12 +138,11 @@ export function CustomerOfferRequestsPanel({
 
       {!loading && !error && offers.length === 0 ? (
         <EmptyState
-          title={CUSTOMER_EMPTY_DATA_MESSAGE}
-          description="Marketplace veya hizmet detayından Teklif İste ile talep oluşturun."
-          actionLabel="Marketplace'e git"
-          onAction={() => {
-            window.location.href = "/marketplace";
-          }}
+          icon={EMPTY_STATE_PRESETS.offersCustomer.icon}
+          title={EMPTY_STATE_PRESETS.offersCustomer.title}
+          description={EMPTY_STATE_PRESETS.offersCustomer.description}
+          actionLabel={EMPTY_STATE_PRESETS.offersCustomer.actionLabel}
+          href={EMPTY_STATE_PRESETS.offersCustomer.href}
         />
       ) : null}
 

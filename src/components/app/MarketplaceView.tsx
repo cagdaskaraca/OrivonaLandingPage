@@ -7,7 +7,9 @@ import { DemoShell } from "@/src/components/app/DemoShell";
 import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
 import { StartConversationModal } from "@/src/components/messaging/StartConversationModal";
+import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { SkeletonGrid } from "@/src/components/ui/SkeletonGrid";
 import { useCustomerActionGuard } from "@/src/hooks/useCustomerActionGuard";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -214,6 +216,7 @@ export function MarketplaceView() {
       title="Marketplace"
       subtitle="Şehir, kategori ve bütçe filtreleriyle doğrulanmış hizmet sağlayıcılarını keşfedin."
     >
+      <MarketplaceEducationBanner />
       <form
         onSubmit={handleSubmit}
         className={`${glassCard} mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4`}
@@ -305,9 +308,10 @@ export function MarketplaceView() {
 
       {!loading && searched && mergedItems.length === 0 && !error ? (
         <EmptyState
+          icon={EMPTY_STATE_PRESETS.marketplaceSearch.icon}
           title="Filtrelere uygun hizmet bulunamadı"
           description="Farklı şehir veya kategori deneyin."
-          actionLabel="Filtreleri temizle"
+          actionLabel={EMPTY_STATE_PRESETS.marketplaceSearch.actionLabel}
           onAction={clearFilters}
         />
       ) : null}

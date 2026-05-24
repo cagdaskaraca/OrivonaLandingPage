@@ -31,6 +31,8 @@ import {
   resolvePublicInviteUrl,
   shareInviteViaWhatsApp,
 } from "@/src/lib/invites";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import {
   btnPrimary,
   btnSecondary,
@@ -208,9 +210,17 @@ function GuestsPanel({ planId }: { planId: string | number }) {
       {loading ? (
         <p className="text-sm text-zinc-500">Davetliler yükleniyor…</p>
       ) : guests.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-zinc-500">
-          Henüz davetli yok.
-        </p>
+        <EmptyState
+          icon={EMPTY_STATE_PRESETS.guests.icon}
+          title={EMPTY_STATE_PRESETS.guests.title}
+          description={EMPTY_STATE_PRESETS.guests.description}
+          actionLabel={EMPTY_STATE_PRESETS.guests.actionLabel}
+          onAction={() => {
+            document
+              .getElementById(EMPTY_STATE_PRESETS.guests.sectionId ?? "")
+              ?.scrollIntoView({ behavior: "smooth" });
+          }}
+        />
       ) : (
         <div className={dashboardTableWrap}>
           <table className="w-full min-w-[34rem] text-left text-sm xl:min-w-full">

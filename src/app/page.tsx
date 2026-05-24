@@ -3,6 +3,7 @@ import { HomeAiPlannerShowcase } from "@/src/components/home/HomeAiPlannerShowca
 import { HomeContactSection } from "@/src/components/home/HomeContactSection";
 import { HomeFooter } from "@/src/components/home/HomeFooter";
 import { HomeHero } from "@/src/components/home/HomeHero";
+import { HomeFaqSection } from "@/src/components/home/HomeFaqSection";
 import { HomeHowItWorks } from "@/src/components/home/HomeHowItWorks";
 import { HomeMarketplacePreview } from "@/src/components/home/HomeMarketplacePreview";
 import { HomeNavbar } from "@/src/components/home/HomeNavbar";
@@ -52,9 +53,10 @@ export default function Home() {
         >
           <HomeMarketplacePreview />
         </Suspense>
-        <HomeAiPlannerShowcase />
-        <HomeTrustSection />
         <HomeHowItWorks />
+        <HomeTrustSection />
+        <HomeAiPlannerShowcase />
+        <HomeFaqSection />
         <HomeVendorSection />
         <HomeContactSection />
       </main>

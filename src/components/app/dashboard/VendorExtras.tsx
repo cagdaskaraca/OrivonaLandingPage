@@ -20,6 +20,8 @@ import type {
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
+import { EmptyState } from "@/src/components/ui/EmptyState";
+import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnPrimary, btnSecondary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
 
 export function VendorSummaryCards() {
@@ -72,7 +74,21 @@ export function VendorReservationsPanel() {
       {loading ? (
         <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
       ) : list.length === 0 ? (
-        <p className="mt-2 text-sm text-zinc-500">Rezervasyon yok.</p>
+        <div className="mt-4">
+          <EmptyState
+            icon={EMPTY_STATE_PRESETS.reservationsVendor.icon}
+            title={EMPTY_STATE_PRESETS.reservationsVendor.title}
+            description={EMPTY_STATE_PRESETS.reservationsVendor.description}
+            actionLabel={EMPTY_STATE_PRESETS.reservationsVendor.actionLabel}
+            onAction={() => {
+              document
+                .getElementById(
+                  EMPTY_STATE_PRESETS.reservationsVendor.sectionId ?? "",
+                )
+                ?.scrollIntoView({ behavior: "smooth" });
+            }}
+          />
+        </div>
       ) : (
         <ul className="mt-4 space-y-2 text-sm">
           {list.map((r) => (

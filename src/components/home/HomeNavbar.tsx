@@ -38,6 +38,9 @@ export function HomeNavbar() {
           <SmoothScrollToSection sectionId="nasil-calisir" className={navLink}>
             Nasıl Çalışır
           </SmoothScrollToSection>
+          <SmoothScrollToSection sectionId="sss" className={navLink}>
+            SSS
+          </SmoothScrollToSection>
           <SmoothScrollToSection sectionId="iletisim" className={navLink}>
             İletişim
           </SmoothScrollToSection>
@@ -58,6 +61,9 @@ export function HomeNavbar() {
         </SmoothScrollToSection>
         <SmoothScrollToSection sectionId="nasil-calisir" className="hover:text-violet-200">
           Nasıl Çalışır
+        </SmoothScrollToSection>
+        <SmoothScrollToSection sectionId="sss" className="hover:text-violet-200">
+          SSS
         </SmoothScrollToSection>
         <SmoothScrollToSection sectionId="iletisim" className="hover:text-violet-200">
           İletişim

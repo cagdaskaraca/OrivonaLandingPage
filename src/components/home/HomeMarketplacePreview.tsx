@@ -13,6 +13,7 @@ import {
 } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { Category, MarketplaceItem } from "@/src/lib/api/types";
+import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
 import { buildMarketplaceHref } from "@/src/lib/marketplaceUrl";
 import { sortMarketplaceItems } from "@/src/lib/marketplacePremium";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
@@ -91,9 +92,13 @@ export function HomeMarketplacePreview() {
           </Link>
         </div>
 
+        <div className="mt-8">
+          <MarketplaceEducationBanner />
+        </div>
+
         <form
           onSubmit={handleSearch}
-          className={`${glassCard} mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_auto]`}
+          className={`${glassCard} mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_auto]`}
         >
           <label className="block text-sm">
             <span className="mb-1 block text-xs text-zinc-500">Şehir</span>
