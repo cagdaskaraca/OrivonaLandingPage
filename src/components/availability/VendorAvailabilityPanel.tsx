@@ -7,6 +7,8 @@ import {
   fetchVendorAvailability,
 } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import type { VendorAvailability } from "@/src/lib/api/types";
 import { AvailabilityTimeSlotsEditor } from "@/src/components/availability/AvailabilityTimeSlotsEditor";
 import { OrivonaAvailabilityCalendar } from "@/src/components/availability/OrivonaAvailabilityCalendar";
@@ -57,11 +59,17 @@ function applyFormFromSaved(
 }
 
 export function VendorAvailabilityPanel() {
-  const [items, setItems] = useState<VendorAvailability[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data,
+    loading,
+    error: loadError,
+    reload: load,
+    setData,
+  } = useVendorSectionLoad(fetchVendorAvailability);
+  const items = data ?? [];
   const [saving, setSaving] = useState(false);
   const [resettingId, setResettingId] = useState<string | number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [isAvailable, setIsAvailable] = useState(true);
@@ -71,25 +79,6 @@ export function VendorAvailabilityPanel() {
   const [localSlotsByDate, setLocalSlotsByDate] = useState<
     Record<string, AvailabilityTimeSlot[]>
   >({});
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await fetchVendorAvailability();
-      setItems(list);
-    } catch (err) {
-      logApiError("Vendor availability fetch failed", err);
-      setError(formatUiErrorMessage(err, "Müsaitlik yüklenemedi."));
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const datesWithStatus = useMemo(() => availabilityStatusMap(items), [items]);
 
@@ -127,7 +116,7 @@ export function VendorAvailabilityPanel() {
     const key = toDateKey(selectedDate) ?? selectedDate;
     if (!key) return;
     setSaving(true);
-    setError(null);
+    setActionError(null);
     setSuccess(null);
     try {
       const hasBackendSlots = false;
@@ -147,7 +136,7 @@ export function VendorAvailabilityPanel() {
             }
           : {}),
       });
-      setItems((prev) => mergeAvailabilityItem(prev, saved));
+      setData((prev) => mergeAvailabilityItem(prev ?? [], saved));
       if (timeSlots.length > 0) {
         setLocalSlotsByDate((prev) => ({ ...prev, [key]: timeSlots }));
       }
@@ -159,7 +148,7 @@ export function VendorAvailabilityPanel() {
       await load();
     } catch (err) {
       logApiError("Vendor availability create failed", err);
-      setError(formatUiErrorMessage(err, "Kaydedilemedi."));
+      setActionError(formatUiErrorMessage(err, "Kaydedilemedi."));
     } finally {
       setSaving(false);
     }
@@ -167,7 +156,7 @@ export function VendorAvailabilityPanel() {
 
   async function handleReset(id: string | number, date?: string) {
     setResettingId(id);
-    setError(null);
+    setActionError(null);
     setSuccess(null);
     try {
       await deleteVendorAvailability(id);
@@ -188,7 +177,7 @@ export function VendorAvailabilityPanel() {
       }
     } catch (err) {
       logApiError("Vendor availability reset failed", err);
-      setError(formatUiErrorMessage(err, "Sıfırlanamadı."));
+      setActionError(formatUiErrorMessage(err, "Sıfırlanamadı."));
     } finally {
       setResettingId(null);
     }
@@ -211,9 +200,7 @@ export function VendorAvailabilityPanel() {
         güncel durumu görür.
       </p>
 
-      {loading ? (
-        <p className="mt-6 text-sm text-zinc-500">Yükleniyor…</p>
-      ) : (
+      <VendorSectionState loading={loading} error={loadError} onRetry={load}>
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,320px)_1fr]">
           <OrivonaAvailabilityCalendar
             selectedDate={selectedDate}
@@ -282,12 +269,14 @@ export function VendorAvailabilityPanel() {
             </button>
           </form>
         </div>
-      )}
+      </VendorSectionState>
 
       {success ? (
         <p className="mt-4 text-sm text-emerald-300/90">{success}</p>
       ) : null}
-      {error ? <p className="mt-4 text-sm text-red-300/90">{error}</p> : null}
+      {actionError ? (
+        <p className="mt-4 text-sm text-red-300/90">{actionError}</p>
+      ) : null}
 
       <div className="mt-8 border-t border-violet-500/15 pt-6">
         <h3 className="text-sm font-semibold text-white">Kayıtlı tarihler</h3>
@@ -295,7 +284,7 @@ export function VendorAvailabilityPanel() {
           Durumu değiştirmek için tarihe tıklayın ve Müsait veya Dolu olarak
           kaydedin.
         </p>
-        {loading ? null : sortedItems.length === 0 ? (
+        {!loading && !loadError && sortedItems.length === 0 ? (
           <p className="mt-3 text-sm text-zinc-500">Henüz müsaitlik kaydı yok.</p>
         ) : (
           <ul className="mt-3 divide-y divide-white/[0.06] rounded-xl border border-white/[0.08] bg-white/[0.02]">

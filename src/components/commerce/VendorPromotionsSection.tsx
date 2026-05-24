@@ -1,31 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import { fetchVendorPromotions, type Promotion } from "@/src/lib/api/commerce";
 import { promotionTypeLabel } from "@/src/lib/commerceUi";
-import { logApiError } from "@/src/lib/api/client";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { glassCard } from "@/src/lib/ui";
 
 export function VendorPromotionsSection() {
-  const [items, setItems] = useState<Promotion[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      setItems(await fetchVendorPromotions());
-    } catch (err) {
-      logApiError("Vendor promotions", err);
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { data, loading, error, reload } = useVendorSectionLoad(
+    fetchVendorPromotions,
+  );
+  const items = data ?? [];
 
   return (
     <div className={`${glassCard} space-y-4`}>
@@ -37,15 +23,19 @@ export function VendorPromotionsSection() {
         </p>
       </div>
 
-      {loading ? (
-        <p className="text-sm text-zinc-500">Yükleniyor…</p>
-      ) : items.length === 0 ? (
-        <EmptyState
-          icon="✨"
-          title="Aktif tanıtım yok"
-          description="Öne çıkan veya sponsorlu görünürlük tanımlandığında burada listelenir."
-        />
-      ) : (
+      <VendorSectionState
+        loading={loading}
+        error={error}
+        onRetry={reload}
+        isEmpty={!loading && !error && items.length === 0}
+        empty={
+          <EmptyState
+            icon="✨"
+            title="Aktif tanıtım yok"
+            description="Öne çıkan veya sponsorlu görünürlük tanımlandığında burada listelenir."
+          />
+        }
+      >
         <ul className="space-y-2">
           {items.map((p) => (
             <li
@@ -63,7 +53,7 @@ export function VendorPromotionsSection() {
             </li>
           ))}
         </ul>
-      )}
+      </VendorSectionState>
     </div>
   );
 }

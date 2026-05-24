@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ServiceImageManager,
   VendorReservationsPanel,
@@ -27,6 +27,9 @@ import {
   updateVendorService,
 } from "@/src/lib/api";
 import { ApiError, formatUiErrorMessage } from "@/src/lib/api/client";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
+import { VENDOR_LOADING_MESSAGE } from "@/src/lib/api/vendorDashboardFetch";
 import type {
   Category,
   VendorProfile,
@@ -86,12 +89,20 @@ function serviceToForm(service: VendorService): VendorServicePayload {
 }
 
 function DashboardContent() {
-  const { user, logout } = useAuth();
-  const [profile, setProfile] = useState<VendorProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const { user, logout, loading: authLoading } = useAuth();
+  const {
+    data: profile,
+    loading: profileLoading,
+    reload: loadProfile,
+  } = useVendorSectionLoad(fetchVendorProfile);
+  const {
+    data: servicesData,
+    loading: servicesLoading,
+    error: servicesLoadError,
+    reload: loadServices,
+  } = useVendorSectionLoad(fetchVendorServices);
+  const services = servicesData ?? [];
   const [categories, setCategories] = useState<Category[]>([]);
-  const [services, setServices] = useState<VendorService[]>([]);
-  const [servicesLoading, setServicesLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<VendorServicePayload>(defaultForm);
@@ -101,53 +112,23 @@ function DashboardContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const serviceFormRef = useRef<HTMLFormElement>(null);
 
+  const dashboardBootLoading =
+    authLoading || profileLoading || servicesLoading;
+
   useDashboardHashScroll({
-    isLoading: profileLoading || servicesLoading,
+    isLoading: dashboardBootLoading,
   });
 
   useEffect(() => {
-    if (!profileLoading && !servicesLoading) {
+    if (!dashboardBootLoading) {
       notifyDashboardLayoutReady();
     }
-  }, [profileLoading, servicesLoading]);
-
-  const loadServices = useCallback(async () => {
-    setServicesLoading(true);
-    try {
-      const list = await fetchVendorServices();
-      setServices(list);
-    } catch (err) {
-      console.error("Vendor services fetch failed", err);
-      setErrorMessage(
-        formatUiErrorMessage(err, "Hizmetler yüklenemedi."),
-      );
-      setServices([]);
-    } finally {
-      setServicesLoading(false);
-    }
-  }, []);
-
-  const loadProfile = useCallback(async () => {
-    setProfileLoading(true);
-    try {
-      const p = await fetchVendorProfile();
-      setProfile(p);
-    } catch (err) {
-      console.error("Vendor profile fetch failed", err);
-      if (err instanceof ApiError) {
-        console.error("Backend error response", err.body);
-      }
-      setProfile(null);
-    } finally {
-      setProfileLoading(false);
-    }
-  }, []);
+  }, [dashboardBootLoading]);
 
   useEffect(() => {
-    loadProfile();
-    loadServices();
-    fetchCategories().then(setCategories);
-  }, [loadProfile, loadServices]);
+    if (authLoading) return;
+    void fetchCategories().then(setCategories);
+  }, [authLoading]);
 
   function cancelForm() {
     setEditingId(null);
@@ -302,6 +283,14 @@ function DashboardContent() {
       ) : null}
     </>
   );
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <p className="animate-pulse text-sm text-zinc-500">{VENDOR_LOADING_MESSAGE}</p>
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -604,13 +593,17 @@ function DashboardContent() {
           </form>
         ) : null}
 
-        {servicesLoading ? (
-          <p className="mt-3 text-sm text-zinc-500">Hizmetler yükleniyor…</p>
-        ) : services.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">
-            Henüz hizmet yok. &quot;Yeni Hizmet Ekle&quot; ile ilk hizmetinizi oluşturun.
-          </p>
-        ) : (
+        <VendorSectionState
+          loading={servicesLoading}
+          error={servicesLoadError}
+          onRetry={loadServices}
+          isEmpty={!servicesLoading && !servicesLoadError && services.length === 0}
+          empty={
+            <p className="mt-3 text-sm text-zinc-500">
+              Henüz hizmet yok. &quot;Yeni Hizmet Ekle&quot; ile ilk hizmetinizi oluşturun.
+            </p>
+          }
+        >
           <ul className="mt-4 space-y-3">
             {services.map((s) => (
               <li
@@ -660,7 +653,7 @@ function DashboardContent() {
               </li>
             ))}
           </ul>
-        )}
+        </VendorSectionState>
       </DashboardSection>
 
       <section id="dashboard-coupons" className="scroll-mt-24 mb-8">

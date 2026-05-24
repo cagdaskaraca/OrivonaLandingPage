@@ -3,9 +3,11 @@ import {
   apiGetRaw,
   apiPostPublicRaw,
   apiPostRaw,
-  isApiNotFound,
-  withOptionalNotFound,
 } from "@/src/lib/api/client";
+import {
+  envelopeToList,
+  vendorGetWithRetry,
+} from "@/src/lib/api/vendorDashboardFetch";
 import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
@@ -192,16 +194,12 @@ export function normalizeReviewSummary(raw: unknown): ReviewIntelligenceSummary 
 // ——— Leads ———
 
 export async function fetchVendorLeads(): Promise<VendorLead[]> {
-  return withOptionalNotFound(
-    async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/vendor/leads");
-      assertSuccess(body);
-      const data = toList(extractPayload(body.data)).map(normalizeVendorLead);
-      console.log("Vendor CRM response", data);
-      return data;
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/leads", {
+    sectionKey: "crm",
+    devLogLabel: "Vendor CRM response",
+    allowNotFound: true,
+  });
+  return envelopeToList(extractPayload(body.data)).map(normalizeVendorLead);
 }
 
 export async function fetchVendorLeadById(
@@ -241,77 +239,54 @@ export async function addVendorLeadNote(
 // ——— Analytics ———
 
 export async function fetchVendorAnalyticsSummary(): Promise<VendorAnalyticsSummary> {
-  return withOptionalNotFound(
-    async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/vendor/analytics/summary");
-      assertSuccess(body);
-      const data = normalizeAnalyticsSummary(
-        extractPayload(body.data) ?? body.data,
-      );
-      console.log("Vendor analytics response", data);
-      return data;
-    },
-    {},
-  );
+  const body = await vendorGetWithRetry("/vendor/analytics/summary", {
+    sectionKey: "analytics",
+    devLogLabel: "Vendor analytics summary response",
+    allowNotFound: true,
+  });
+  return normalizeAnalyticsSummary(extractPayload(body.data) ?? body.data);
 }
 
 export async function fetchVendorAnalyticsServices(): Promise<
   VendorServicePerformance[]
 > {
-  return withOptionalNotFound(
-    async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/vendor/analytics/services");
-      assertSuccess(body);
-      const data = toList(extractPayload(body.data)).map(
-        normalizeServicePerformance,
-      );
-      console.log("Vendor analytics response", data);
-      return data;
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/analytics/services", {
+    sectionKey: "analytics",
+    devLogLabel: "Vendor analytics services response",
+    allowNotFound: true,
+  });
+  return envelopeToList(extractPayload(body.data)).map(normalizeServicePerformance);
 }
 
 export async function fetchVendorAnalyticsLeads(): Promise<VendorLeadFunnelStage[]> {
-  return withOptionalNotFound(
-    async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/vendor/analytics/leads");
-      assertSuccess(body);
-      const payload = extractPayload(body.data);
-      let data: VendorLeadFunnelStage[];
-      if (Array.isArray(payload)) {
-        data = payload.map(normalizeFunnelStage);
-      } else if (payload && typeof payload === "object") {
-        const o = payload as Record<string, unknown>;
-        const stages = o.stages ?? o.Stages ?? o.funnel;
-        data = Array.isArray(stages)
-          ? stages.map(normalizeFunnelStage)
-          : toList(body.data).map(normalizeFunnelStage);
-      } else {
-        data = toList(body.data).map(normalizeFunnelStage);
-      }
-      console.log("Vendor analytics response", data);
-      return data;
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/analytics/leads", {
+    sectionKey: "analytics",
+    devLogLabel: "Vendor analytics leads response",
+    allowNotFound: true,
+  });
+  const payload = extractPayload(body.data);
+  if (Array.isArray(payload)) {
+    return payload.map(normalizeFunnelStage);
+  }
+  if (payload && typeof payload === "object") {
+    const o = payload as Record<string, unknown>;
+    const stages = o.stages ?? o.Stages ?? o.funnel;
+    if (Array.isArray(stages)) {
+      return stages.map(normalizeFunnelStage);
+    }
+  }
+  return envelopeToList(body.data).map(normalizeFunnelStage);
 }
 
 export async function fetchVendorAnalyticsMonthly(): Promise<
   VendorMonthlyAnalytics[]
 > {
-  return withOptionalNotFound(
-    async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/vendor/analytics/monthly");
-      assertSuccess(body);
-      const data = toList(extractPayload(body.data)).map(
-        normalizeMonthlyAnalytics,
-      );
-      console.log("Vendor analytics response", data);
-      return data;
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/analytics/monthly", {
+    sectionKey: "analytics",
+    devLogLabel: "Vendor analytics monthly response",
+    allowNotFound: true,
+  });
+  return envelopeToList(extractPayload(body.data)).map(normalizeMonthlyAnalytics);
 }
 
 // ——— Track view ———
@@ -337,7 +312,10 @@ export async function fetchServiceReviewSummary(
 }
 
 export async function fetchVendorReviewSummary(): Promise<ReviewIntelligenceSummary> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/review-summary");
-  assertSuccess(body);
+  const body = await vendorGetWithRetry("/vendor/review-summary", {
+    sectionKey: "reviews",
+    devLogLabel: "Vendor review summary response",
+    allowNotFound: true,
+  });
   return normalizeReviewSummary(extractPayload(body.data) ?? body.data);
 }

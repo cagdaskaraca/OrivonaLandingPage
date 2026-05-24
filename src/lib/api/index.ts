@@ -15,6 +15,10 @@ import {
   withOptionalNotFound,
 } from "@/src/lib/api/client";
 import {
+  VendorSectionLoadError,
+  vendorGetWithRetry,
+} from "@/src/lib/api/vendorDashboardFetch";
+import {
   normalizeEventRequest,
   type AdminSummary,
   type AiRecommendationItem,
@@ -523,11 +527,18 @@ export function normalizeCategory(raw: unknown): Category {
 }
 
 export function extractVendorServices(envelope: ApiEnvelope): VendorService[] {
-  return extractEnvelopeList(envelope).map(normalizeVendorService);
+  if (envelope.success === false) return [];
+  return toList(envelope.data).map(normalizeVendorService);
 }
 
 export function extractVendorService(envelope: ApiEnvelope): VendorService {
-  assertApiEnvelopeSuccess(envelope);
+  if (envelope.success === false) {
+    throw new Error(
+      typeof envelope.message === "string"
+        ? envelope.message
+        : "Geçersiz hizmet yanıtı.",
+    );
+  }
   const payload = envelope.data;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     return normalizeVendorService(payload);
@@ -537,11 +548,15 @@ export function extractVendorService(envelope: ApiEnvelope): VendorService {
 
 export async function fetchVendorProfile(): Promise<VendorProfile | null> {
   try {
-    const body = await apiGetRaw<ApiEnvelope>("/vendor/profile");
-    assertApiEnvelopeSuccess(body);
+    const body = await vendorGetWithRetry("/vendor/profile", {
+      sectionKey: "profile",
+      devLogLabel: "Vendor profile response",
+      allowNotFound: true,
+    });
     if (!body.data) return {};
     return normalizeVendorProfile(body.data);
   } catch (e) {
+    if (e instanceof VendorSectionLoadError) throw e;
     if (e instanceof ApiError && (e.status === 404 || e.status === 405)) {
       return null;
     }
@@ -550,7 +565,11 @@ export async function fetchVendorProfile(): Promise<VendorProfile | null> {
 }
 
 export async function fetchVendorServices(): Promise<VendorService[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/services");
+  const body = await vendorGetWithRetry("/vendor/services", {
+    sectionKey: "services",
+    devLogLabel: "Vendor services response",
+    allowNotFound: true,
+  });
   return extractVendorServices(body);
 }
 

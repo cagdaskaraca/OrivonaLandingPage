@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import {
   createVendorCoupon,
   deleteVendorCoupon,
@@ -9,8 +9,10 @@ import {
   updateVendorCoupon,
   type Coupon,
 } from "@/src/lib/api/commerce";
-import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { formatUiErrorMessage } from "@/src/lib/api/client";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { PaymentComingSoonNotice } from "@/src/components/commerce/PaymentComingSoonNotice";
 import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
@@ -40,36 +42,23 @@ function couponToForm(c: Coupon): Omit<Coupon, "id"> {
 }
 
 export function VendorCouponsSection() {
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data,
+    loading,
+    error: loadError,
+    reload: load,
+  } = useVendorSectionLoad(fetchVendorCoupons);
+  const coupons = data ?? [];
+  const [formError, setFormError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | number | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setCoupons(await fetchVendorCoupons());
-    } catch (err) {
-      logApiError("Vendor coupons", err);
-      setError(formatUiErrorMessage(err, "Kuponlar yüklenemedi."));
-      setCoupons([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    setError(null);
+    setFormError(null);
     try {
       if (editingId != null) {
         await updateVendorCoupon(editingId, form);
@@ -81,7 +70,7 @@ export function VendorCouponsSection() {
       setForm(emptyForm());
       await load();
     } catch (err) {
-      setError(formatUiErrorMessage(err, "Kupon kaydedilemedi."));
+      setFormError(formatUiErrorMessage(err, "Kupon kaydedilemedi."));
     } finally {
       setSaving(false);
     }
@@ -93,7 +82,7 @@ export function VendorCouponsSection() {
       await deleteVendorCoupon(id);
       await load();
     } catch (err) {
-      setError(formatUiErrorMessage(err, "Kupon silinemedi."));
+      setFormError(formatUiErrorMessage(err, "Kupon silinemedi."));
     }
   }
 
@@ -121,7 +110,7 @@ export function VendorCouponsSection() {
 
       <PaymentComingSoonNotice compact />
 
-      {error ? <p className="text-sm text-red-300/90">{error}</p> : null}
+      {formError ? <p className="text-sm text-red-300/90">{formError}</p> : null}
 
       {showForm ? (
         <form
@@ -204,17 +193,21 @@ export function VendorCouponsSection() {
         </form>
       ) : null}
 
-      {loading ? (
-        <p className="text-sm text-zinc-500">Yükleniyor…</p>
-      ) : coupons.length === 0 ? (
-        <EmptyState
-          icon="🏷️"
-          title="Kupon yok"
-          description="İlk indirim kuponunuzu oluşturun."
-          actionLabel="Yeni kupon"
-          onAction={() => setShowForm(true)}
-        />
-      ) : (
+      <VendorSectionState
+        loading={loading}
+        error={loadError}
+        onRetry={load}
+        isEmpty={!loading && !loadError && coupons.length === 0}
+        empty={
+          <EmptyState
+            icon="🏷️"
+            title="Kupon yok"
+            description="İlk indirim kuponunuzu oluşturun."
+            actionLabel="Yeni kupon"
+            onAction={() => setShowForm(true)}
+          />
+        }
+      >
         <ul className="divide-y divide-white/[0.06] rounded-xl border border-white/10">
           {coupons.map((c) => (
             <li
@@ -252,7 +245,7 @@ export function VendorCouponsSection() {
             </li>
           ))}
         </ul>
-      )}
+      </VendorSectionState>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
   apiPutRaw,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import { vendorGetWithRetry } from "@/src/lib/api/vendorDashboardFetch";
 import { flattenAvailabilityPayload } from "@/src/lib/availability";
 import { CUSTOMER_DEFAULT_ZERO_SUMMARY } from "@/src/lib/customerDashboard";
 import {
@@ -98,8 +99,10 @@ function normalizeSummary(raw: unknown): DashboardSummary {
 }
 
 export async function fetchVendorDashboardSummary(): Promise<DashboardSummary> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/dashboard/summary");
-  assertSuccess(body);
+  const body = await vendorGetWithRetry("/vendor/dashboard/summary", {
+    sectionKey: "summary",
+    allowNotFound: true,
+  });
   return normalizeSummary(body.data);
 }
 
@@ -284,8 +287,11 @@ export async function fetchMyOfferRequests(): Promise<OfferRequest[]> {
 }
 
 export async function fetchVendorOfferRequests(): Promise<OfferRequest[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/offer-requests");
-  assertSuccess(body);
+  const body = await vendorGetWithRetry("/vendor/offer-requests", {
+    sectionKey: "offers",
+    devLogLabel: "Vendor offers response",
+    allowNotFound: true,
+  });
   return toList(body.data).map(normalizeOffer);
 }
 
@@ -383,8 +389,11 @@ export async function fetchMyReservations(): Promise<Reservation[]> {
 }
 
 export async function fetchVendorReservations(): Promise<Reservation[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/reservations");
-  assertSuccess(body);
+  const body = await vendorGetWithRetry("/vendor/reservations", {
+    sectionKey: "reservations",
+    devLogLabel: "Vendor reservations response",
+    allowNotFound: true,
+  });
   return toList(body.data).map(normalizeReservation);
 }
 
@@ -1422,8 +1431,11 @@ function parseAvailabilityList(data: unknown): VendorAvailability[] {
 }
 
 export async function fetchVendorAvailability(): Promise<VendorAvailability[]> {
-  const body = await apiGetRaw<ApiEnvelope>("/vendor/availability");
-  assertSuccess(body);
+  const body = await vendorGetWithRetry("/vendor/availability", {
+    sectionKey: "availability",
+    devLogLabel: "Vendor availability response",
+    allowNotFound: true,
+  });
   return parseAvailabilityList(body.data);
 }
 

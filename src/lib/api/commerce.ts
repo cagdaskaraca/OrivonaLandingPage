@@ -7,6 +7,10 @@ import {
   getApiBaseUrl,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import {
+  envelopeToList,
+  vendorGetWithRetry,
+} from "@/src/lib/api/vendorDashboardFetch";
 import { getToken } from "@/src/lib/auth";
 import type { ServiceMediaItem } from "@/src/lib/api/premiumSaas";
 
@@ -150,13 +154,14 @@ function normalizePromotion(raw: unknown): Promotion | null {
 }
 
 export async function fetchVendorPromotions(): Promise<Promotion[]> {
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>("/vendor/promotions");
-      return toList(raw).map(normalizePromotion).filter(Boolean) as Promotion[];
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/promotions", {
+    sectionKey: "promotions",
+    devLogLabel: "Vendor promotions response",
+    allowNotFound: true,
+  });
+  return envelopeToList(body.data)
+    .map(normalizePromotion)
+    .filter(Boolean) as Promotion[];
 }
 
 export async function fetchAdminPromotions(): Promise<Promotion[]> {
@@ -330,13 +335,14 @@ export async function validateCoupon(
 }
 
 export async function fetchVendorCoupons(): Promise<Coupon[]> {
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>("/vendor/coupons");
-      return toList(raw).map(normalizeCoupon).filter(Boolean) as Coupon[];
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/coupons", {
+    sectionKey: "coupons",
+    devLogLabel: "Vendor coupons response",
+    allowNotFound: true,
+  });
+  return envelopeToList(body.data)
+    .map(normalizeCoupon)
+    .filter(Boolean) as Coupon[];
 }
 
 export async function createVendorCoupon(

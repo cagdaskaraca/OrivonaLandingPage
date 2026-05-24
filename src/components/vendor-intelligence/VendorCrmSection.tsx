@@ -1,56 +1,45 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   addVendorLeadNote,
   fetchVendorLeads,
   updateVendorLeadStatus,
 } from "@/src/lib/api/vendorIntelligence";
-import { isApiNotFound, logApiError } from "@/src/lib/api/client";
+import { logApiError } from "@/src/lib/api/client";
 import type { VendorLead } from "@/src/lib/api/types";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import {
   LEAD_FUNNEL_STAGES,
   leadStatusLabel,
   maskLeadCustomerName,
   normalizeLeadStatusKey,
-  VENDOR_CRM_LOAD_ERROR,
   VENDOR_EMPTY_DATA,
 } from "@/src/lib/vendorCrm";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 export function VendorCrmSection() {
-  const [leads, setLeads] = useState<VendorLead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const { data, loading, error, reload: load } = useVendorSectionLoad(
+    fetchVendorLeads,
+  );
+  const leads = data ?? [];
   const [actionError, setActionError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [noteText, setNoteText] = useState("");
   const [statusDraft, setStatusDraft] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadFailed(false);
-    setActionError(null);
-    try {
-      const list = await fetchVendorLeads();
-      setLeads(list);
-      setSelectedId((prev) => {
-        if (prev != null && list.some((l) => l.id === prev)) return prev;
-        return list[0]?.id ?? null;
-      });
-    } catch (err) {
-      logApiError("Vendor CRM", err);
-      setLeads([]);
-      setLoadFailed(!isApiNotFound(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (leads.length === 0) {
+      setSelectedId(null);
+      return;
+    }
+    setSelectedId((prev) => {
+      if (prev != null && leads.some((l) => l.id === prev)) return prev;
+      return leads[0]?.id ?? null;
+    });
+  }, [leads]);
 
   const selected = leads.find((l) => l.id === selectedId) ?? leads[0];
 
@@ -92,136 +81,107 @@ export function VendorCrmSection() {
     }
   }
 
-  if (loading) {
-    return <p className="text-sm text-zinc-500">CRM yükleniyor…</p>;
-  }
-
-  if (loadFailed) {
-    return (
-      <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-        <p>{VENDOR_CRM_LOAD_ERROR}</p>
-        <button
-          type="button"
-          className={`${btnSecondary} mt-3 text-xs`}
-          onClick={() => void load()}
-        >
-          Tekrar dene
-        </button>
-      </div>
-    );
-  }
-
-  if (leads.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed border-violet-400/25 bg-violet-500/[0.04] px-4 py-8 text-center text-sm text-zinc-500">
-        {VENDOR_EMPTY_DATA}
-      </p>
-    );
-  }
-
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,320px)]">
-      <div className="orivona-scroll-x mt-0 rounded-xl border border-white/10 pb-0.5">
-        <table className="w-full min-w-[640px] text-left text-sm">
-          <thead>
-            <tr className="border-b border-white/10 text-xs uppercase tracking-wide text-zinc-500">
-              <th className="px-4 py-3 font-medium">Müşteri</th>
-              <th className="px-4 py-3 font-medium">Hizmet</th>
-              <th className="px-4 py-3 font-medium">Durum</th>
-              <th className="px-4 py-3 font-medium">Skor</th>
-              <th className="px-4 py-3 font-medium">Son aktivite</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.map((lead) => {
-              const active = lead.id === (selected?.id ?? selectedId);
-              return (
-                <tr
-                  key={String(lead.id)}
-                  className={`cursor-pointer border-b border-white/[0.06] transition last:border-0 ${
-                    active ? "bg-violet-500/10" : "hover:bg-white/[0.03]"
-                  }`}
-                  onClick={() => lead.id != null && setSelectedId(lead.id)}
-                >
-                  <td className="px-4 py-3 font-medium text-zinc-100">
-                    {maskLeadCustomerName(lead)}
-                  </td>
-                  <td className="px-4 py-3 text-zinc-400">
-                    {lead.serviceTitle ?? "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full border border-violet-400/25 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-100">
-                      {leadStatusLabel(lead.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-300">
-                    {lead.score != null ? Math.round(lead.score) : "—"}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
-                    {lead.lastActivityAt ?? lead.lastActivity ?? "—"}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {selected ? (
-        <aside className="rounded-xl border border-violet-400/20 bg-violet-500/[0.05] p-4">
-          <h3 className="text-sm font-semibold text-white">Lead detayı</h3>
-          <p className="mt-1 text-xs text-zinc-500">
-            {maskLeadCustomerName(selected)} · {selected.serviceTitle ?? "—"}
-          </p>
-          {selected.notes?.trim() || selected.note?.trim() ? (
-            <p className="mt-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-zinc-400">
-              {selected.notes ?? selected.note}
-            </p>
-          ) : null}
-          <label className="mt-4 block text-sm">
-            <span className="mb-1 block text-xs text-zinc-400">Durum</span>
-            <select
-              className={selectClass}
-              value={statusDraft}
-              onChange={(e) => setStatusDraft(e.target.value)}
-            >
-              {LEAD_FUNNEL_STAGES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
-            className={`${btnSecondary} mt-2 w-full text-xs`}
-            disabled={saving}
-            onClick={() => void handleStatusUpdate()}
-          >
-            Durumu güncelle
-          </button>
-          <label className="mt-4 block text-sm">
-            <span className="mb-1 block text-xs text-zinc-400">Not ekle</span>
-            <textarea
-              className={`${inputClass} min-h-[72px] resize-y text-sm`}
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-              placeholder="Görüşme notu…"
-            />
-          </label>
-          <button
-            type="button"
-            className={`${btnPrimary} mt-2 w-full text-xs`}
-            disabled={saving || !noteText.trim()}
-            onClick={() => void handleAddNote()}
-          >
-            Not kaydet
-          </button>
-          {actionError ? (
-            <p className="mt-3 text-xs text-red-300/90">{actionError}</p>
-          ) : null}
-        </aside>
+    <VendorSectionState
+      loading={loading}
+      error={error}
+      onRetry={load}
+      isEmpty={!loading && !error && leads.length === 0}
+      empty={
+        <p className="rounded-xl border border-dashed border-violet-400/25 bg-violet-500/[0.04] px-4 py-8 text-center text-sm text-zinc-500">
+          {VENDOR_EMPTY_DATA}
+        </p>
+      }
+    >
+      {actionError ? (
+        <p className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+          {actionError}
+        </p>
       ) : null}
-    </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,280px)_1fr]">
+        <ul className="space-y-2">
+          {leads.map((lead) => (
+            <li key={String(lead.id)}>
+              <button
+                type="button"
+                className={`w-full rounded-xl border px-3 py-2.5 text-left text-sm transition ${
+                  lead.id === selected?.id
+                    ? "border-violet-400/40 bg-violet-500/15 text-white"
+                    : "border-white/10 bg-white/[0.02] text-zinc-300 hover:border-violet-400/25"
+                }`}
+                onClick={() => setSelectedId(lead.id ?? null)}
+              >
+                <p className="font-medium">{maskLeadCustomerName(lead)}</p>
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {leadStatusLabel(lead.status)}
+                  {lead.serviceTitle ? ` · ${lead.serviceTitle}` : ""}
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {selected ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            <h3 className="text-lg font-semibold text-white">
+              {maskLeadCustomerName(selected)}
+            </h3>
+            <p className="mt-1 text-sm text-zinc-400">
+              {selected.serviceTitle ?? "Hizmet belirtilmedi"}
+            </p>
+            <div className="mt-4 flex flex-wrap items-end gap-3">
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-500">Durum</span>
+                <select
+                  className={selectClass}
+                  value={statusDraft}
+                  onChange={(e) => setStatusDraft(e.target.value)}
+                >
+                  {LEAD_FUNNEL_STAGES.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                className={`${btnPrimary} text-xs`}
+                disabled={saving}
+                onClick={() => void handleStatusUpdate()}
+              >
+                Durumu güncelle
+              </button>
+            </div>
+            <div className="mt-6">
+              <label className="block text-sm">
+                <span className="mb-1 block text-xs text-zinc-500">Not ekle</span>
+                <input
+                  className={inputClass}
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="İç not…"
+                />
+              </label>
+              <button
+                type="button"
+                className={`${btnSecondary} mt-2 text-xs`}
+                disabled={saving || !noteText.trim()}
+                onClick={() => void handleAddNote()}
+              >
+                Not kaydet
+              </button>
+            </div>
+            {selected.notes?.trim() ? (
+              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-zinc-400">
+                <p className="rounded-lg bg-white/[0.03] px-3 py-2 whitespace-pre-wrap">
+                  {selected.notes}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </VendorSectionState>
   );
 }

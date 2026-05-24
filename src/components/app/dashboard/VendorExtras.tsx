@@ -13,7 +13,6 @@ import {
 } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type {
-  DashboardSummary,
   Reservation,
   ServiceImage,
   VendorService,
@@ -21,26 +20,19 @@ import type {
 import { useToast } from "@/src/contexts/ToastContext";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
+import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnPrimary, btnSecondary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
 
 export function VendorSummaryCards() {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchVendorDashboardSummary()
-      .then(setSummary)
-      .catch((e) => {
-        if (e instanceof ApiError) console.log("Vendor summary failed", e.body);
-        setSummary({});
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: summary, loading } = useVendorSectionLoad(
+    fetchVendorDashboardSummary,
+  );
 
   return (
     <SummaryCards
-      summary={summary}
+      summary={summary ?? {}}
       loading={loading}
       className="mb-6"
       emptyMessage=""
@@ -50,55 +42,40 @@ export function VendorSummaryCards() {
 
 export function VendorReservationsPanel() {
   const toast = useToast();
-  const [list, setList] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      setList(await fetchVendorReservations());
-    } catch (e) {
-      if (e instanceof ApiError) console.log("Vendor reservations failed", e.body);
-      setList([]);
-      setError("Rezervasyon verileri şu anda alınamadı.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
+  const {
+    data,
+    loading,
+    error,
+    reload: load,
+  } = useVendorSectionLoad(fetchVendorReservations);
+  const list = data ?? [];
 
   return (
     <div className={`${glassCard} mb-8`}>
       <h2 className="text-lg font-semibold text-white">Rezervasyonlar</h2>
-      {error ? (
-        <p className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          {error}
-        </p>
-      ) : null}
-      {loading ? (
-        <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
-      ) : list.length === 0 ? (
-        <div className="mt-4">
-          <EmptyState
-            icon={EMPTY_STATE_PRESETS.reservationsVendor.icon}
-            title={EMPTY_STATE_PRESETS.reservationsVendor.title}
-            description={EMPTY_STATE_PRESETS.reservationsVendor.description}
-            actionLabel={EMPTY_STATE_PRESETS.reservationsVendor.actionLabel}
-            onAction={() => {
-              document
-                .getElementById(
-                  EMPTY_STATE_PRESETS.reservationsVendor.sectionId ?? "",
-                )
-                ?.scrollIntoView({ behavior: "smooth" });
-            }}
-          />
-        </div>
-      ) : (
+      <VendorSectionState
+        loading={loading}
+        error={error}
+        onRetry={load}
+        isEmpty={!loading && !error && list.length === 0}
+        empty={
+          <div className="mt-4">
+            <EmptyState
+              icon={EMPTY_STATE_PRESETS.reservationsVendor.icon}
+              title={EMPTY_STATE_PRESETS.reservationsVendor.title}
+              description={EMPTY_STATE_PRESETS.reservationsVendor.description}
+              actionLabel={EMPTY_STATE_PRESETS.reservationsVendor.actionLabel}
+              onAction={() => {
+                document
+                  .getElementById(
+                    EMPTY_STATE_PRESETS.reservationsVendor.sectionId ?? "",
+                  )
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
+          </div>
+        }
+      >
         <ul className="mt-4 space-y-2 text-sm">
           {list.map((r) => (
             <li
@@ -148,7 +125,7 @@ export function VendorReservationsPanel() {
             </li>
           ))}
         </ul>
-      )}
+      </VendorSectionState>
     </div>
   );
 }

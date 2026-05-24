@@ -7,6 +7,10 @@ import {
   buildQuery,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import {
+  envelopeToList,
+  vendorGetWithRetry,
+} from "@/src/lib/api/vendorDashboardFetch";
 
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -124,13 +128,12 @@ export async function fetchMyActivityFeed(): Promise<ActivityFeedItem[]> {
 }
 
 export async function fetchVendorActivityFeed(): Promise<ActivityFeedItem[]> {
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>("/vendor/activity-feed");
-      return toList(raw).map(normalizeActivityItem);
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/activity-feed", {
+    sectionKey: "activity",
+    devLogLabel: "Vendor activity feed response",
+    allowNotFound: true,
+  });
+  return envelopeToList(body.data).map(normalizeActivityItem);
 }
 
 export async function fetchAdminActivityFeed(): Promise<ActivityFeedItem[]> {
@@ -249,40 +252,42 @@ function normalizeLead(raw: unknown): VendorPipelineLead | null {
   };
 }
 
-export async function fetchVendorPipeline(): Promise<VendorPipeline | null> {
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>("/vendor/pipeline");
-      const leads = toList(raw, ["leads", "items"]).map(normalizeLead).filter(Boolean) as VendorPipelineLead[];
-      const o = toRecord(raw);
-      const columnsRaw = Array.isArray(o.columns) ? o.columns : [];
-      const columns = columnsRaw.map((col) => {
-        const c = toRecord(col);
-        const stage = pickStr(c, "stage", "Stage") ?? "New";
-        const colLeads = toList(c.leads ?? c.Leads).map(normalizeLead).filter(Boolean) as VendorPipelineLead[];
-        return { stage, leads: colLeads };
-      });
-      if (columns.length === 0 && leads.length > 0) {
-        const byStage = new Map<string, VendorPipelineLead[]>();
-        for (const lead of leads) {
-          const list = byStage.get(lead.stage) ?? [];
-          list.push(lead);
-          byStage.set(lead.stage, list);
-        }
-        return {
-          leads,
-          columns: [...byStage.entries()].map(([stage, colLeads]) => ({
-            stage,
-            leads: colLeads,
-          })),
-        };
-      }
-      const result = { columns, leads };
-      console.log("Vendor pipeline response", result);
-      return result;
-    },
-    null,
-  );
+export async function fetchVendorPipeline(): Promise<VendorPipeline> {
+  const body = await vendorGetWithRetry("/vendor/pipeline", {
+    sectionKey: "pipeline",
+    devLogLabel: "Vendor pipeline response",
+    allowNotFound: true,
+  });
+  const raw = body.data ?? {};
+  const leads = toList(raw, ["leads", "items"])
+    .map(normalizeLead)
+    .filter(Boolean) as VendorPipelineLead[];
+  const o = toRecord(raw);
+  const columnsRaw = Array.isArray(o.columns) ? o.columns : [];
+  const columns = columnsRaw.map((col) => {
+    const c = toRecord(col);
+    const stage = pickStr(c, "stage", "Stage") ?? "New";
+    const colLeads = toList(c.leads ?? c.Leads)
+      .map(normalizeLead)
+      .filter(Boolean) as VendorPipelineLead[];
+    return { stage, leads: colLeads };
+  });
+  if (columns.length === 0 && leads.length > 0) {
+    const byStage = new Map<string, VendorPipelineLead[]>();
+    for (const lead of leads) {
+      const list = byStage.get(lead.stage) ?? [];
+      list.push(lead);
+      byStage.set(lead.stage, list);
+    }
+    return {
+      leads,
+      columns: [...byStage.entries()].map(([stage, colLeads]) => ({
+        stage,
+        leads: colLeads,
+      })),
+    };
+  }
+  return { columns, leads };
 }
 
 export async function updateVendorLeadStage(
@@ -478,21 +483,20 @@ export async function fetchServiceAvailabilityHeatmap(
 }
 
 export async function fetchVendorAvailabilityHeatmap(): Promise<HeatmapMonth[]> {
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>("/vendor/availability/heatmap");
-      return toList(raw, ["months", "items"]).map((m) => {
-        const o = toRecord(m);
-        return {
-          month: pickStr(o, "month", "Month", "monthName") ?? "—",
-          year: pickNum(o, "year", "Year"),
-          level: pickStr(o, "level", "Level", "density") ?? "Medium",
-          occupancyRate: pickNum(o, "occupancyRate", "OccupancyRate"),
-        };
-      });
-    },
-    [],
-  );
+  const body = await vendorGetWithRetry("/vendor/availability/heatmap", {
+    sectionKey: "availability",
+    devLogLabel: "Vendor availability response",
+    allowNotFound: true,
+  });
+  return envelopeToList(body.data).map((m) => {
+    const o = toRecord(m);
+    return {
+      month: pickStr(o, "month", "Month", "monthName") ?? "—",
+      year: pickNum(o, "year", "Year"),
+      level: pickStr(o, "level", "Level", "density") ?? "Medium",
+      occupancyRate: pickNum(o, "occupancyRate", "OccupancyRate"),
+    };
+  });
 }
 
 // —— Saved AI plans ——
