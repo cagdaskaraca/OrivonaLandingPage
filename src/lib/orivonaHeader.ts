@@ -9,7 +9,16 @@ export const orivonaHeaderShellRelative =
   "relative z-[100] w-full border-b border-white/10 bg-[#06040c]/90 backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
 
 export const orivonaHeaderInner =
-  "mx-auto flex h-[var(--orivona-header-h)] min-h-[var(--orivona-header-h)] max-h-[var(--orivona-header-h)] max-w-6xl items-center gap-3 px-4 sm:gap-4 sm:px-6";
+  "mx-auto grid h-[var(--orivona-header-h)] min-h-[var(--orivona-header-h)] max-h-[var(--orivona-header-h)] w-full max-w-6xl grid-cols-[1fr_auto] items-center gap-x-3 px-4 sm:gap-x-4 sm:px-6 md:grid-cols-[1fr_auto_1fr]";
+
+export const orivonaHeaderStart =
+  "flex min-w-0 items-center justify-self-start";
+
+export const orivonaHeaderCenter =
+  "hidden min-w-0 items-center justify-center justify-self-center gap-5 md:flex lg:gap-6";
+
+export const orivonaHeaderEnd =
+  "flex min-w-0 items-center justify-end justify-self-end";
 
 export const orivonaLogoBox =
   "flex h-12 min-h-12 shrink-0 items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2";

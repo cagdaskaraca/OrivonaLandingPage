@@ -8,9 +8,12 @@ import { GlobalSearch } from "@/src/components/premium/GlobalSearch";
 import { SmoothScrollToSection, SmoothScrollToTop } from "@/src/components/SmoothLandingNav";
 import {
   orivonaHeaderActions,
+  orivonaHeaderCenter,
+  orivonaHeaderEnd,
   orivonaHeaderInner,
   orivonaHeaderShellFixed,
   orivonaHeaderShellRelative,
+  orivonaHeaderStart,
   orivonaNavLink,
   orivonaNavLinkMobile,
 } from "@/src/lib/orivonaHeader";
@@ -24,22 +27,22 @@ type OrivonaSiteHeaderProps = {
   showSearch?: boolean;
 };
 
-function AppNavLinks({ className }: { className?: string }) {
+function AppNavLinks() {
   return (
-    <div className={`hidden items-center gap-5 md:flex lg:gap-6 ${className ?? ""}`}>
+    <>
       <Link href="/marketplace" className={orivonaNavLink}>
         Marketplace
       </Link>
       <Link href="/ai-planner" className={orivonaNavLink}>
         AI Planlayıcı
       </Link>
-    </div>
+    </>
   );
 }
 
-function MarketingNavLinks({ className }: { className?: string }) {
+function MarketingNavLinks() {
   return (
-    <div className={`hidden items-center gap-5 md:flex lg:gap-6 ${className ?? ""}`}>
+    <>
       <Link href="/marketplace" className={orivonaNavLink}>
         Marketplace
       </Link>
@@ -58,7 +61,36 @@ function MarketingNavLinks({ className }: { className?: string }) {
       <SmoothScrollToSection sectionId="iletisim" className={orivonaNavLink}>
         İletişim
       </SmoothScrollToSection>
-    </div>
+    </>
+  );
+}
+
+function HeaderCenter({
+  variant,
+  showSearch,
+}: {
+  variant: "marketing" | "app";
+  showSearch: boolean;
+}) {
+  if (showSearch) {
+    return (
+      <div className={`${orivonaHeaderCenter} px-2`}>
+        <div className="w-full min-w-[12rem] max-w-md">
+          <Suspense fallback={null}>
+            <GlobalSearch compact />
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <nav
+      className={orivonaHeaderCenter}
+      aria-label="Ana menü"
+    >
+      {variant === "marketing" ? <MarketingNavLinks /> : <AppNavLinks />}
+    </nav>
   );
 }
 
@@ -72,28 +104,24 @@ export function OrivonaSiteHeader({
   return (
     <header className={shellClass}>
       <div className={orivonaHeaderInner}>
-        {variant === "marketing" ? (
-          <OrivonaHeaderLogo
-            priority
-            wrapper={({ className, children }) => (
-              <SmoothScrollToTop className={className}>{children}</SmoothScrollToTop>
-            )}
-          />
-        ) : (
-          <OrivonaHeaderLogo href="/" />
-        )}
+        <div className={orivonaHeaderStart}>
+          {variant === "marketing" ? (
+            <OrivonaHeaderLogo
+              priority
+              wrapper={({ className, children }) => (
+                <SmoothScrollToTop className={className}>{children}</SmoothScrollToTop>
+              )}
+            />
+          ) : (
+            <OrivonaHeaderLogo href="/" />
+          )}
+        </div>
 
-        {showSearch ? (
-          <div className="flex min-h-0 min-w-0 flex-1 items-center sm:max-w-md lg:mx-2">
-            <Suspense fallback={null}>
-              <GlobalSearch compact />
-            </Suspense>
-          </div>
-        ) : null}
+        <HeaderCenter variant={variant} showSearch={showSearch} />
 
-        {variant === "marketing" ? <MarketingNavLinks /> : <AppNavLinks />}
-
-        <LandingNavAuth className={`${orivonaHeaderActions} hidden sm:flex`} />
+        <div className={`${orivonaHeaderEnd} col-start-2 md:col-start-3`}>
+          <LandingNavAuth className={`${orivonaHeaderActions} flex`} />
+        </div>
       </div>
 
       {variant === "marketing" ? (
@@ -116,7 +144,6 @@ export function OrivonaSiteHeader({
           <SmoothScrollToSection sectionId="iletisim" className={orivonaNavLinkMobile}>
             İletişim
           </SmoothScrollToSection>
-          <LandingNavAuth className="w-full justify-center border-t border-white/10 pt-2.5 sm:hidden" />
         </div>
       ) : null}
     </header>
