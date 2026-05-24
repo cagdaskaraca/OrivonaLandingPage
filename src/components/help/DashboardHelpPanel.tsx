@@ -56,7 +56,9 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-white">Başlarken</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          ORIVONA&apos;yı hızlıca keşfetmek için önerilen adımlar.
+          {role === "customer"
+            ? "Organizasyon planınız, teklif ve rezervasyon süreçleri için önerilen adımlar."
+            : "Hizmet ilanı, müsaitlik ve teklif akışı için önerilen adımlar (hizmet sağlayıcı işletme)."}
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

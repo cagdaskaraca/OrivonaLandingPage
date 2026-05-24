@@ -316,7 +316,7 @@ function DashboardContent() {
         <VendorAnalyticsSection />
       </DashboardSection>
 
-      <DashboardSection id="dashboard-crm" title="Vendor CRM">
+      <DashboardSection id="dashboard-crm" title="İşletme CRM">
         <p className="mb-4 text-sm text-zinc-400">
           Lead listesi, durum güncelleme ve notlar. Müşteri adları gizlidir.
         </p>

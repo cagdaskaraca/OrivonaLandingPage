@@ -190,9 +190,9 @@ const VENDOR_FAQ: FaqItem[] = [
     "v-account",
     "vendor",
     "İşletme hesabı nasıl açılır?",
-    `Ne anlama gelir: İşletme hesabı; hizmetlerinizi marketplace'te listeleyip müşterilerden teklif ve mesaj almanız için gereken satıcı profilidir.
+    `Ne anlama gelir: İşletme hesabı; mekan sahibi, organizasyon firması, fotoğrafçı veya catering firması gibi organizasyon hizmeti sunan taraflar içindir. Marketplace'te hizmet ilanı yayınlayıp müşterilerden teklif ve mesaj alırsınız. ORIVONA ürün satışı değil; hizmet sunumu ve teklif akışı platformudur.
 
-Nereye tıklarsınız: Ana sayfa → İşletmeler / işletme başvurusu bölümü veya Kayıt Ol (/register) ekranında işletme (vendor) rolünü seçin. Kayıt sonrası İşletme Paneli (/vendor/dashboard) açılır.
+Nereye tıklarsınız: Ana sayfa → İşletmeler bölümü veya Kayıt Ol (/register) ekranında hizmet sağlayıcı işletme rolünü seçin. Kayıt sonrası İşletme Paneli (/vendor/dashboard) açılır.
 
 Sonra ne olur: Profil, hizmet ve belge bilgilerinizi doldurursunuz; ORIVONA incelemesinden sonra onaylı işletme olarak görünürsünüz. Onay öncesi bazı yayınlama özellikleri kısıtlı olabilir.
 
@@ -228,7 +228,7 @@ Sonra ne olur: Kaydettiğiniz hizmet listede görünür; aktif/pasif durumunu de
     "Hizmet görselleri nasıl yönetilir?",
     `Ne anlama gelir: Görseller; ilanınızın marketplace kartında ve detay sayfasında güven oluşturan fotoğraf/video medyasıdır.
 
-Nereye tıklarsınız: Hizmetlerim'de bir hizmeti düzenle moduna alın; aynı bölümde Service Image Manager ve Gelişmiş Medya (Vendor Service Media) panelleri açılır.
+Nereye tıklarsınız: Hizmetlerim'de bir hizmeti düzenle moduna alın; aynı bölümde Hizmet Görselleri ve Gelişmiş Medya panelleri açılır.
 
 Sonra ne olur: Kapak görseli ve ek medya yüklenir, sıralanır veya kaldırılır. Değişiklikler kaydedildikten sonra marketplace önizlemesinde yansır.
 
@@ -298,9 +298,9 @@ Sonra ne olur: Mesaj gönderip geçmişi okursunuz; okunmamışlar vurgulanır. 
     "v-crm",
     "vendor",
     "CRM / lead sistemi ne işe yarar?",
-    `Ne anlama gelir: CRM ve pipeline; teklif taleplerini aşamalara (yeni, görüşmede, kazanıldı vb.) ayırarak satış huninizi görselleştirir.
+    `Ne anlama gelir: CRM ve pipeline; müşteri teklif taleplerini aşamalara (yeni, görüşmede, kazanıldı vb.) ayırarak organizasyon teklif huninizi görselleştirir.
 
-Nereye tıklarsınız: İşletme Paneli → CRM Pipeline (dashboard-pipeline) ve Vendor CRM (dashboard-crm) bölümleri.
+Nereye tıklarsınız: İşletme Paneli → CRM Pipeline (dashboard-pipeline) ve İşletme CRM (dashboard-crm) bölümleri.
 
 Sonra ne olur: Kartları sütunlar arasında takip edersiniz; CRM tablosunda müşteri ve talep detaylarına bakarsınız.
 

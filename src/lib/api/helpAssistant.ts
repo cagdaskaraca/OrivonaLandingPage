@@ -1,5 +1,9 @@
 import { apiPost, apiPostPublic } from "@/src/lib/api/client";
 import { getToken } from "@/src/lib/auth";
+import {
+  isWeakObotAnswer,
+  sanitizeObotTerminology,
+} from "@/src/lib/obot/fallback";
 import type { HelpAssistantRole, OBotAction, OBotReply } from "@/src/lib/obot/types";
 import { OBOT_ACTIONS, resolveObotAction } from "@/src/lib/obot/actions";
 
@@ -37,14 +41,17 @@ function normalizeReply(body: unknown): OBotReply | null {
   const answer = raw.answer ?? raw.text ?? raw.message;
   if (!answer || typeof answer !== "string") return null;
 
+  const cleaned = sanitizeObotTerminology(answer.trim());
+  if (isWeakObotAnswer(cleaned)) return null;
+
   return {
-    answer: answer.trim(),
+    answer: cleaned,
     actions: normalizeActions(raw.actions),
     suggestedQuestions: raw.suggestedQuestions ?? raw.suggestions,
   };
 }
 
-/** POST /help/assistant — falls back to null when endpoint missing. */
+/** POST /help/assistant — returns null when endpoint missing or answer unusable. */
 export async function postHelpAssistant(
   message: string,
   role: HelpAssistantRole,
@@ -65,20 +72,24 @@ export async function postHelpAssistant(
 export function welcomeReply(role: HelpAssistantRole): OBotReply {
   const intros: Record<HelpAssistantRole, string> = {
     anonymous:
-      "Merhaba, ben OBot. ORIVONA hakkında sorularınızı yanıtlayabilirim. Giriş yapmadan marketplace'i keşfedebilir; teklif ve etkinlik için müşteri veya işletme hesabı açmanız gerekir.",
+      "Merhaba, ben OBot. ORIVONA bir organizasyon marketplace'idir: müşteriler etkinlik planlar, hizmet sağlayıcı işletmeler (mekan, catering, organizasyon firması vb.) teklif sunar. Giriş yapmadan marketplace'i keşfedebilirsiniz.",
     customer:
-      "Merhaba, ben OBot. Etkinlik planı, teklif, rezervasyon, davetli ve QR süreçlerinde size yol gösterebilirim.",
+      "Merhaba, ben OBot. Müşteri olarak organizasyon planınızı yönetmenize yardımcı olabilirim: etkinlik planı, teklif, rezervasyon, davetli ve QR süreçleri.",
     vendor:
-      "Merhaba, ben OBot. Hizmet ilanı, müsaitlik, teklif yanıtlama ve CRM konularında yardımcı olabilirim.",
+      "Merhaba, ben OBot. Hizmet sağlayıcı işletme panelinde; hizmet ilanı ekleme, müsaitlik yönetimi, teklif süreçleri, rezervasyon akışları ve CRM konularında yol gösterebilirim.",
     admin:
-      "Merhaba, ben OBot. İşletme onayı, kategori, kullanıcı ve rozet yönetimi hakkında yönlendirme yapabilirim.",
+      "Merhaba, ben OBot. İşletme onayı, kategori, kullanıcı ve rozet yönetimi için admin paneli yönlendirmeleri sunabilirim.",
   };
 
   const actions =
     role === "anonymous"
       ? [OBOT_ACTIONS.login, OBOT_ACTIONS.register, OBOT_ACTIONS.marketplace]
       : role === "customer"
-        ? [OBOT_ACTIONS["create-event"], OBOT_ACTIONS["ai-planner"], OBOT_ACTIONS.marketplace]
+        ? [
+            { ...OBOT_ACTIONS["create-event"], label: "Etkinlik Planlarım" },
+            OBOT_ACTIONS["ai-planner"],
+            OBOT_ACTIONS.marketplace,
+          ]
         : role === "vendor"
           ? [
               OBOT_ACTIONS["vendor-services"],

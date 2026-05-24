@@ -4,7 +4,7 @@ import type { OBotAction } from "@/src/lib/obot/types";
 export const OBOT_ACTIONS: Record<string, OBotAction> = {
   "create-event": {
     id: "create-event",
-    label: "Etkinlik oluştur",
+    label: "Etkinlik Planlarım",
     href: "/customer/dashboard",
     sectionId: "event-os-plans",
   },
@@ -88,7 +88,7 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
   },
   "vendor-crm": {
     id: "vendor-crm",
-    label: "CRM",
+    label: "İşletme CRM",
     href: "/vendor/dashboard",
     sectionId: "dashboard-crm",
   },

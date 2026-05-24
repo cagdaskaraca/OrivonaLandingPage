@@ -146,7 +146,7 @@ export const VENDOR_HELP_CARDS: DashboardHelpCard[] = [
       "Müşteri taleplerine hızlı dönüş verin; kabul veya red ile süreci netleştirin.",
     cta: "Tekliflere git",
     sectionId: "dashboard-offers",
-    hint: "Hızlı dönüş, dönüşüm oranınızı artırır.",
+    hint: "Hızlı yanıt, teklif kabul oranınızı artırır.",
   },
   {
     id: "profile",

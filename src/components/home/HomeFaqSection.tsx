@@ -15,7 +15,7 @@ export function HomeFaqSection() {
             Merak ettikleriniz
           </h2>
           <p className="mt-4 text-sm text-zinc-400 sm:text-base">
-            Müşteri, işletme ve yönetici süreçleri için adım adım rehberler.
+            Müşteri organizasyonu, hizmet sağlayıcı işletme ve yönetici süreçleri için adım adım rehberler.
             Sağ alttaki OBot ile de soru sorabilirsiniz.
           </p>
         </div>

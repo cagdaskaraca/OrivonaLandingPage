@@ -15,11 +15,11 @@ export const OBOT_QUICK_QUESTIONS: Record<HelpAssistantRole, string[]> = {
     "Rezervasyon süreci nasıl işler?",
   ],
   vendor: [
-    "İşletme olarak ilan nasıl veririm?",
+    "Hizmet ilanı nasıl eklenir?",
     "Müsaitlik nasıl ayarlanır?",
     "Gelen tekliflere nasıl cevap verilir?",
     "Revize teklif nasıl gönderilir?",
-    "CRM ne işe yarar?",
+    "CRM pipeline ne işe yarar?",
   ],
   admin: [
     "İşletme onayı nasıl yapılır?",
