@@ -4,6 +4,17 @@ import type { ResolvedNotificationLink } from "@/src/lib/notificationNavigation"
 /** Sticky dashboard header offset (matches .orivona-dashboard-anchor). */
 export const DASHBOARD_SCROLL_OFFSET_PX = 120;
 
+/** Landing section scroll-margin (matches homepage scroll-mt-28). */
+export const LANDING_SCROLL_OFFSET_PX = 112;
+
+/** Homepage marketing section element ids. */
+export const HOME_LANDING_SECTION_IDS = new Set([
+  "isletmeler",
+  "nasil-calisir",
+  "iletisim",
+  "sss",
+]);
+
 const HASH_SCROLL_RETRY_MS = [100, 300, 600, 1000, 1500] as const;
 const HIGHLIGHT_MS = 1500;
 const LAYOUT_STABLE_MAX_DELTA_PX = 6;
@@ -18,6 +29,8 @@ type ScrollOptions = {
   /** Re-scroll when hash is already in the URL (notification re-clicks). */
   forceSameHash?: boolean;
   updateHash?: boolean;
+  /** Scroll offset for fixed header (defaults to dashboard). */
+  offsetPx?: number;
 };
 
 let pendingSectionId: string | null = null;
@@ -55,13 +68,11 @@ function applySectionHighlight(el: HTMLElement): void {
   }, HIGHLIGHT_MS);
 }
 
-function scrollElementIntoView(el: HTMLElement): void {
+function scrollElementIntoView(el: HTMLElement, offsetPx: number): void {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       const top =
-        window.scrollY +
-        el.getBoundingClientRect().top -
-        DASHBOARD_SCROLL_OFFSET_PX;
+        window.scrollY + el.getBoundingClientRect().top - offsetPx;
       window.scrollTo({
         top: Math.max(0, top),
         behavior: "smooth",
@@ -87,6 +98,7 @@ export function scrollToHashWhenReady(
   const highlight = options?.highlight ?? true;
   const forceSameHash = options?.forceSameHash ?? true;
   const updateHash = options?.updateHash ?? true;
+  const offsetPx = options?.offsetPx ?? DASHBOARD_SCROLL_OFFSET_PX;
   const baseUrl = `${window.location.pathname}${window.location.search}`;
 
   if (forceSameHash && window.location.hash.replace(/^#/, "") === sectionId) {
@@ -132,7 +144,7 @@ export function scrollToHashWhenReady(
       return false;
     }
 
-    scrollElementIntoView(el);
+    scrollElementIntoView(el, offsetPx);
     if (highlight) applySectionHighlight(el);
     if (updateHash) {
       history.replaceState(null, "", `${baseUrl}#${sectionId}`);
@@ -161,10 +173,32 @@ export function scrollToDashboardSection(
   scrollToHashWhenReady(`#${sectionId.replace(/^#/, "")}`, options);
 }
 
+/** Scroll to a homepage marketing section (#isletmeler, #nasil-calisir, …). */
+export function scrollToHomeHashWhenReady(
+  hash: string,
+  options?: Omit<ScrollOptions, "offsetPx">,
+): () => void {
+  return scrollToHashWhenReady(hash, {
+    ...options,
+    offsetPx: LANDING_SCROLL_OFFSET_PX,
+  });
+}
+
+export function homeSectionHref(sectionId: string): string {
+  const id = sectionId.replace(/^#/, "");
+  return `/#${id}`;
+}
+
 /** Notify dashboards that async sections finished loading (re-run pending hash scroll). */
 export function notifyDashboardLayoutReady(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent("orivona-dashboard-layout-ready"));
+}
+
+/** Notify homepage that async blocks finished loading (re-run pending hash scroll). */
+export function notifyLandingLayoutReady(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("orivona-landing-layout-ready"));
 }
 
 /** Same-page hash navigation or cross-route push with pending scroll. */

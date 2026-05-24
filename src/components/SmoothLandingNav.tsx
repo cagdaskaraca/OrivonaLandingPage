@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
+import {
+  homeSectionHref,
+  scrollToHomeHashWhenReady,
+  setPendingHashScroll,
+} from "@/src/lib/scrollToDashboardSection";
 
-function scrollToSection(elementId: string) {
-  document.getElementById(elementId)?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
+function isHomePath(pathname: string): boolean {
+  return pathname === "/" || pathname === "";
 }
 
 export function SmoothScrollToSection({
@@ -20,18 +22,33 @@ export function SmoothScrollToSection({
   sectionId: string;
   children: ReactNode;
 } & Omit<ComponentProps<"a">, "href" | "onClick">) {
+  const pathname = usePathname() ?? "";
+  const router = useRouter();
+  const href = homeSectionHref(sectionId);
+  const onHome = isHomePath(pathname);
+
   return (
-    <a
+    <Link
       {...rest}
-      href="/"
+      href={href}
       className={className}
       onClick={(e) => {
+        if (onHome) {
+          e.preventDefault();
+          scrollToHomeHashWhenReady(`#${sectionId}`, {
+            highlight: false,
+            forceSameHash: true,
+            updateHash: true,
+          });
+          return;
+        }
+        setPendingHashScroll(sectionId);
         e.preventDefault();
-        scrollToSection(sectionId);
+        router.push(href);
       }}
     >
       {children}
-    </a>
+    </Link>
   );
 }
 
@@ -44,7 +61,7 @@ export function SmoothScrollToTop({
 } & Omit<ComponentProps<"a">, "href" | "onClick">) {
   const pathname = usePathname();
 
-  if (pathname !== "/") {
+  if (!isHomePath(pathname ?? "")) {
     return (
       <Link href="/" className={className} {...rest}>
         {children}

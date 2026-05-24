@@ -17,6 +17,7 @@ import { ActiveCampaignBanner } from "@/src/components/commerce/ActiveCampaignBa
 import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
 import { buildMarketplaceHref } from "@/src/lib/marketplaceUrl";
 import { sortMarketplaceItems } from "@/src/lib/marketplacePremium";
+import { notifyLandingLayoutReady } from "@/src/lib/scrollToDashboardSection";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 export function HomeMarketplacePreview() {
@@ -47,6 +48,7 @@ export function HomeMarketplacePreview() {
       setError(formatUiErrorMessage(err, "Hizmetler yüklenemedi."));
     } finally {
       setLoading(false);
+      notifyLandingLayoutReady();
     }
   }, []);
 

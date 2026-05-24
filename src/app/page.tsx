@@ -9,10 +9,12 @@ import { HomeMarketplacePreview } from "@/src/components/home/HomeMarketplacePre
 import { HomeNavbar } from "@/src/components/home/HomeNavbar";
 import { HomeTrustSection } from "@/src/components/home/HomeTrustSection";
 import { HomeVendorSection } from "@/src/components/home/HomeVendorSection";
+import { HomeHashScroll } from "@/src/components/home/HomeHashScroll";
 
 export default function Home() {
   return (
     <div className="orivona-landing-with-mobile-nav relative min-h-screen">
+      <HomeHashScroll />
       <HomeNavbar />
 
       <main className="orivona-landing-main relative z-[2]">

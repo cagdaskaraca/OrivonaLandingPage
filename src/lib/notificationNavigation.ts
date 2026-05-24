@@ -1,6 +1,12 @@
 /** Resolve notification actionUrl to in-app routes with dashboard section hashes. */
 
 const HASH_ALIASES: Record<string, string> = {
+  businesses: "isletmeler",
+  business: "isletmeler",
+  isletme: "isletmeler",
+  "how-it-works": "nasil-calisir",
+  howitworks: "nasil-calisir",
+  contact: "iletisim",
   messages: "dashboard-messages",
   message: "dashboard-messages",
   mesajlar: "dashboard-messages",
