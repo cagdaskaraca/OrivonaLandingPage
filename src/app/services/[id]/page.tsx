@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { ServiceDetailView } from "@/src/components/app/ServiceDetailView";
 
 export const metadata = {
@@ -5,5 +6,15 @@ export const metadata = {
 };
 
 export default function ServiceDetailPage() {
-  return <ServiceDetailView />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#06040c] text-zinc-400">
+          Yükleniyor…
+        </div>
+      }
+    >
+      <ServiceDetailView />
+    </Suspense>
+  );
 }

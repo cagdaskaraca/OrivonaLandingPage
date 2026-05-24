@@ -14,6 +14,8 @@ type OfferRequestModalProps = {
   open: boolean;
   onClose: () => void;
   onSuccess: (message: string) => void;
+  /** Pre-fill event date (e.g. from availability calendar). */
+  initialEventDate?: string;
 };
 
 export function OfferRequestModal({
@@ -21,6 +23,7 @@ export function OfferRequestModal({
   open,
   onClose,
   onSuccess,
+  initialEventDate,
 }: OfferRequestModalProps) {
   const [message, setMessage] = useState("");
   const [guestCount, setGuestCount] = useState("100");
@@ -32,8 +35,12 @@ export function OfferRequestModal({
     if (!open) {
       setError(null);
       setLoading(false);
+      return;
     }
-  }, [open]);
+    if (initialEventDate?.trim()) {
+      setEventDate(initialEventDate.trim().slice(0, 10));
+    }
+  }, [open, initialEventDate]);
 
   const serviceId = item?.vendorServiceId ?? item?.id;
 

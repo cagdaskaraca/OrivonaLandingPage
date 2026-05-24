@@ -26,6 +26,7 @@ type MarketplaceServiceCardProps = {
   onMessageSend?: () => void;
   showOfferButton?: boolean;
   showMessageButton?: boolean;
+  showFavoriteButton?: boolean;
 };
 
 export function MarketplaceServiceCard({
@@ -37,6 +38,7 @@ export function MarketplaceServiceCard({
   onMessageSend,
   showOfferButton = true,
   showMessageButton = false,
+  showFavoriteButton = true,
 }: MarketplaceServiceCardProps) {
   const title = item.serviceTitle ?? item.title ?? "Hizmet";
   const vendor = item.vendorName ?? "İşletme";
@@ -128,7 +130,7 @@ export function MarketplaceServiceCard({
             </span>
           ))}
         </div>
-        {onFavoriteToggle ? (
+        {showFavoriteButton && onFavoriteToggle ? (
           <button
             type="button"
             aria-label={isFavorite ? "Favoriden çıkar" : "Favoriye ekle"}
@@ -234,12 +236,6 @@ export function MarketplaceServiceCard({
               >
                 Mesaj Gönder
               </button>
-            ) : showMessageButton ? (
-              <span
-                className={`${btnSecondary} ${actionBtnBase} pointer-events-none opacity-60`}
-              >
-                Mesaj için giriş yapın
-              </span>
             ) : null}
             {showOfferButton && onOfferRequest ? (
               <button
@@ -249,12 +245,6 @@ export function MarketplaceServiceCard({
               >
                 Teklif İste
               </button>
-            ) : showOfferButton ? (
-              <span
-                className={`${btnSecondary} ${actionBtnBase} pointer-events-none opacity-60`}
-              >
-                Giriş yaparak teklif isteyin
-              </span>
             ) : null}
           </div>
         ) : null}

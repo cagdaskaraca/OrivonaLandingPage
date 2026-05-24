@@ -11,6 +11,7 @@ import {
   registerCustomer,
   registerVendor,
 } from "@/src/lib/auth";
+import { getSafeReturnUrl } from "@/src/lib/authRedirect";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
@@ -71,7 +72,12 @@ export function RegisterView() {
         getRoleFromUser(data.user) ??
         (tab === "customer" ? "Customer" : "Vendor");
       await refresh();
-      router.push(getDashboardPathForRole(role));
+      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      if (returnUrl && role === "Customer") {
+        router.push(returnUrl);
+      } else {
+        router.push(getDashboardPathForRole(role));
+      }
     } catch (err) {
       console.error("Registration failed", err);
       if (err instanceof ApiError) {

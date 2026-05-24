@@ -14,14 +14,17 @@ import {
   upcomingAvailability,
 } from "@/src/lib/availability";
 import { OrivonaAvailabilityCalendar } from "@/src/components/availability/OrivonaAvailabilityCalendar";
-import { glassCard } from "@/src/lib/ui";
+import { btnPrimary, glassCard } from "@/src/lib/ui";
 
 type ServiceAvailabilityPanelProps = {
   serviceId: string | number;
+  /** Called when user wants to start offer/reservation for selected date. */
+  onStartOfferForDate?: (date: string) => void;
 };
 
 export function ServiceAvailabilityPanel({
   serviceId,
+  onStartOfferForDate,
 }: ServiceAvailabilityPanelProps) {
   const [items, setItems] = useState<VendorAvailability[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +68,8 @@ export function ServiceAvailabilityPanel({
       <div>
         <h2 className="text-lg font-semibold text-white">Müsaitlik</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Takvimden bir tarih seçerek müsaitliği kontrol edin.
+          Takvimden bir tarih seçerek müsaitliği kontrol edin. Teklif veya
+          rezervasyon için tarih seçimi giriş gerektirir.
         </p>
       </div>
 
@@ -98,6 +102,15 @@ export function ServiceAvailabilityPanel({
               </p>
               {selected.notes?.trim() ? (
                 <p className="mt-1.5 text-xs text-zinc-400">{selected.notes}</p>
+              ) : null}
+              {selectedAvailable && onStartOfferForDate ? (
+                <button
+                  type="button"
+                  className={`${btnPrimary} mt-3 w-full text-sm`}
+                  onClick={() => onStartOfferForDate(checkDate)}
+                >
+                  Bu tarih için teklif iste
+                </button>
               ) : null}
             </div>
           ) : (

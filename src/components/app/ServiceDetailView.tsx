@@ -11,8 +11,8 @@ import { ServiceCoverImage } from "@/src/components/marketplace/ServiceCoverImag
 import { ServiceReviewsSection } from "@/src/components/reviews/ServiceReviewsSection";
 import { StarRating, formatRatingDisplay } from "@/src/components/reviews/StarRating";
 import { EmptyState } from "@/src/components/ui/EmptyState";
-import { useAuth } from "@/src/contexts/AuthContext";
 import { useToast } from "@/src/contexts/ToastContext";
+import { useCustomerActionGuard } from "@/src/hooks/useCustomerActionGuard";
 import {
   addFavorite,
   fetchFavorites,
@@ -44,7 +44,12 @@ function serviceIdOf(service: MarketplaceItem): string | undefined {
 export function ServiceDetailView() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : params.id?.[0];
-  const { isAuthenticated, role } = useAuth();
+  const returnPath = id ? `/services/${encodeURIComponent(id)}` : "/marketplace";
+  const {
+    requireCustomerAction,
+    authPromptModal,
+    canPerformCustomerAction,
+  } = useCustomerActionGuard({ returnPath });
   const toast = useToast();
 
   const [service, setService] = useState<MarketplaceItem | null>(null);
@@ -55,11 +60,9 @@ export function ServiceDetailView() {
   const [favLoading, setFavLoading] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [offerPrefillDate, setOfferPrefillDate] = useState<string | undefined>();
 
-  const canFavorite = isAuthenticated && role === "Customer";
-  const canOffer = isAuthenticated && role === "Customer";
-  const canMessage = isAuthenticated && role === "Customer";
-  const canReview = isAuthenticated && role === "Customer";
+  const canReview = canPerformCustomerAction;
 
   const load = useCallback(async () => {
     if (!id) {
@@ -94,7 +97,7 @@ export function ServiceDetailView() {
   }, [load]);
 
   useEffect(() => {
-    if (!canFavorite || !service) return;
+    if (!canPerformCustomerAction || !service) return;
     fetchFavorites()
       .then((list) => {
         const sid = serviceIdOf(service);
@@ -104,7 +107,7 @@ export function ServiceDetailView() {
         );
       })
       .catch(() => {});
-  }, [canFavorite, service]);
+  }, [canPerformCustomerAction, service]);
 
   const galleryUrls = useMemo(
     () => (service ? getServiceGalleryUrls(service) : []),
@@ -123,9 +126,21 @@ export function ServiceDetailView() {
         ? `${service.guestCapacity} kişi`
         : null;
 
+  function openOffer(prefillDate?: string) {
+    if (!requireCustomerAction()) return;
+    setOfferPrefillDate(prefillDate);
+    setOfferOpen(true);
+  }
+
+  function openMessage() {
+    if (!requireCustomerAction()) return;
+    setMessageOpen(true);
+  }
+
   async function toggleFavorite() {
+    if (!requireCustomerAction()) return;
     const sid = service ? serviceIdOf(service) : undefined;
-    if (!sid || !canFavorite) return;
+    if (!sid) return;
     setFavLoading(true);
     try {
       if (isFavorite) {
@@ -305,53 +320,36 @@ export function ServiceDetailView() {
               </p>
             ) : null}
 
-            {id ? <ServiceAvailabilityPanel serviceId={id} /> : null}
+            {id ? (
+              <ServiceAvailabilityPanel
+                serviceId={id}
+                onStartOfferForDate={(date) => openOffer(date)}
+              />
+            ) : null}
 
             <div className="flex flex-col gap-3 border-t border-white/10 pt-4">
-              {canMessage ? (
-                <button
-                  type="button"
-                  className={btnSecondary}
-                  onClick={() => setMessageOpen(true)}
-                >
-                  Mesaj Gönder
-                </button>
-              ) : !isAuthenticated ? (
-                <Link href="/login" className={`${btnSecondary} text-center`}>
-                  Mesaj için giriş yapın
-                </Link>
-              ) : null}
-              {canOffer ? (
-                <button
-                  type="button"
-                  className={btnPrimary}
-                  onClick={() => setOfferOpen(true)}
-                >
-                  Teklif İste
-                </button>
-              ) : !isAuthenticated ? (
-                <Link href="/login" className={`${btnPrimary} text-center`}>
-                  Teklif için giriş yapın
-                </Link>
-              ) : null}
-              {canFavorite ? (
-                <button
-                  type="button"
-                  className={btnSecondary}
-                  onClick={toggleFavorite}
-                  disabled={favLoading}
-                >
-                  {favLoading
-                    ? "Kaydediliyor…"
-                    : isFavorite
-                      ? "Favorilerden çıkar"
-                      : "Favorilere ekle"}
-                </button>
-              ) : isAuthenticated ? null : (
-                <Link href="/login" className={`${btnSecondary} text-center`}>
-                  Favoriler için giriş yapın
-                </Link>
-              )}
+              <button
+                type="button"
+                className={btnSecondary}
+                onClick={openMessage}
+              >
+                Mesaj Gönder
+              </button>
+              <button type="button" className={btnPrimary} onClick={() => openOffer()}>
+                Teklif İste
+              </button>
+              <button
+                type="button"
+                className={btnSecondary}
+                onClick={() => void toggleFavorite()}
+                disabled={favLoading}
+              >
+                {favLoading
+                  ? "Kaydediliyor…"
+                  : isFavorite
+                    ? "Favorilerden çıkar"
+                    : "Favorilere ekle"}
+              </button>
             </div>
           </aside>
         </div>
@@ -360,7 +358,11 @@ export function ServiceDetailView() {
       <OfferRequestModal
         item={service}
         open={offerOpen}
-        onClose={() => setOfferOpen(false)}
+        initialEventDate={offerPrefillDate}
+        onClose={() => {
+          setOfferOpen(false);
+          setOfferPrefillDate(undefined);
+        }}
         onSuccess={(msg) => toast.success(msg)}
       />
       <StartConversationModal
@@ -371,6 +373,7 @@ export function ServiceDetailView() {
           toast.success("Konuşma başlatıldı. Mesajlar panelinizde.")
         }
       />
+      {authPromptModal}
     </DemoShell>
   );
 }

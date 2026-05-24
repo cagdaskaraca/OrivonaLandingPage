@@ -6,6 +6,7 @@ import { useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { getDashboardPathForRole, login } from "@/src/lib/auth";
+import { getSafeReturnUrl } from "@/src/lib/authRedirect";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
 
@@ -29,7 +30,12 @@ export function LoginView() {
         return;
       }
       await refresh();
-      router.push(getDashboardPathForRole(role));
+      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      if (returnUrl && role === "Customer") {
+        router.push(returnUrl);
+      } else {
+        router.push(getDashboardPathForRole(role));
+      }
     } catch (err) {
       setError(
         formatApiErrorMessage(
@@ -87,7 +93,14 @@ export function LoginView() {
         </button>
         <p className="text-center text-xs text-zinc-500">
           Hesabınız yok mu?{" "}
-          <Link href="/register" className="text-violet-300 hover:text-white">
+          <Link
+            href={
+              searchParams.get("returnUrl")
+                ? `/register?returnUrl=${encodeURIComponent(searchParams.get("returnUrl")!)}`
+                : "/register"
+            }
+            className="text-violet-300 hover:text-white"
+          >
             Kayıt olun
           </Link>
         </p>

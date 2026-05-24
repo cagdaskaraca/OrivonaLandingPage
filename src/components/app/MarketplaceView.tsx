@@ -7,7 +7,7 @@ import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModa
 import { StartConversationModal } from "@/src/components/messaging/StartConversationModal";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { SkeletonGrid } from "@/src/components/ui/SkeletonGrid";
-import { useAuth } from "@/src/contexts/AuthContext";
+import { useCustomerActionGuard } from "@/src/hooks/useCustomerActionGuard";
 import { useToast } from "@/src/contexts/ToastContext";
 import {
   addFavorite,
@@ -42,7 +42,8 @@ const emptyFilters: MarketplaceFilters = {
 };
 
 export function MarketplaceView() {
-  const { isAuthenticated, role } = useAuth();
+  const { requireCustomerAction, authPromptModal, canPerformCustomerAction } =
+    useCustomerActionGuard();
   const toast = useToast();
   const [filters, setFilters] = useState<MarketplaceFilters>(emptyFilters);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -55,10 +56,6 @@ export function MarketplaceView() {
   const [offerItem, setOfferItem] = useState<MarketplaceItem | null>(null);
   const [messageItem, setMessageItem] = useState<MarketplaceItem | null>(null);
 
-  const canFavorite = isAuthenticated && role === "Customer";
-  const canOffer = isAuthenticated && role === "Customer";
-  const canMessage = isAuthenticated && role === "Customer";
-
   useEffect(() => {
     fetchCategories()
       .then(setCategories)
@@ -66,7 +63,7 @@ export function MarketplaceView() {
   }, []);
 
   const loadFavorites = useCallback(async () => {
-    if (!canFavorite) {
+    if (!canPerformCustomerAction) {
       setFavoriteIds(new Set());
       return;
     }
@@ -83,56 +80,54 @@ export function MarketplaceView() {
     } catch (e) {
       console.log("Favorites load failed", e);
     }
-  }, [canFavorite]);
+  }, [canPerformCustomerAction]);
 
   useEffect(() => {
-    loadFavorites();
+    void loadFavorites();
   }, [loadFavorites]);
 
-  const load = useCallback(
-    async (next: MarketplaceFilters) => {
-      const params = buildMarketplaceQueryParams(next);
-      console.log("Marketplace query params", params);
+  const load = useCallback(async (next: MarketplaceFilters) => {
+    const params = buildMarketplaceQueryParams(next);
+    console.log("Marketplace query params", params);
 
-      setLoading(true);
-      setError(null);
-      setSearched(true);
-      try {
-        const { response, items: raw } = await fetchMarketplace(next);
-        console.log("Marketplace response", response.data);
-        setItems(sortMarketplaceItems(raw, next.sortBy ?? ""));
-      } catch (e) {
-        if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
-        setItems([]);
-        setError(
-          formatApiErrorMessage(
-            e,
-            "Marketplace verisi yüklenemedi. API çalışıyor mu?",
-          ),
-        );
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
+    setLoading(true);
+    setError(null);
+    setSearched(true);
+    try {
+      const { response, items: raw } = await fetchMarketplace(next);
+      console.log("Marketplace response", response.data);
+      setItems(sortMarketplaceItems(raw, next.sortBy ?? ""));
+    } catch (e) {
+      if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
+      setItems([]);
+      setError(
+        formatApiErrorMessage(
+          e,
+          "Marketplace verisi yüklenemedi. API çalışıyor mu?",
+        ),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    load(filters);
+    void load(filters);
   }
 
   function clearFilters() {
     setFilters(emptyFilters);
-    load(emptyFilters);
+    void load(emptyFilters);
   }
 
   const serviceId = (item: MarketplaceItem) =>
     String(item.vendorServiceId ?? item.id ?? "");
 
   async function toggleFavorite(item: MarketplaceItem) {
+    if (!requireCustomerAction()) return;
     const id = item.vendorServiceId ?? item.id;
-    if (id == null || !canFavorite) return;
+    if (id == null) return;
     const key = String(id);
     setFavLoadingId(key);
     try {
@@ -155,6 +150,16 @@ export function MarketplaceView() {
     } finally {
       setFavLoadingId(null);
     }
+  }
+
+  function openOffer(item: MarketplaceItem) {
+    if (!requireCustomerAction()) return;
+    setOfferItem(item);
+  }
+
+  function openMessage(item: MarketplaceItem) {
+    if (!requireCustomerAction()) return;
+    setMessageItem(item);
   }
 
   const mergedItems = useMemo(
@@ -277,17 +282,12 @@ export function MarketplaceView() {
               item={item}
               isFavorite={item.isFavorite}
               favoriteLoading={favLoadingId === serviceId(item)}
-              onFavoriteToggle={
-                canFavorite ? () => toggleFavorite(item) : undefined
-              }
-              showOfferButton={canOffer}
-              showMessageButton={canMessage}
-              onOfferRequest={
-                canOffer ? () => setOfferItem(item) : undefined
-              }
-              onMessageSend={
-                canMessage ? () => setMessageItem(item) : undefined
-              }
+              onFavoriteToggle={() => void toggleFavorite(item)}
+              showFavoriteButton
+              showOfferButton
+              showMessageButton
+              onOfferRequest={() => openOffer(item)}
+              onMessageSend={() => openMessage(item)}
             />
           ))}
         </div>
@@ -313,6 +313,7 @@ export function MarketplaceView() {
           toast.success("Konuşma başlatıldı. Mesajlar panelinizde.")
         }
       />
+      {authPromptModal}
     </DemoShell>
   );
 }
