@@ -29,7 +29,7 @@ export function CustomerAuthPromptModal({
   const message =
     reason === "wrong_role"
       ? "Bu işlem yalnızca müşteri hesabıyla yapılabilir."
-      : "Bu işlemi yapmak için giriş yapmalısınız.";
+      : "Bu işlem için giriş yapmanız gerekiyor.";
 
   return (
     <Modal open={open} title={title} onClose={onClose}>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { filtersFromSearchParams } from "@/src/lib/marketplaceUrl";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
@@ -42,10 +44,27 @@ const emptyFilters: MarketplaceFilters = {
 };
 
 export function MarketplaceView() {
+  const searchParams = useSearchParams();
+  const initialFromUrl = useMemo(
+    () => filtersFromSearchParams(new URLSearchParams(searchParams.toString())),
+    [searchParams],
+  );
+  const urlBootstrapped = useRef(false);
   const { requireCustomerAction, authPromptModal, canPerformCustomerAction } =
     useCustomerActionGuard();
   const toast = useToast();
-  const [filters, setFilters] = useState<MarketplaceFilters>(emptyFilters);
+  const [filters, setFilters] = useState<MarketplaceFilters>(() => ({
+    ...emptyFilters,
+    city: initialFromUrl.city ?? "",
+    district: initialFromUrl.district ?? "",
+    categoryId: initialFromUrl.categoryId ?? "",
+    keyword: initialFromUrl.keyword ?? "",
+    minPrice: initialFromUrl.minPrice ?? "",
+    maxPrice: initialFromUrl.maxPrice ?? "",
+    minRating: initialFromUrl.minRating ?? "",
+    guestCount: initialFromUrl.guestCount ?? "",
+    sortBy: initialFromUrl.sortBy ?? "",
+  }));
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
@@ -110,6 +129,25 @@ export function MarketplaceView() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (urlBootstrapped.current) return;
+    urlBootstrapped.current = true;
+    const hasQuery = [
+      initialFromUrl.city,
+      initialFromUrl.district,
+      initialFromUrl.categoryId,
+      initialFromUrl.keyword,
+      initialFromUrl.minPrice,
+      initialFromUrl.maxPrice,
+      initialFromUrl.minRating,
+      initialFromUrl.guestCount,
+      initialFromUrl.sortBy,
+    ].some((v) => (v ?? "").trim() !== "");
+    if (hasQuery) {
+      void load(initialFromUrl);
+    }
+  }, [initialFromUrl, load]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
