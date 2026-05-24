@@ -3,8 +3,10 @@
 :root {
   --background: #06040c;
   --foreground: #f4f4f8;
-  --orivona-dashboard-nav-h: 6rem;
-  --orivona-landing-nav-h: 4.75rem;
+  --orivona-header-h: 88px;
+  --orivona-dashboard-nav-h: 88px;
+  --orivona-landing-nav-h: 88px;
+  --orivona-header-mobile-row-h: 52px;
 }
 
 @theme inline {
@@ -26,13 +28,23 @@ html {
 }
 
 @media (max-width: 767px) {
-  :root {
-    --orivona-landing-nav-h: 7.75rem;
+  .orivona-landing-with-mobile-nav {
+    --orivona-landing-nav-h: calc(
+      var(--orivona-header-h) + var(--orivona-header-mobile-row-h)
+    );
   }
 }
 
 .orivona-landing-main {
   padding-top: calc(var(--orivona-landing-nav-h) + 0.75rem);
+}
+
+.orivona-main-below-header {
+  padding-top: 1.5rem;
+}
+
+.orivona-dashboard-shell .orivona-main-below-header {
+  padding-top: calc(var(--orivona-header-h) + 1.5rem);
 }
 
 @keyframes orivona-float {
@@ -138,7 +150,7 @@ html {
 
 /* Dashboard: sticky nav height + ORIVONA scrollbars */
 .orivona-dashboard-shell {
-  --orivona-dashboard-nav-h: 6rem;
+  --orivona-dashboard-nav-h: var(--orivona-header-h);
 }
 
 .orivona-scroll-x {

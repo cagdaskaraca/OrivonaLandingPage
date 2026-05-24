@@ -110,9 +110,7 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
   if (authLoading || !isAuthenticated) return null;
 
   const triggerClass =
-    variant === "landing"
-      ? "relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition-[color,box-shadow,border-color] hover:border-violet-400/30 hover:text-white hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]"
-      : "relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-400 transition-[color,box-shadow,border-color] hover:border-violet-400/30 hover:text-violet-100 hover:shadow-[0_0_18px_rgba(167,139,250,0.2)]";
+    "relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-zinc-300 transition-[color,box-shadow,border-color] hover:border-violet-400/30 hover:text-white hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]";
 
   return (
     <div ref={rootRef} className="relative">

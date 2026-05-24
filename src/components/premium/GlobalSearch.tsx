@@ -18,7 +18,12 @@ function groupHits(hits: GlobalSearchHit[]): Map<string, GlobalSearchHit[]> {
   return map;
 }
 
-export function GlobalSearch() {
+type GlobalSearchProps = {
+  /** Fits inside the 88px site header without changing bar height. */
+  compact?: boolean;
+};
+
+export function GlobalSearch({ compact = false }: GlobalSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<GlobalSearchHit[]>([]);
@@ -104,10 +109,15 @@ export function GlobalSearch() {
   let flatIdx = -1;
 
   return (
-    <div ref={wrapRef} className="relative w-full max-w-md">
+    <div
+      ref={wrapRef}
+      className={`relative w-full ${compact ? "max-w-none" : "max-w-md"}`}
+    >
       <input
         type="search"
-        className={`${inputClass} pr-10 text-sm`}
+        className={`${inputClass} pr-10 text-sm ${
+          compact ? "!h-10 !max-h-10 !min-h-10 !py-2" : ""
+        }`}
         placeholder="Her yerde ara..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}

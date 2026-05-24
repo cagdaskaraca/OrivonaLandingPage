@@ -6,7 +6,7 @@ import { btnPrimary, btnSecondary, glassCard } from "@/src/lib/ui";
 
 export function FaqPageView() {
   return (
-    <div className="relative min-h-screen">
+    <div className="orivona-landing-with-mobile-nav relative min-h-screen">
       <HomeNavbar />
 
       <main className="orivona-landing-main relative z-[2]">

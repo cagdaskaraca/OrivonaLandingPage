@@ -10,7 +10,7 @@ export function LandingNavAuth({ className = "" }: { className?: string }) {
       className={`flex flex-wrap items-center gap-4 text-sm text-zinc-300 ${className}`.trim()}
     >
       <NotificationBell variant="landing" />
-      <AuthNavLinks variant="landing" />
+      <AuthNavLinks />
     </div>
   );
 }

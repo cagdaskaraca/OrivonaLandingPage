@@ -1,11 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { Suspense, type ReactNode } from "react";
-import { GlobalSearch } from "@/src/components/premium/GlobalSearch";
-import { AuthNavLinks } from "@/src/components/nav/AuthNavLinks";
-import { NotificationBell } from "@/src/components/nav/NotificationBell";
+import type { ReactNode } from "react";
+import { OrivonaSiteHeader } from "@/src/components/nav/OrivonaSiteHeader";
 
 type DemoShellProps = {
   title: string;
@@ -16,9 +12,6 @@ type DemoShellProps = {
   stickyNav?: boolean;
   children: ReactNode;
 };
-
-const DASHBOARD_HEADER_CLASS =
-  "fixed top-0 left-0 right-0 z-[100] w-full border-b border-white/10 bg-[#06040c]/90 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
 
 export function DemoShell({
   title,
@@ -33,52 +26,16 @@ export function DemoShell({
         stickyNav ? "orivona-dashboard-shell" : ""
       }`}
     >
-      <header
-        className={
-          stickyNav
-            ? DASHBOARD_HEADER_CLASS
-            : "relative z-10 border-b border-white/10 bg-black/70 backdrop-blur-xl"
-        }
-      >
-        <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
-          <Link
-            href="/"
-            className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-90"
-          >
-            <span className="flex items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2">
-              <Image
-                src="/orivona-logo.png"
-                alt="ORIVONA"
-                width={120}
-                height={36}
-                className="h-8 w-auto object-contain"
-              />
-            </span>
-          </Link>
-          {stickyNav ? (
-            <div className="order-last w-full min-w-0 flex-1 sm:order-none sm:max-w-xs md:max-w-md lg:mx-4">
-              <Suspense fallback={null}>
-                <GlobalSearch />
-              </Suspense>
-            </div>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-zinc-400 sm:gap-x-4 sm:text-sm">
-            <Link href="/marketplace" className="hover:text-violet-200">
-              Marketplace
-            </Link>
-            <Link href="/ai-planner" className="hover:text-violet-200">
-              AI Planlayıcı
-            </Link>
-            <NotificationBell variant="demo" />
-            <AuthNavLinks variant="demo" />
-          </div>
-        </nav>
-      </header>
+      <OrivonaSiteHeader
+        variant="app"
+        fixed={stickyNav}
+        showSearch={stickyNav}
+      />
       <main
         className={`relative z-10 mx-auto max-w-6xl px-4 sm:px-6 ${
           stickyNav
-            ? "pt-[calc(var(--orivona-dashboard-nav-h)+1.5rem)] pb-10 sm:pb-14"
-            : "py-10 sm:py-14"
+            ? "orivona-main-below-header pb-10 sm:pb-14"
+            : "orivona-main-below-header py-10 sm:py-14"
         }`}
       >
         <div

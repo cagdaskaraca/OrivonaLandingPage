@@ -12,7 +12,7 @@ import { HomeVendorSection } from "@/src/components/home/HomeVendorSection";
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen">
+    <div className="orivona-landing-with-mobile-nav relative min-h-screen">
       <HomeNavbar />
 
       <main className="orivona-landing-main relative z-[2]">

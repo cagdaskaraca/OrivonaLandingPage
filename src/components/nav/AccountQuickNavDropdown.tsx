@@ -47,10 +47,7 @@ export function AccountQuickNavDropdown({
     };
   }, [open]);
 
-  const triggerClass =
-    variant === "landing"
-      ? `${triggerBase} border-white/10 bg-white/[0.04] text-zinc-200 hover:border-violet-400/35 hover:text-white hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]`
-      : `${triggerBase} border-violet-400/20 bg-violet-500/10 text-violet-100 hover:border-violet-400/40 hover:bg-violet-500/15`;
+  const triggerClass = `${triggerBase} border-white/10 bg-white/[0.04] text-zinc-200 hover:border-violet-400/35 hover:text-white hover:shadow-[0_0_18px_rgba(167,139,250,0.25)]`;
 
   function navigate(item: QuickNavItem) {
     setOpen(false);
