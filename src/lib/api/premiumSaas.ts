@@ -277,7 +277,9 @@ export async function fetchVendorPipeline(): Promise<VendorPipeline | null> {
           })),
         };
       }
-      return { columns, leads };
+      const result = { columns, leads };
+      console.log("Vendor pipeline response", result);
+      return result;
     },
     null,
   );

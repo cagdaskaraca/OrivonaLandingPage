@@ -197,3 +197,31 @@ html {
     rgba(192, 132, 252, 0.8)
   );
 }
+
+/* Vendor CRM pipeline: 6 equal columns on desktop; themed scroll on smaller viewports */
+.orivona-pipeline-board {
+  min-width: 0;
+}
+
+.orivona-pipeline-grid {
+  display: grid;
+  gap: 0.75rem;
+  min-width: min(100%, 100%);
+  grid-template-columns: repeat(6, minmax(10.5rem, 1fr));
+}
+
+@media (min-width: 1024px) {
+  .orivona-pipeline-board.orivona-scroll-x {
+    overflow-x: visible;
+  }
+
+  .orivona-pipeline-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+  }
+
+  .orivona-pipeline-column {
+    min-width: 0;
+  }
+}

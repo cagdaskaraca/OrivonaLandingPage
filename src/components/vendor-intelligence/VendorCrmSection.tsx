@@ -6,20 +6,23 @@ import {
   fetchVendorLeads,
   updateVendorLeadStatus,
 } from "@/src/lib/api/vendorIntelligence";
-import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { VendorLead } from "@/src/lib/api/types";
 import {
   LEAD_FUNNEL_STAGES,
   leadStatusLabel,
   maskLeadCustomerName,
   normalizeLeadStatusKey,
+  VENDOR_CRM_LOAD_ERROR,
+  VENDOR_EMPTY_DATA,
 } from "@/src/lib/vendorCrm";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 export function VendorCrmSection() {
   const [leads, setLeads] = useState<VendorLead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | number | null>(null);
   const [noteText, setNoteText] = useState("");
   const [statusDraft, setStatusDraft] = useState("");
@@ -27,7 +30,8 @@ export function VendorCrmSection() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
+    setActionError(null);
     try {
       const list = await fetchVendorLeads();
       setLeads(list);
@@ -36,9 +40,9 @@ export function VendorCrmSection() {
         return list[0]?.id ?? null;
       });
     } catch (err) {
-      logApiError("Vendor leads", err);
+      logApiError("Vendor CRM", err);
       setLeads([]);
-      setError(formatUiErrorMessage(err, "Lead listesi yüklenemedi."));
+      setLoadFailed(!isApiNotFound(err));
     } finally {
       setLoading(false);
     }
@@ -60,11 +64,13 @@ export function VendorCrmSection() {
   async function handleStatusUpdate() {
     if (selected?.id == null || !statusDraft) return;
     setSaving(true);
+    setActionError(null);
     try {
       await updateVendorLeadStatus(selected.id, statusDraft);
       await load();
     } catch (err) {
-      setError(formatUiErrorMessage(err, "Durum güncellenemedi."));
+      logApiError("Vendor CRM status update", err);
+      setActionError("Durum güncellenemedi.");
     } finally {
       setSaving(false);
     }
@@ -73,12 +79,14 @@ export function VendorCrmSection() {
   async function handleAddNote() {
     if (selected?.id == null || !noteText.trim()) return;
     setSaving(true);
+    setActionError(null);
     try {
       await addVendorLeadNote(selected.id, noteText.trim());
       setNoteText("");
       await load();
     } catch (err) {
-      setError(formatUiErrorMessage(err, "Not eklenemedi."));
+      logApiError("Vendor CRM note", err);
+      setActionError("Not eklenemedi.");
     } finally {
       setSaving(false);
     }
@@ -88,10 +96,10 @@ export function VendorCrmSection() {
     return <p className="text-sm text-zinc-500">CRM yükleniyor…</p>;
   }
 
-  if (error && leads.length === 0) {
+  if (loadFailed) {
     return (
       <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-        <p>{error}</p>
+        <p>{VENDOR_CRM_LOAD_ERROR}</p>
         <button
           type="button"
           className={`${btnSecondary} mt-3 text-xs`}
@@ -105,9 +113,8 @@ export function VendorCrmSection() {
 
   if (leads.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-violet-400/25 bg-violet-500/[0.04] px-4 py-8 text-center text-sm text-zinc-400">
-        Henüz lead kaydı yok. Marketplace görüntülemeleri ve teklifler burada
-        listelenir.
+      <p className="rounded-xl border border-dashed border-violet-400/25 bg-violet-500/[0.04] px-4 py-8 text-center text-sm text-zinc-500">
+        {VENDOR_EMPTY_DATA}
       </p>
     );
   }
@@ -210,8 +217,8 @@ export function VendorCrmSection() {
           >
             Not kaydet
           </button>
-          {error ? (
-            <p className="mt-3 text-xs text-red-300/90">{error}</p>
+          {actionError ? (
+            <p className="mt-3 text-xs text-red-300/90">{actionError}</p>
           ) : null}
         </aside>
       ) : null}

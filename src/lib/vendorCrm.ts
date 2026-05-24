@@ -1,6 +1,13 @@
 import type { VendorLead, VendorLeadFunnelStage } from "@/src/lib/api/types";
 import { maskFullName } from "@/src/lib/messaging";
 
+/** Fixed UI copy for vendor dashboard sections (never show unrelated API errors). */
+export const VENDOR_ANALYTICS_LOAD_ERROR =
+  "Analitik veriler şu anda alınamadı.";
+export const VENDOR_CRM_LOAD_ERROR = "CRM verileri şu anda alınamadı.";
+export const VENDOR_PIPELINE_LOAD_ERROR = "Pipeline verileri şu anda alınamadı.";
+export const VENDOR_EMPTY_DATA = "Henüz veri yok.";
+
 export const LEAD_FUNNEL_STAGES = [
   { value: "New", label: "Yeni" },
   { value: "Contacted", label: "İletişime geçildi" },

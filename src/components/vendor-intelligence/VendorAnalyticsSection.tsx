@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchVendorAnalyticsLeads,
+  fetchVendorAnalyticsMonthly,
   fetchVendorAnalyticsServices,
   fetchVendorAnalyticsSummary,
 } from "@/src/lib/api/vendorIntelligence";
-import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type {
   VendorAnalyticsSummary,
   VendorLeadFunnelStage,
+  VendorMonthlyAnalytics,
   VendorServicePerformance,
 } from "@/src/lib/api/types";
 import {
@@ -17,6 +19,8 @@ import {
   formatPercent,
   formatResponseTime,
   formatTryAmount,
+  VENDOR_ANALYTICS_LOAD_ERROR,
+  VENDOR_EMPTY_DATA,
 } from "@/src/lib/vendorCrm";
 import { btnSecondary, skeletonClass } from "@/src/lib/ui";
 
@@ -41,27 +45,69 @@ export function VendorAnalyticsSection() {
   const [summary, setSummary] = useState<VendorAnalyticsSummary | null>(null);
   const [services, setServices] = useState<VendorServicePerformance[]>([]);
   const [funnelStages, setFunnelStages] = useState<VendorLeadFunnelStage[]>([]);
+  const [monthly, setMonthly] = useState<VendorMonthlyAnalytics[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadFailed(false);
     try {
-      const [s, svc, funnel] = await Promise.all([
-        fetchVendorAnalyticsSummary(),
-        fetchVendorAnalyticsServices(),
-        fetchVendorAnalyticsLeads(),
-      ]);
-      setSummary(s);
-      setServices(svc);
-      setFunnelStages(funnel);
+      const [summaryRes, servicesRes, funnelRes, monthlyRes] =
+        await Promise.allSettled([
+          fetchVendorAnalyticsSummary(),
+          fetchVendorAnalyticsServices(),
+          fetchVendorAnalyticsLeads(),
+          fetchVendorAnalyticsMonthly(),
+        ]);
+
+      let anyOk = false;
+      let anyHardFail = false;
+
+      if (summaryRes.status === "fulfilled") {
+        setSummary(summaryRes.value);
+        anyOk = true;
+      } else {
+        logApiError("Vendor analytics summary", summaryRes.reason);
+        if (!isApiNotFound(summaryRes.reason)) anyHardFail = true;
+        setSummary(null);
+      }
+
+      if (servicesRes.status === "fulfilled") {
+        setServices(servicesRes.value);
+        anyOk = true;
+      } else {
+        logApiError("Vendor analytics services", servicesRes.reason);
+        if (!isApiNotFound(servicesRes.reason)) anyHardFail = true;
+        setServices([]);
+      }
+
+      if (funnelRes.status === "fulfilled") {
+        setFunnelStages(funnelRes.value);
+        anyOk = true;
+      } else {
+        logApiError("Vendor analytics leads funnel", funnelRes.reason);
+        if (!isApiNotFound(funnelRes.reason)) anyHardFail = true;
+        setFunnelStages([]);
+      }
+
+      if (monthlyRes.status === "fulfilled") {
+        setMonthly(monthlyRes.value);
+        anyOk = true;
+      } else {
+        logApiError("Vendor analytics monthly", monthlyRes.reason);
+        if (!isApiNotFound(monthlyRes.reason)) anyHardFail = true;
+        setMonthly([]);
+      }
+
+      setLoadFailed(anyHardFail && !anyOk);
     } catch (err) {
       logApiError("Vendor analytics", err);
       setSummary(null);
       setServices([]);
       setFunnelStages([]);
-      setError(formatUiErrorMessage(err, "Analitik veriler yüklenemedi."));
+      setMonthly([]);
+      setLoadFailed(!isApiNotFound(err));
     } finally {
       setLoading(false);
     }
@@ -87,10 +133,10 @@ export function VendorAnalyticsSection() {
     );
   }
 
-  if (error) {
+  if (loadFailed) {
     return (
       <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-        <p>{error}</p>
+        <p>{VENDOR_ANALYTICS_LOAD_ERROR}</p>
         <button
           type="button"
           className={`${btnSecondary} mt-3 text-xs`}
@@ -104,6 +150,22 @@ export function VendorAnalyticsSection() {
 
   const reservations =
     summary?.reservations ?? summary?.totalReservations ?? 0;
+
+  const hasAnyData =
+    (summary?.totalViews ?? 0) > 0 ||
+    (summary?.totalMessages ?? 0) > 0 ||
+    (summary?.totalOffers ?? 0) > 0 ||
+    services.length > 0 ||
+    funnel.some((f) => f.count > 0) ||
+    monthly.length > 0;
+
+  if (!hasAnyData) {
+    return (
+      <p className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-zinc-500">
+        {VENDOR_EMPTY_DATA}
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -145,7 +207,7 @@ export function VendorAnalyticsSection() {
         </p>
         {funnel.every((f) => f.count === 0) ? (
           <p className="mt-4 rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-zinc-500">
-            Henüz lead verisi yok.
+            {VENDOR_EMPTY_DATA}
           </p>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-5">
@@ -178,7 +240,7 @@ export function VendorAnalyticsSection() {
         </h3>
         {services.length === 0 ? (
           <p className="mt-4 rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-zinc-500">
-            Performans verisi bulunamadı.
+            {VENDOR_EMPTY_DATA}
           </p>
         ) : (
           <div className="orivona-scroll-x mt-4 rounded-xl border border-white/10 pb-0.5">
