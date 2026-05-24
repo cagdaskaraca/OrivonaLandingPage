@@ -36,6 +36,7 @@ import type {
 import { formatCityForApi } from "@/src/lib/turkish";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
+import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { AvailabilityHeatmapPanel } from "@/src/components/premium/AvailabilityHeatmapPanel";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -74,6 +75,7 @@ function serviceToForm(service: VendorService): VendorServicePayload {
 }
 
 function DashboardContent() {
+  useDashboardHashScroll();
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);

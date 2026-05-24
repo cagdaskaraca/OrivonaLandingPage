@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { FaqItem } from "@/src/lib/helpContent";
+import type { FaqItem } from "@/src/lib/helpFaqContent";
 import { glassCard } from "@/src/lib/ui";
 
 type FaqAccordionProps = {
@@ -68,9 +68,16 @@ export function FaqAccordion({ items, allowMultiple = false }: FaqAccordionProps
               style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
             >
               <div className="overflow-hidden">
-                <p className="border-t border-white/[0.06] px-5 pb-4 pt-0 text-sm leading-relaxed text-zinc-400">
-                  {item.answer}
-                </p>
+                <div className="space-y-3 border-t border-white/[0.06] px-5 pb-5 pt-3">
+                  {item.answer.split(/\n\n+/).map((paragraph, i) => (
+                    <p
+                      key={i}
+                      className="text-sm leading-relaxed text-zinc-400"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

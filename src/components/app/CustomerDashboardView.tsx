@@ -37,6 +37,7 @@ import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
+import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -101,6 +102,7 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 }
 
 function DashboardContent() {
+  useDashboardHashScroll();
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("conversation");
   const { user, logout } = useAuth();

@@ -71,70 +71,8 @@ export const TRUST_PILLARS = [
   },
 ] as const;
 
-export type FaqItem = { id: string; question: string; answer: string };
-
-export const FAQ_ITEMS: FaqItem[] = [
-  {
-    id: "what",
-    question: "ORIVONA nedir?",
-    answer:
-      "ORIVONA, düğün, nişan, doğum günü ve kurumsal etkinlikler için hizmet sağlayıcıları keşfetmenizi, teklif almanızı ve organizasyonunuzu tek platformdan yönetmenizi sağlayan AI destekli bir marketplace'tir.",
-  },
-  {
-    id: "reservation",
-    question: "Rezervasyon nasıl çalışır?",
-    answer:
-      "Marketplace'te hizmet seçip teklif isteyebilir veya kabul ettiğiniz teklifle rezervasyon oluşturabilirsiniz. İşletme onayı sonrası rezervasyonunuz panelinizde görünür ve süreç mesajlaşma ile takip edilir.",
-  },
-  {
-    id: "offers",
-    question: "Teklif sistemi nasıl çalışır?",
-    answer:
-      "Bir hizmet için teklif talebi gönderirsiniz; işletme size özel fiyat, tarih ve koşullarla yanıt verir. Birden fazla teklifi karşılaştırıp uygun olanı kabul edebilirsiniz.",
-  },
-  {
-    id: "vendor-approval",
-    question: "İşletmeler nasıl onaylanır?",
-    answer:
-      "İşletmeler başvuru yapar; ORIVONA ekibi profil ve belgeleri inceler. Onaylanan işletmeler marketplace'te görünür ve müşterilerden teklif alabilir.",
-  },
-  {
-    id: "ai",
-    question: "AI Planlayıcı ne yapar?",
-    answer:
-      "Etkinlik türü, şehir, kişi sayısı ve bütçenize göre checklist, bütçe dağılımı, zaman çizelgesi ve önerilen hizmetler üretir. Planınızı kaydedip marketplace ile birleştirebilirsiniz.",
-  },
-  {
-    id: "qr",
-    question: "QR davetiye sistemi nasıl çalışır?",
-    answer:
-      "Davetlilerinize link veya e-posta ile davet gönderebilir; RSVP sonrası kişisel QR bilet oluşturulur. Etkinlik günü QR ile giriş doğrulanabilir.",
-  },
-  {
-    id: "payment",
-    question: "Ödeme sistemi var mı?",
-    answer:
-      "Rezervasyon ve teklif süreçleri platformda yönetilir. Ödeme koşulları işletme ile anlaşmanıza göre şekillenir; detaylar teklif ve rezervasyon ekranlarında yer alır.",
-  },
-  {
-    id: "become-vendor",
-    question: "Hizmet sağlayıcı nasıl olunur?",
-    answer:
-      "Ana sayfadaki İşletme Başvurusu veya kayıt ekranından işletme hesabı oluşturun. Profilinizi tamamlayıp hizmetlerinizi ekledikten sonra onay sürecine alınırsınız.",
-  },
-  {
-    id: "pricing",
-    question: "Etkinlik oluşturmak ücretli mi?",
-    answer:
-      "Müşteri hesabı oluşturmak ve etkinlik planı açmak ücretsizdir. Hizmet bedelleri işletmelerin tekliflerine göre belirlenir.",
-  },
-  {
-    id: "contact-vendor",
-    question: "Müşteriler işletmelere nasıl ulaşır?",
-    answer:
-      "Hizmet detay sayfasından mesaj gönderebilir veya teklif isteyebilirsiniz. Tüm iletişim ve teklif geçmişi panelinizde saklanır.",
-  },
-];
+export type { FaqCategory, FaqItem, FaqSection } from "@/src/lib/helpFaqContent";
+export { FAQ_ITEMS, FAQ_SECTIONS } from "@/src/lib/helpFaqContent";
 
 export type DashboardHelpCard = {
   id: string;

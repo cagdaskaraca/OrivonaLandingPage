@@ -1,5 +1,4 @@
-import { FaqAccordion } from "@/src/components/help/FaqAccordion";
-import { FAQ_ITEMS } from "@/src/lib/helpContent";
+import { FaqGroupedSection } from "@/src/components/help/FaqGroupedSection";
 
 export function HomeFaqSection() {
   return (
@@ -7,7 +6,7 @@ export function HomeFaqSection() {
       id="sss"
       className="relative scroll-mt-28 border-t border-violet-200/[0.06] py-16 sm:py-24"
     >
-      <div className="mx-auto max-w-3xl px-4 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">
             Sık sorulan sorular
@@ -16,12 +15,12 @@ export function HomeFaqSection() {
             Merak ettikleriniz
           </h2>
           <p className="mt-4 text-sm text-zinc-400 sm:text-base">
-            Rezervasyon, teklifler, AI planlayıcı ve işletme süreçleri hakkında
-            kısa yanıtlar.
+            Müşteri, işletme ve yönetici süreçleri için adım adım rehberler.
+            Sağ alttaki OBot ile de soru sorabilirsiniz.
           </p>
         </div>
         <div className="mt-10">
-          <FaqAccordion items={FAQ_ITEMS} />
+          <FaqGroupedSection />
         </div>
       </div>
     </section>
