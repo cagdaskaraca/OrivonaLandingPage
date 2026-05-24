@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
 
 function scrollToSection(elementId: string) {
@@ -40,6 +42,16 @@ export function SmoothScrollToTop({
 }: {
   children: ReactNode;
 } & Omit<ComponentProps<"a">, "href" | "onClick">) {
+  const pathname = usePathname();
+
+  if (pathname !== "/") {
+    return (
+      <Link href="/" className={className} {...rest}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
     <a
       {...rest}

@@ -10,7 +10,7 @@ const navLink =
 
 export function HomeNavbar() {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-[100] w-full border-b border-white/10 bg-[#06040c]/90 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80">
       <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
         <SmoothScrollToTop className="flex min-w-0 items-center transition-opacity hover:opacity-90">
           <span className="flex min-h-[3rem] shrink-0 items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2">
@@ -38,9 +38,9 @@ export function HomeNavbar() {
           <SmoothScrollToSection sectionId="nasil-calisir" className={navLink}>
             Nasıl Çalışır
           </SmoothScrollToSection>
-          <SmoothScrollToSection sectionId="sss" className={navLink}>
+          <Link href="/faq" className={navLink}>
             SSS
-          </SmoothScrollToSection>
+          </Link>
           <SmoothScrollToSection sectionId="iletisim" className={navLink}>
             İletişim
           </SmoothScrollToSection>
@@ -62,9 +62,9 @@ export function HomeNavbar() {
         <SmoothScrollToSection sectionId="nasil-calisir" className="hover:text-violet-200">
           Nasıl Çalışır
         </SmoothScrollToSection>
-        <SmoothScrollToSection sectionId="sss" className="hover:text-violet-200">
+        <Link href="/faq" className="hover:text-violet-200">
           SSS
-        </SmoothScrollToSection>
+        </Link>
         <SmoothScrollToSection sectionId="iletisim" className="hover:text-violet-200">
           İletişim
         </SmoothScrollToSection>

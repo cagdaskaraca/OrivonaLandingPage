@@ -29,14 +29,10 @@ export function DemoShell({
 }: DemoShellProps) {
   return (
     <div
-      className={`relative min-h-screen bg-[#06040c] text-zinc-100 ${
-        stickyNav ? "orivona-dashboard-shell" : "overflow-x-hidden"
+      className={`relative min-h-screen text-zinc-100 ${
+        stickyNav ? "orivona-dashboard-shell" : ""
       }`}
     >
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_55%_at_50%_-15%,rgba(167,139,250,0.18),transparent_55%)]"
-        aria-hidden
-      />
       <header
         className={
           stickyNav

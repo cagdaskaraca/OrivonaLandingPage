@@ -7,6 +7,7 @@ import { toHelpAssistantRole } from "@/src/lib/obot/types";
 
 const OBOT_ROUTE_PATTERNS: RegExp[] = [
   /^\/$/,
+  /^\/faq\/?$/,
   /^\/marketplace\/?$/,
   /^\/services\/[^/]+\/?$/,
   /^\/customer\/dashboard\/?$/,

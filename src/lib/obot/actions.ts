@@ -103,7 +103,7 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
     label: "Admin paneli",
     href: "/admin/dashboard",
   },
-  faq: { id: "faq", label: "SSS bölümü", href: "/#sss" },
+  faq: { id: "faq", label: "SSS sayfası", href: "/faq" },
 };
 
 export function resolveObotAction(

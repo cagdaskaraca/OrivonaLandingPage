@@ -9,7 +9,7 @@ export default function CustomerDashboardPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-[#06040c] text-sm text-zinc-400">
+        <div className="flex min-h-screen items-center justify-center text-sm text-zinc-400">
           Yükleniyor…
         </div>
       }

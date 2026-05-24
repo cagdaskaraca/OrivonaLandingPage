@@ -397,3 +397,85 @@ export const FAQ_ITEMS: FaqItem[] = [
   ...VENDOR_FAQ,
   ...ADMIN_FAQ,
 ];
+
+const FAQ_BY_ID = new Map(FAQ_ITEMS.map((item) => [item.id, item]));
+
+export function getFaqItemsByIds(ids: string[]): FaqItem[] {
+  return ids
+    .map((id) => FAQ_BY_ID.get(id))
+    .filter((item): item is FaqItem => item != null);
+}
+
+/** Topic groups for the dedicated /faq page. */
+export type FaqPageSection = {
+  id: string;
+  label: string;
+  description: string;
+  itemIds: string[];
+};
+
+export const FAQ_PAGE_SECTIONS: FaqPageSection[] = [
+  {
+    id: "customers",
+    label: "Müşteriler",
+    description: "Keşif, etkinlik planı ve müşteri paneli",
+    itemIds: [
+      "c-what",
+      "c-create-event",
+      "c-marketplace-search",
+      "c-favorites",
+      "c-messaging",
+    ],
+  },
+  {
+    id: "vendors",
+    label: "İşletmeler",
+    description: "İlan, müsaitlik, mesajlaşma ve işletme paneli",
+    itemIds: [
+      "v-account",
+      "v-approval",
+      "v-listing",
+      "v-media",
+      "v-availability",
+      "v-messages",
+      "v-crm",
+      "v-analytics",
+    ],
+  },
+  {
+    id: "offers-reservations",
+    label: "Rezervasyon & Teklif",
+    description: "Teklif isteme, kabul ve rezervasyon akışları",
+    itemIds: [
+      "c-request-offer",
+      "c-reservation",
+      "v-offer-response",
+      "v-revise-offer",
+      "v-reservations",
+    ],
+  },
+  {
+    id: "invite-qr",
+    label: "Davetiye & QR",
+    description: "Davetli listesi, RSVP, ortak link ve QR bilet",
+    itemIds: [
+      "c-guest-list",
+      "c-public-invite",
+      "c-qr-invite",
+      "c-rsvp-track",
+      "c-seating",
+    ],
+  },
+  {
+    id: "ai-planner",
+    label: "AI Planlayıcı",
+    description: "Yapay zeka destekli etkinlik planı ve öneriler",
+    itemIds: ["c-ai-planner"],
+  },
+  {
+    id: "account-security",
+    label: "Hesap & Güvenlik",
+    description: "Hesap rolleri, onay süreçleri ve platform yönetimi",
+    itemIds: ["a-vendor-approve", "a-categories", "a-users", "a-badges"],
+  },
+];

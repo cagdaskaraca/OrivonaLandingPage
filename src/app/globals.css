@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07060b;
+  --background: #06040c;
   --foreground: #f4f4f8;
   --orivona-dashboard-nav-h: 6rem;
+  --orivona-landing-nav-h: 4.75rem;
 }
 
 @theme inline {
@@ -21,6 +22,17 @@ body {
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --orivona-landing-nav-h: 7.75rem;
+  }
+}
+
+.orivona-landing-main {
+  padding-top: calc(var(--orivona-landing-nav-h) + 0.75rem);
 }
 
 @keyframes orivona-float {
@@ -56,6 +68,9 @@ html {
   .orivona-phone-float,
   .orivona-phone-float-alt {
     animation: none;
+  }
+  .orivona-global-mouse-glow {
+    display: none !important;
   }
 }
 
