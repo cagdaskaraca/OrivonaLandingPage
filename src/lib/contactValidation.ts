@@ -40,6 +40,26 @@ export function digitsOnly(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+/** Strip dial code / leading zero from pasted or typed input (local digits only). */
+export function normalizeNationalDigits(
+  countryCode: string,
+  raw: string,
+): string {
+  let digits = digitsOnly(raw);
+  const maxLen = countryCode === "TR" ? 10 : 15;
+
+  if (countryCode === "TR") {
+    if (digits.startsWith("90") && digits.length > 10) {
+      digits = digits.slice(2);
+    }
+    if (digits.startsWith("0") && digits.length >= 10) {
+      digits = digits.slice(1);
+    }
+  }
+
+  return digits.slice(0, maxLen);
+}
+
 /** Turkish mobile display: 5XX XXX XX XX */
 export function formatTrNationalDisplay(digits: string): string {
   const d = digitsOnly(digits).slice(0, 10);
@@ -104,7 +124,7 @@ export function validatePhone(
   nationalDigits: string,
   required = false,
 ): { valid: boolean; message?: string } {
-  const digits = digitsOnly(nationalDigits);
+  const digits = normalizeNationalDigits(countryCode, nationalDigits);
   if (!digits) {
     return required
       ? { valid: false, message: PHONE_INVALID_MESSAGE }

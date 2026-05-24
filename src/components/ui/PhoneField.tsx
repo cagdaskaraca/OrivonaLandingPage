@@ -4,9 +4,8 @@ import { useEffect, useId, useState } from "react";
 import { FieldError } from "@/src/components/ui/FieldError";
 import {
   PHONE_COUNTRIES,
-  digitsOnly,
   formatNationalDisplay,
-  getPhoneCountry,
+  normalizeNationalDigits,
   parseStoredPhone,
   toE164Phone,
   validatePhone,
@@ -47,7 +46,6 @@ export function PhoneField({
     setNationalDigits(next.nationalDigits);
   }, [value]);
 
-  const country = getPhoneCountry(countryCode);
   const display = formatNationalDisplay(countryCode, nationalDigits);
   const validation = validatePhone(countryCode, nationalDigits, required);
   const shouldShow = showValidation || touched;
@@ -64,15 +62,13 @@ export function PhoneField({
 
   function handleCountryChange(nextCode: string) {
     setCountryCode(nextCode);
-    const maxLen = nextCode === "TR" ? 10 : 15;
-    const trimmed = digitsOnly(nationalDigits).slice(0, maxLen);
+    const trimmed = normalizeNationalDigits(nextCode, nationalDigits);
     setNationalDigits(trimmed);
     commit(nextCode, trimmed);
   }
 
   function handleDigitsChange(raw: string) {
-    const maxLen = countryCode === "TR" ? 10 : 15;
-    const digits = digitsOnly(raw).slice(0, maxLen);
+    const digits = normalizeNationalDigits(countryCode, raw);
     setNationalDigits(digits);
     commit(countryCode, digits);
   }
@@ -98,15 +94,12 @@ export function PhoneField({
           ))}
         </select>
         <div className={shellClass}>
-          <span className="shrink-0 text-zinc-500" aria-hidden>
-            +{country.dial} |
-          </span>
           <input
             id={inputId}
             type="text"
             inputMode="numeric"
             autoComplete="tel-national"
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-white placeholder:text-zinc-500 outline-none"
+            className="min-w-0 w-full border-0 bg-transparent p-0 text-white placeholder:text-zinc-500 outline-none"
             value={display}
             onChange={(e) => handleDigitsChange(e.target.value)}
             onBlur={() => setTouched(true)}
