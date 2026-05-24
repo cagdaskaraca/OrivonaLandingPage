@@ -694,6 +694,22 @@ function normalizeAdminVendor(raw: unknown): AdminVendor {
   return {
     id: recordId(o),
     businessName: recordStr(o, "businessName", "BusinessName"),
+    legalBusinessName: recordStr(
+      o,
+      "legalBusinessName",
+      "LegalBusinessName",
+    ),
+    companyType: recordStr(o, "companyType", "CompanyType"),
+    taxNumber: recordStr(o, "taxNumber", "TaxNumber"),
+    nationalId:
+      recordStr(o, "nationalId", "NationalId") ??
+      recordStr(o, "nationalID", "NationalID") ??
+      recordStr(o, "tcKimlikNo", "TcKimlikNo"),
+    identityVerificationStatus: recordStr(
+      o,
+      "identityVerificationStatus",
+      "IdentityVerificationStatus",
+    ),
     ownerName:
       recordStr(o, "ownerName", "OwnerName") ??
       recordStr(o, "fullName", "FullName") ??
@@ -916,6 +932,9 @@ function normalizeNotification(raw: unknown): AppNotification {
 
   return {
     id: recordId(o),
+    type:
+      recordStr(o, "type", "Type") ??
+      recordStr(o, "notificationType", "NotificationType"),
     title: recordStr(o, "title", "Title"),
     message:
       recordStr(o, "message", "Message") ??
@@ -926,6 +945,11 @@ function normalizeNotification(raw: unknown): AppNotification {
       recordStr(o, "sentAt", "SentAt"),
     isRead,
     readAt,
+    actionUrl:
+      recordStr(o, "actionUrl", "ActionUrl") ??
+      recordStr(o, "action_url", "action_url") ??
+      recordStr(o, "url", "Url") ??
+      recordStr(o, "link", "Link"),
   };
 }
 

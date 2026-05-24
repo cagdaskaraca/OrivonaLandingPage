@@ -8,10 +8,13 @@ import {
   fetchAccountProfile,
   updateAccountProfile,
 } from "@/src/lib/api";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { ApiError, formatUiErrorMessage } from "@/src/lib/api/client";
 import type { AccountProfile } from "@/src/lib/api/types";
 import { getRoleFromUser, normalizeRole } from "@/src/lib/auth";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { NumericInput } from "@/src/components/ui/NumericInput";
+import { PhoneField } from "@/src/components/ui/PhoneField";
+import { isValidStoredPhone } from "@/src/lib/contactValidation";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
 function preferredTypesToString(value: AccountProfile["preferredEventTypes"]): string {
@@ -33,6 +36,8 @@ function AccountForm() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [phoneValid, setPhoneValid] = useState(true);
 
   const effectiveRole =
     role ??
@@ -47,7 +52,7 @@ function AccountForm() {
       .catch((err) => {
         console.log("Account profile fetch failed", err);
         if (err instanceof ApiError) console.log("Backend error response", err.body);
-        setError(formatApiErrorMessage(err, "Profil yüklenemedi."));
+        setError(formatUiErrorMessage(err, "Profil yüklenemedi."));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -62,11 +67,18 @@ function AccountForm() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!profile) return;
+    setShowValidation(true);
+    const phoneValue = profile.phoneNumber ?? profile.phone ?? "";
+    if (!isValidStoredPhone(phoneValue, false)) {
+      return;
+    }
     setSaving(true);
     setSuccess(null);
     setError(null);
     const payload: AccountProfile = {
       ...profile,
+      phoneNumber: phoneValue.trim() || undefined,
+      phone: phoneValue.trim() || undefined,
       preferredEventTypes: isCustomer
         ? preferredTypesFromString(
             preferredTypesToString(profile.preferredEventTypes),
@@ -80,7 +92,7 @@ function AccountForm() {
     } catch (err) {
       console.log("Account profile save failed", err);
       if (err instanceof ApiError) console.log("Backend error response", err.body);
-      setError(formatApiErrorMessage(err, "Profil kaydedilemedi."));
+      setError(formatUiErrorMessage(err, "Profil kaydedilemedi."));
     } finally {
       setSaving(false);
     }
@@ -138,21 +150,14 @@ function AccountForm() {
             </label>
             <label className="block text-sm">
               <span className="mb-1.5 block text-xs text-zinc-400">Telefon</span>
-              <input
-                className={inputClass}
+              <PhoneField
                 value={profile.phoneNumber ?? profile.phone ?? ""}
-                onChange={(e) => {
-                  updateField("phoneNumber", e.target.value);
-                  updateField("phone", e.target.value);
+                onChange={(e164) => {
+                  updateField("phoneNumber", e164);
+                  updateField("phone", e164);
                 }}
-              />
-            </label>
-            <label className="block text-sm sm:col-span-2">
-              <span className="mb-1.5 block text-xs text-zinc-400">Rol</span>
-              <input
-                className={`${inputClass} opacity-70`}
-                value={profile.role ?? effectiveRole ?? ""}
-                readOnly
+                showValidation={showValidation}
+                onValidityChange={setPhoneValid}
               />
             </label>
           </div>
@@ -260,31 +265,27 @@ function AccountForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm">
                   <span className="mb-1.5 block text-xs text-zinc-400">Min bütçe (₺)</span>
-                  <input
-                    type="number"
-                    className={inputClass}
-                    value={profile.budgetMin ?? ""}
-                    onChange={(e) =>
-                      updateField("budgetMin", Number(e.target.value))
-                    }
+                  <NumericInput
+                    value={profile.budgetMin ?? 0}
+                    onChange={(budgetMin) => updateField("budgetMin", budgetMin)}
                   />
                 </label>
                 <label className="block text-sm">
                   <span className="mb-1.5 block text-xs text-zinc-400">Max bütçe (₺)</span>
-                  <input
-                    type="number"
-                    className={inputClass}
-                    value={profile.budgetMax ?? ""}
-                    onChange={(e) =>
-                      updateField("budgetMax", Number(e.target.value))
-                    }
+                  <NumericInput
+                    value={profile.budgetMax ?? 0}
+                    onChange={(budgetMax) => updateField("budgetMax", budgetMax)}
                   />
                 </label>
               </div>
             </div>
           ) : null}
 
-          <button type="submit" className={btnPrimary} disabled={saving}>
+          <button
+            type="submit"
+            className={btnPrimary}
+            disabled={saving || !phoneValid || !profile.fullName?.trim()}
+          >
             {saving ? "Kaydediliyor…" : "Kaydet"}
           </button>
         </form>

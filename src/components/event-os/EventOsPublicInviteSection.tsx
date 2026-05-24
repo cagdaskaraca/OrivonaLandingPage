@@ -110,7 +110,7 @@ function PublicInvitePanel({ planId }: { planId: string | number }) {
       <EventOsPlanPicker />
       <p className="text-sm text-zinc-400">
         Misafirleriniz e-posta olmadan bu ortak linkten ad, telefon veya e-posta ile
-        kendilerini doğrulayıp RSVP verebilir ve QR bilet alabilir.
+        kendilerini doğrulayıp katılım yanıtı verebilir ve QR bilet alabilir.
       </p>
 
       {error ? <EventOsError message={error} onRetry={() => void load()} /> : null}

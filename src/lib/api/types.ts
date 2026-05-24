@@ -83,6 +83,8 @@ export type MarketplaceItem = {
   imageUrl?: string;
   coverImageUrl?: string;
   isFeatured?: boolean;
+  isSponsored?: boolean;
+  promotionType?: string;
   isFavorite?: boolean;
   isVendorPremium?: boolean;
   createdAt?: string;
@@ -300,6 +302,11 @@ export type AiEventPlanResult = {
 export type AdminVendor = {
   id?: string | number;
   businessName?: string;
+  legalBusinessName?: string;
+  companyType?: string;
+  taxNumber?: string;
+  nationalId?: string;
+  identityVerificationStatus?: string;
   ownerName?: string;
   email?: string;
   city?: string;
@@ -576,9 +583,13 @@ export type AppNotification = {
   id?: string | number;
   title?: string;
   message?: string;
+  type?: string;
   createdAt?: string;
   isRead?: boolean;
   readAt?: string;
+  actionUrl?: string;
+  /** Client-only row (not from API). */
+  synthetic?: boolean;
 };
 
 export type Conversation = {
@@ -794,6 +805,7 @@ export type EventTask = {
   status?: string;
   categoryName?: string;
   priority?: string;
+  dueDate?: string;
   sortOrder?: number;
 };
 
@@ -803,6 +815,7 @@ export type EventTaskFormPayload = {
   status?: EventTaskStatus;
   categoryName?: string;
   priority?: string;
+  dueDate?: string;
 };
 
 export type EventGuest = {

@@ -20,6 +20,7 @@ import {
   taskProgressPercent,
 } from "@/src/lib/eventOs";
 import { EventPlanCountdown } from "@/src/components/premium/EventPlanCountdown";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 function planToForm(plan: EventPlan): EventPlanFormPayload {
@@ -257,38 +258,25 @@ export function EventPlansSection() {
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Misafir</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.guestCount}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  guestCount: Number(e.target.value),
-                }))
+              onChange={(guestCount) =>
+                setForm((f) => ({ ...f, guestCount }))
               }
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Min bütçe</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.budgetMin}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, budgetMin: Number(e.target.value) }))
-              }
+              onChange={(budgetMin) => setForm((f) => ({ ...f, budgetMin }))}
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Max bütçe</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.budgetMax}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, budgetMax: Number(e.target.value) }))
-              }
+              onChange={(budgetMax) => setForm((f) => ({ ...f, budgetMax }))}
             />
           </label>
         </div>

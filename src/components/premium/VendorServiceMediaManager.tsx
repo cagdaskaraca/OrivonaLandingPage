@@ -8,6 +8,7 @@ import {
   type ServiceMediaItem,
 } from "@/src/lib/api/premiumSaas";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 type VendorServiceMediaManagerProps = {
@@ -123,12 +124,7 @@ export function VendorServiceMediaManager({
         </label>
         <label className="block text-sm">
           <span className="mb-1 text-xs text-zinc-500">Sıra</span>
-          <input
-            type="number"
-            className={inputClass}
-            value={sortOrder}
-            onChange={(e) => setSortOrder(Number(e.target.value))}
-          />
+          <NumericInput value={sortOrder} onChange={setSortOrder} />
         </label>
         <label className="flex items-center gap-2 text-sm sm:col-span-2">
           <input

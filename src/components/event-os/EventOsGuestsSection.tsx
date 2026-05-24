@@ -31,7 +31,11 @@ import {
   resolvePublicInviteUrl,
   shareInviteViaWhatsApp,
 } from "@/src/lib/invites";
+import { EmailField } from "@/src/components/ui/EmailField";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { NumericInput } from "@/src/components/ui/NumericInput";
+import { PhoneField } from "@/src/components/ui/PhoneField";
+import { isValidEmail, isValidStoredPhone } from "@/src/lib/contactValidation";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import {
   btnPrimary,
@@ -78,6 +82,9 @@ function GuestsPanel({ planId }: { planId: string | number }) {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [emailValid, setEmailValid] = useState(true);
+  const [phoneValid, setPhoneValid] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,12 +127,24 @@ function GuestsPanel({ planId }: { planId: string | number }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setShowValidation(true);
+    const emailFilled = Boolean(form.email?.trim());
+    const phoneFilled = Boolean(form.phone?.trim());
+    if (emailFilled && !isValidEmail(form.email!)) return;
+    if (phoneFilled && !isValidStoredPhone(form.phone, false)) return;
+    if (!emailValid || !phoneValid) return;
+
     setSaving(true);
     try {
+      const payload: EventGuestFormPayload = {
+        ...form,
+        email: form.email?.trim() ?? "",
+        phone: form.phone?.trim() ?? "",
+      };
       if (editingId != null) {
-        await updateEventPlanGuest(planId, editingId, form);
+        await updateEventPlanGuest(planId, editingId, payload);
       } else {
-        await createEventPlanGuest(planId, form);
+        await createEventPlanGuest(planId, payload);
       }
       setForm(defaultGuest());
       setEditingId(null);
@@ -228,7 +247,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
               <tr className="border-b border-white/[0.08] bg-white/[0.02] text-xs text-zinc-500">
                 <th className="px-3 py-2.5 font-medium">Ad Soyad</th>
                 <th className="px-3 py-2.5 font-medium">İletişim</th>
-                <th className="px-3 py-2.5 font-medium">RSVP</th>
+                <th className="px-3 py-2.5 font-medium">Katılım Durumu</th>
                 <th className="px-3 py-2.5 font-medium">Bilet</th>
                 <th className="px-3 py-2.5 font-medium">Yanıt tarihi</th>
                 <th className="px-3 py-2.5 font-medium text-right">İşlem</th>
@@ -339,18 +358,20 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-zinc-400">E-posta</span>
-          <input
-            className={inputClass}
+          <EmailField
             value={form.email ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            onChange={(email) => setForm((f) => ({ ...f, email }))}
+            showValidation={showValidation}
+            onValidityChange={setEmailValid}
           />
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-zinc-400">Telefon</span>
-          <input
-            className={inputClass}
+          <PhoneField
             value={form.phone ?? ""}
-            onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+            onChange={(phone) => setForm((f) => ({ ...f, phone }))}
+            showValidation={showValidation}
+            onValidityChange={setPhoneValid}
           />
         </label>
         <label className="block text-sm">
@@ -365,7 +386,7 @@ function GuestsPanel({ planId }: { planId: string | number }) {
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-xs text-zinc-400">RSVP</span>
+          <span className="mb-1 block text-xs text-zinc-400">Katılım Durumu</span>
           <select
             className={selectClass}
             value={form.rsvpStatus ?? "Pending"}
@@ -390,21 +411,25 @@ function GuestsPanel({ planId }: { planId: string | number }) {
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-zinc-400">+1 sayısı</span>
-          <input
-            type="number"
+          <NumericInput
             min={0}
-            className={inputClass}
             value={form.plusOneCount ?? 0}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                plusOneCount: Number(e.target.value),
-              }))
+            onChange={(plusOneCount) =>
+              setForm((f) => ({ ...f, plusOneCount }))
             }
           />
         </label>
         <div className="flex flex-wrap gap-2 sm:col-span-2">
-          <button type="submit" className={btnPrimary} disabled={saving}>
+          <button
+            type="submit"
+            className={btnPrimary}
+            disabled={
+              saving ||
+              !form.fullName.trim() ||
+              !emailValid ||
+              !phoneValid
+            }
+          >
             {saving ? "…" : editingId != null ? "Güncelle" : "Ekle"}
           </button>
           {editingId != null ? (

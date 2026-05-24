@@ -21,6 +21,10 @@ import {
   storeGuestAccessToken,
 } from "@/src/lib/eventInviteAccess";
 import { formatEventLocation } from "@/src/lib/invites";
+import { EmailField } from "@/src/components/ui/EmailField";
+import { NumericInput } from "@/src/components/ui/NumericInput";
+import { PhoneField } from "@/src/components/ui/PhoneField";
+import { isValidEmail, isValidStoredPhone } from "@/src/lib/contactValidation";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
 type EventInvitePublicViewProps = {
@@ -54,6 +58,17 @@ export function EventInvitePublicView({ token }: EventInvitePublicViewProps) {
   const [submitting, setSubmitting] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [pendingAccept, setPendingAccept] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [emailValid, setEmailValid] = useState(true);
+  const [phoneValid, setPhoneValid] = useState(true);
+
+  const phoneRequired =
+    phase === "ambiguous" || guest?.requiresPhone === true;
+  const emailRequired = guest?.requiresEmail === true;
+  const verifyCanSubmit =
+    Boolean(fullName.trim()) &&
+    phoneValid &&
+    (emailRequired ? emailValid && Boolean(email.trim()) : emailValid);
 
   const accessToken = guest?.guestAccessToken ?? getGuestAccessToken(token);
 
@@ -81,6 +96,14 @@ export function EventInvitePublicView({ token }: EventInvitePublicViewProps) {
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
+    setShowValidation(true);
+    if (
+      !isValidStoredPhone(phone, phoneRequired) ||
+      (email.trim() && !isValidEmail(email)) ||
+      (emailRequired && !isValidEmail(email))
+    ) {
+      return;
+    }
     setVerifying(true);
     setVerifyError(null);
     try {
@@ -311,32 +334,38 @@ export function EventInvitePublicView({ token }: EventInvitePublicViewProps) {
               </label>
               <label className="block text-sm">
                 <span className="mb-1 block text-xs text-zinc-400">Telefon</span>
-                <input
-                  className={inputClass}
-                  type="tel"
+                <PhoneField
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required={phase === "ambiguous" || guest?.requiresPhone === true}
+                  onChange={setPhone}
+                  required={phoneRequired}
                   disabled={verifying}
+                  showValidation={showValidation}
+                  onValidityChange={setPhoneValid}
                 />
               </label>
               <label className="block text-sm">
                 <span className="mb-1 block text-xs text-zinc-400">
-                  E-posta (isteğe bağlı)
+                  {emailRequired ? "E-posta" : "E-posta (isteğe bağlı)"}
                 </span>
-                <input
-                  className={inputClass}
-                  type="email"
+                <EmailField
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required={guest?.requiresEmail === true}
+                  onChange={setEmail}
+                  required={emailRequired}
                   disabled={verifying}
+                  showValidation={showValidation}
+                  onValidityChange={(valid) =>
+                    setEmailValid(!email.trim() || valid)
+                  }
                 />
               </label>
               {verifyError ? (
                 <p className="text-sm text-red-300/90">{verifyError}</p>
               ) : null}
-              <button type="submit" className={`${btnPrimary} w-full`} disabled={verifying}>
+              <button
+                type="submit"
+                className={`${btnPrimary} w-full`}
+                disabled={verifying || !verifyCanSubmit}
+              >
                 {verifying ? "Doğrulanıyor…" : "Doğrula"}
               </button>
             </form>
@@ -403,16 +432,12 @@ export function EventInvitePublicView({ token }: EventInvitePublicViewProps) {
                     <span className="mb-1 block text-xs text-zinc-400">
                       Yanınızda getireceğiniz kişi (+1)
                     </span>
-                    <input
-                      type="number"
+                    <NumericInput
                       min={0}
                       max={maxPlus}
-                      className={inputClass}
                       value={plusOneCount}
-                      onChange={(e) =>
-                        setPlusOneCount(
-                          Math.min(maxPlus, Math.max(0, Number(e.target.value))),
-                        )
+                      onChange={(n) =>
+                        setPlusOneCount(Math.min(maxPlus, Math.max(0, n)))
                       }
                     />
                   </label>

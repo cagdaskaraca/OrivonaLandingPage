@@ -93,6 +93,9 @@ export function normalizeEventTask(raw: unknown): EventTask {
       recordStr(o, "categoryName", "CategoryName") ??
       recordStr(o, "category", "Category"),
     priority: recordStr(o, "priority", "Priority"),
+    dueDate:
+      recordStr(o, "dueDate", "DueDate") ??
+      recordStr(o, "dueAt", "DueAt"),
     sortOrder: recordNum(o, "sortOrder", "SortOrder"),
   };
 }
@@ -235,12 +238,35 @@ function buildPlanBody(payload: EventPlanFormPayload): Record<string, unknown> {
 }
 
 function buildTaskBody(payload: EventTaskFormPayload): Record<string, unknown> {
-  return {
+  const body: Record<string, unknown> = {
     title: payload.title.trim(),
     description: payload.description?.trim() ?? "",
     status: payload.status ?? "Todo",
     categoryName: payload.categoryName?.trim() ?? "",
     priority: payload.priority?.trim() ?? "",
+  };
+  if (payload.dueDate?.trim()) {
+    body.dueDate = payload.dueDate.trim();
+  }
+  return body;
+}
+
+/** Full PUT body when backend requires title and related fields on status update. */
+export function buildTaskUpdateFromExisting(
+  task: EventTask,
+  overrides: Partial<EventTaskFormPayload> = {},
+): EventTaskFormPayload {
+  const title = (overrides.title ?? task.title ?? "").trim();
+  if (!title) {
+    throw new Error("Görev başlığı boş olamaz.");
+  }
+  return {
+    title,
+    description: overrides.description ?? task.description ?? "",
+    categoryName: overrides.categoryName ?? task.categoryName ?? "",
+    priority: overrides.priority ?? task.priority ?? "",
+    dueDate: overrides.dueDate ?? task.dueDate ?? "",
+    status: overrides.status ?? (task.status as EventTaskFormPayload["status"]) ?? "Todo",
   };
 }
 
@@ -342,11 +368,11 @@ export async function createEventPlanTask(
 export async function updateEventPlanTask(
   planId: string | number,
   taskId: string | number,
-  payload: Partial<EventTaskFormPayload> & { status?: string },
+  payload: EventTaskFormPayload,
 ): Promise<EventTask> {
   const body = await apiPutRaw<ApiEnvelope>(
     `/event-plans/${planId}/tasks/${taskId}`,
-    payload,
+    buildTaskBody(payload),
   );
   assertSuccess(body);
   const data = extractPayload(body.data);

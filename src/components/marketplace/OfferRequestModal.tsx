@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import { createOfferRequest } from "@/src/lib/api";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { ApiError, formatUiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
+import { CouponCodeField } from "@/src/components/commerce/CouponCodeField";
+import { PaymentComingSoonNotice } from "@/src/components/commerce/PaymentComingSoonNotice";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, inputClass } from "@/src/lib/ui";
 
 const SUCCESS_MESSAGE = "Teklif talebiniz işletmeye gönderildi.";
@@ -26,7 +29,7 @@ export function OfferRequestModal({
   initialEventDate,
 }: OfferRequestModalProps) {
   const [message, setMessage] = useState("");
-  const [guestCount, setGuestCount] = useState("100");
+  const [guestCount, setGuestCount] = useState(100);
   const [eventDate, setEventDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,11 +59,11 @@ export function OfferRequestModal({
       await createOfferRequest({
         vendorServiceId: serviceId,
         message: message.trim(),
-        guestCount: Number(guestCount),
+        guestCount,
         eventDate: eventDate.trim(),
       });
       setMessage("");
-      setGuestCount("100");
+      setGuestCount(100);
       setEventDate("");
       onSuccess(SUCCESS_MESSAGE);
       onClose();
@@ -68,10 +71,8 @@ export function OfferRequestModal({
       if (err instanceof ApiError) {
         console.log("Offer request failed", err.body);
         setError(
-          formatApiErrorMessage(err, err.message || "Teklif talebi gönderilemedi."),
+          formatUiErrorMessage(err, "Teklif talebi gönderilemedi."),
         );
-      } else if (err instanceof Error) {
-        setError(err.message);
       } else {
         setError("Teklif talebi gönderilemedi.");
       }
@@ -97,11 +98,9 @@ export function OfferRequestModal({
         </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Misafir sayısı</span>
-          <input
-            type="number"
-            className={inputClass}
+          <NumericInput
             value={guestCount}
-            onChange={(e) => setGuestCount(e.target.value)}
+            onChange={setGuestCount}
             min={1}
             required
           />
@@ -115,6 +114,13 @@ export function OfferRequestModal({
             onChange={(e) => setEventDate(e.target.value)}
           />
         </label>
+        {serviceId != null ? (
+          <CouponCodeField
+            serviceId={serviceId}
+            basePrice={item?.price ?? item?.basePrice}
+          />
+        ) : null}
+        <PaymentComingSoonNotice compact />
         {error ? (
           <div
             role="alert"

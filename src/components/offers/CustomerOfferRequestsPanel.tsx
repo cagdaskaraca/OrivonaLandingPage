@@ -163,8 +163,8 @@ export function CustomerOfferRequestsPanel({
                   <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
                     <p className="font-medium">Demo rezervasyon onayı</p>
                     <p className="mt-1 text-emerald-200/90">
-                      Teklif kabul edildi. Demo ödeme ile rezervasyon kaydınız
-                      oluşturuldu.
+                      Teklif kabul edildi. Rezervasyon kaydınız oluşturuldu.
+                      Ödeme altyapısı yakında aktif edilecektir.
                     </p>
                   </div>
                 ) : null}

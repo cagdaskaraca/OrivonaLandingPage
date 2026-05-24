@@ -11,6 +11,7 @@ import {
   type EventWizardResult,
 } from "@/src/lib/api/premiumSaas";
 import { formatUiErrorMessage, isApiNotFound, logApiError } from "@/src/lib/api/client";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const STEPS = [
@@ -187,11 +188,9 @@ function WizardContent() {
         {step === 3 ? (
           <label className="block text-sm">
             <span className="mb-1 text-xs text-zinc-500">Kişi sayısı</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={guestCount}
-              onChange={(e) => setGuestCount(Number(e.target.value))}
+              onChange={setGuestCount}
             />
           </label>
         ) : null}
@@ -199,21 +198,11 @@ function WizardContent() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1 text-xs text-zinc-500">Min bütçe</span>
-              <input
-                type="number"
-                className={inputClass}
-                value={budgetMin}
-                onChange={(e) => setBudgetMin(Number(e.target.value))}
-              />
+              <NumericInput value={budgetMin} onChange={setBudgetMin} />
             </label>
             <label className="block text-sm">
               <span className="mb-1 text-xs text-zinc-500">Max bütçe</span>
-              <input
-                type="number"
-                className={inputClass}
-                value={budgetMax}
-                onChange={(e) => setBudgetMax(Number(e.target.value))}
-              />
+              <NumericInput value={budgetMax} onChange={setBudgetMax} />
             </label>
           </div>
         ) : null}

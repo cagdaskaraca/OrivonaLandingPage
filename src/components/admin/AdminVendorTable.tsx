@@ -10,6 +10,12 @@ import {
   vendorCanModerate,
   vendorUserIsActive,
 } from "@/src/lib/adminDashboard";
+import {
+  companyTypeLabel,
+  identityVerificationClass,
+  identityVerificationLabel,
+  maskSensitiveNumber,
+} from "@/src/lib/vendorIdentity";
 import { btnPrimary, skeletonClass } from "@/src/lib/ui";
 
 const btnDanger =
@@ -196,6 +202,57 @@ export function AdminVendorTable({
                   </div>
                 </td>
               </tr>
+              {id != null ? (
+                <tr key={`${String(id)}-identity`} className="bg-white/[0.01]">
+                  <td colSpan={7} className="px-4 py-3">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                          Yasal ad
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-200">
+                          {v.legalBusinessName?.trim() || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                          İşletme türü
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-200">
+                          {companyTypeLabel(v.companyType)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                          Vergi no
+                        </p>
+                        <p className="mt-1 font-mono text-sm text-zinc-300">
+                          {maskSensitiveNumber(v.taxNumber)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                          T.C. kimlik
+                        </p>
+                        <p className="mt-1 font-mono text-sm text-zinc-300">
+                          {maskSensitiveNumber(v.nationalId)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-zinc-500">Kimlik doğrulama:</span>
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${identityVerificationClass(v.identityVerificationStatus)}`}
+                      >
+                        {identityVerificationLabel(v.identityVerificationStatus)}
+                      </span>
+                      <span className="text-[11px] text-zinc-600">
+                        (Otomatik doğrulama entegrasyonu yakında)
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ) : null}
               {id != null ? (
                 <tr key={`${String(id)}-badges`} className="bg-white/[0.01]">
                   <td colSpan={7} className="px-4 py-2">

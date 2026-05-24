@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import {
   fetchNotifications,
   markAllNotificationsRead,
-  markNotificationRead,
 } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
 import { formatRelativeTime } from "@/src/lib/relativeTime";
+import { useNotificationAction } from "@/src/lib/useNotificationAction";
 import { SmartNotificationsButton } from "@/src/components/premium/SmartNotificationsButton";
 import { btnSecondary } from "@/src/lib/ui";
 
@@ -17,6 +17,7 @@ export function NotificationsPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
+  const [actingId, setActingId] = useState<string | number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -32,16 +33,32 @@ export function NotificationsPanel() {
     }
   }, []);
 
+  const { handleNotificationClick } = useNotificationAction({
+    onMarkReadError: (msg) => setError(msg),
+  });
+
   useEffect(() => {
     load();
   }, [load]);
 
-  async function handleMarkRead(id: string | number) {
+  async function onItemClick(notification: AppNotification) {
+    const id = notification.id;
+    setActingId(id ?? null);
     try {
-      await markNotificationRead(id);
-      await load();
-    } catch (err) {
-      logApiError("Mark notification read", err);
+      await handleNotificationClick(notification);
+      if (!notification.actionUrl?.trim()) {
+        await load();
+      } else {
+        setItems((list) =>
+          list.map((n) =>
+            n.id === id && id != null
+              ? { ...n, isRead: true, readAt: new Date().toISOString() }
+              : n,
+          ),
+        );
+      }
+    } finally {
+      setActingId(null);
     }
   }
 
@@ -82,37 +99,45 @@ export function NotificationsPanel() {
         <p className="text-sm text-zinc-500">Bildirim yok.</p>
       ) : (
         <ul className="space-y-2">
-          {items.map((n) => (
-            <li
-              key={String(n.id ?? n.createdAt)}
-              className={`rounded-xl border px-4 py-3 text-sm ${
-                n.isRead
-                  ? "border-white/10 bg-white/[0.02] text-zinc-400"
-                  : "border-violet-400/25 bg-violet-500/[0.08] text-zinc-100"
-              }`}
-            >
-              <p className="font-medium text-white">{n.title ?? "Bildirim"}</p>
-              {n.message ? (
-                <p className="mt-1 text-zinc-400">{n.message}</p>
-              ) : null}
-              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-                {n.createdAt ? (
-                  <span className="text-[11px] text-zinc-500">
-                    {formatRelativeTime(n.createdAt)}
-                  </span>
-                ) : null}
-                {!n.isRead && n.id != null ? (
-                  <button
-                    type="button"
-                    className="text-xs text-violet-300 hover:text-violet-200"
-                    onClick={() => void handleMarkRead(n.id!)}
-                  >
-                    Okundu
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          ))}
+          {items.map((n) => {
+            const hasLink = Boolean(n.actionUrl?.trim());
+            const busy = actingId === n.id;
+            return (
+              <li key={String(n.id ?? n.createdAt)}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void onItemClick(n)}
+                  className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition-colors hover:border-violet-400/30 disabled:opacity-60 ${
+                    n.isRead
+                      ? "border-white/10 bg-white/[0.02] text-zinc-400"
+                      : "border-violet-400/25 bg-violet-500/[0.08] text-zinc-100"
+                  }`}
+                >
+                  <p className="font-medium text-white">{n.title ?? "Bildirim"}</p>
+                  {n.message ? (
+                    <p className="mt-1 text-zinc-400">{n.message}</p>
+                  ) : null}
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    {n.createdAt ? (
+                      <span className="text-[11px] text-zinc-500">
+                        {formatRelativeTime(n.createdAt)}
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                    {hasLink ? (
+                      <span className="text-[11px] font-medium text-violet-300">
+                        Görüntüle →
+                      </span>
+                    ) : !n.isRead ? (
+                      <span className="text-[11px] text-zinc-500">Okundu işaretle</span>
+                    ) : null}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </>

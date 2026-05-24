@@ -9,6 +9,7 @@ import {
 } from "@/src/components/event-os/EventOsShared";
 import { useEventOs } from "@/src/components/event-os/EventOsContext";
 import {
+  buildTaskUpdateFromExisting,
   createEventPlanTask,
   deleteEventPlanTask,
   fetchEventPlanTasks,
@@ -83,13 +84,28 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function setStatus(task: EventTask, status: EventTaskStatus) {
     if (task.id == null) return;
+    const title = task.title?.trim();
+    if (!title) {
+      setError("Görev başlığı eksik; durum güncellenemedi.");
+      return;
+    }
     setSavingId(task.id);
+    setError(null);
     try {
-      await updateEventPlanTask(planId, task.id, { status });
+      await updateEventPlanTask(
+        planId,
+        task.id,
+        buildTaskUpdateFromExisting(task, { status }),
+      );
       await load();
     } catch (err) {
       logApiError("Update task status", err);
-      setError(formatUiErrorMessage(err, "Durum güncellenemedi."));
+      setError(
+        formatUiErrorMessage(
+          err,
+          "Görev durumu güncellenemedi. Lütfen tekrar deneyin.",
+        ),
+      );
     } finally {
       setSavingId(null);
     }

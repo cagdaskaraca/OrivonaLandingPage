@@ -1,4 +1,5 @@
 import type { MarketplaceItem } from "@/src/lib/api/types";
+import { isServiceSponsored } from "@/src/lib/commerceUi";
 
 /** Premium sort options for marketplace UI (sent as API `sortBy`). */
 export const MARKETPLACE_SORT_OPTIONS = [
@@ -34,6 +35,18 @@ export const featuredBadgeClass =
 
 export const premiumBadgeClass =
   "inline-flex shrink-0 rounded-full border border-amber-200/40 bg-gradient-to-r from-amber-400/20 to-amber-600/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.25)]";
+
+export { sponsoredBadgeClass, isServiceSponsored } from "@/src/lib/commerceUi";
+
+export function sponsoredCardClasses(isSponsored: boolean): string {
+  if (!isSponsored) return "";
+  return [
+    "ring-1 ring-fuchsia-400/35",
+    "border-fuchsia-300/25",
+    "shadow-[0_0_40px_-8px_rgba(192,38,211,0.45),0_0_48px_-12px_rgba(139,92,246,0.35)]",
+    "hover:shadow-[0_0_48px_-6px_rgba(192,38,211,0.55)]",
+  ].join(" ");
+}
 
 function ratingOf(item: MarketplaceItem): number {
   return item.rating ?? item.averageRating ?? 0;
@@ -105,6 +118,11 @@ export function sortMarketplaceItems(
           ratingOf(b) - ratingOf(a),
       );
     default:
-      return list;
+      return list.sort(
+        (a, b) =>
+          (isServiceSponsored(b) ? 1 : 0) - (isServiceSponsored(a) ? 1 : 0) ||
+          (b.isFeatured ? 1 : 0) - (a.isFeatured ? 1 : 0) ||
+          ratingOf(b) - ratingOf(a),
+      );
   }
 }

@@ -1,24 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/src/contexts/AuthContext";
-import {
-  fetchNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "@/src/lib/api";
+import { markAllNotificationsRead } from "@/src/lib/api";
+import { useBellNotifications } from "@/src/hooks/useBellNotifications";
+import { useNotificationAction } from "@/src/lib/useNotificationAction";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
+import { isSyntheticNotification } from "@/src/lib/notificationMessages";
 import { formatRelativeTime } from "@/src/lib/relativeTime";
 import { btnSecondary } from "@/src/lib/ui";
 
 type NotificationBellProps = {
   variant?: "landing" | "demo";
 };
-
-function countUnread(items: AppNotification[]): number {
-  return items.filter((n) => !n.isRead).length;
-}
 
 function BellIcon({ className }: { className?: string }) {
   return (
@@ -41,44 +36,24 @@ function BellIcon({ className }: { className?: string }) {
 export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
   const { loading: authLoading, isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<AppNotification[]>([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
   const [markingId, setMarkingId] = useState<string | number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  const unreadCount = countUnread(items);
+  const { items, badgeCount, loading, reload } = useBellNotifications({
+    enabled: isAuthenticated && !authLoading,
+  });
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const list = await fetchNotifications();
-      setItems(list);
-    } catch (err) {
-      logApiError("Notifications fetch failed", err);
-      setError(
-        formatUiErrorMessage(err, "Bildirimler yüklenemedi. Tekrar deneyin."),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) {
-      setItems([]);
-      setOpen(false);
-      return;
-    }
-    load();
-  }, [authLoading, isAuthenticated, load]);
+  const { handleNotificationClick } = useNotificationAction({
+    onAfterNavigate: () => setOpen(false),
+    onMarkReadError: (msg) => setError(msg),
+  });
 
   useEffect(() => {
     if (!open || !isAuthenticated) return;
-    load();
-  }, [open, isAuthenticated, load]);
+    void reload();
+  }, [open, isAuthenticated, reload]);
 
   useEffect(() => {
     if (!open) return;
@@ -98,43 +73,28 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
     };
   }, [open]);
 
-  async function handleMarkRead(notification: AppNotification) {
+  async function onNotificationClick(notification: AppNotification) {
     const id = notification.id;
-    if (id == null) return;
-    if (notification.isRead) return;
-
-    setMarkingId(id);
-    const prev = items;
-    setItems((list) =>
-      list.map((n) =>
-        n.id === id ? { ...n, isRead: true, readAt: new Date().toISOString() } : n,
-      ),
-    );
+    const synthetic = isSyntheticNotification(notification);
+    setMarkingId(id ?? null);
+    setError(null);
     try {
-      await markNotificationRead(id);
-    } catch (err) {
-      setItems(prev);
-      logApiError("Mark notification read failed", err);
-      setError(
-        formatUiErrorMessage(err, "Bildirim okundu olarak işaretlenemedi."),
-      );
+      await handleNotificationClick(notification);
+      await reload();
+    } catch {
+      setError("Bildirim işlenemedi.");
     } finally {
       setMarkingId(null);
     }
   }
 
   async function handleMarkAllRead() {
-    if (unreadCount === 0) return;
+    if (badgeCount === 0) return;
     setMarkingAll(true);
-    const prev = items;
-    const now = new Date().toISOString();
-    setItems((list) =>
-      list.map((n) => ({ ...n, isRead: true, readAt: n.readAt ?? now })),
-    );
     try {
       await markAllNotificationsRead();
+      await reload();
     } catch (err) {
-      setItems(prev);
       logApiError("Mark all notifications read failed", err);
       setError(
         formatUiErrorMessage(
@@ -160,8 +120,8 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
         type="button"
         className={triggerClass}
         aria-label={
-          unreadCount > 0
-            ? `Bildirimler, ${unreadCount} okunmamış`
+          badgeCount > 0
+            ? `Bildirimler, ${badgeCount} okunmamış`
             : "Bildirimler"
         }
         aria-expanded={open}
@@ -169,9 +129,9 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
         onClick={() => setOpen((v) => !v)}
       >
         <BellIcon className="h-[1.15rem] w-[1.15rem]" />
-        {unreadCount > 0 ? (
+        {badgeCount > 0 ? (
           <span className="absolute -right-0.5 -top-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-500 px-1 text-[10px] font-bold leading-none text-[#0a0612] shadow-[0_0_12px_rgba(192,132,252,0.65)]">
-            {unreadCount > 99 ? "99+" : unreadCount}
+            {badgeCount > 99 ? "99+" : badgeCount}
           </span>
         ) : null}
       </button>
@@ -187,7 +147,7 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
             <button
               type="button"
               className="text-xs font-medium text-violet-200/90 transition-colors hover:text-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={markingAll || unreadCount === 0 || loading}
+              disabled={markingAll || badgeCount === 0 || loading}
               onClick={() => void handleMarkAllRead()}
             >
               Tümünü okundu işaretle
@@ -211,7 +171,7 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
                 <button
                   type="button"
                   className={`${btnSecondary} mt-4 px-4 py-2 text-xs`}
-                  onClick={() => void load()}
+                  onClick={() => void reload()}
                 >
                   Tekrar dene
                 </button>
@@ -231,6 +191,7 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
                   const id = notification.id ?? notification.title;
                   const isUnread = !notification.isRead;
                   const isMarking = markingId === notification.id;
+                  const hasLink = Boolean(notification.actionUrl?.trim());
                   return (
                     <li key={String(id)}>
                       <button
@@ -240,8 +201,8 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
                           isUnread
                             ? "bg-violet-500/[0.07]"
                             : "bg-transparent"
-                        }`}
-                        onClick={() => void handleMarkRead(notification)}
+                        } ${hasLink ? "cursor-pointer" : ""}`}
+                        onClick={() => void onNotificationClick(notification)}
                       >
                         <div className="flex items-start gap-2.5">
                           {isUnread ? (
@@ -270,6 +231,11 @@ export function NotificationBell({ variant = "demo" }: NotificationBellProps) {
                             {notification.createdAt ? (
                               <p className="mt-1.5 text-[11px] text-zinc-500">
                                 {formatRelativeTime(notification.createdAt)}
+                              </p>
+                            ) : null}
+                            {hasLink ? (
+                              <p className="mt-1 text-[11px] font-medium text-violet-300/90">
+                                Görüntüle →
                               </p>
                             ) : null}
                           </div>

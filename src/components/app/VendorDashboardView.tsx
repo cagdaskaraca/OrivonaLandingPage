@@ -26,7 +26,7 @@ import {
   fetchVendorServices,
   updateVendorService,
 } from "@/src/lib/api";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { ApiError, formatUiErrorMessage } from "@/src/lib/api/client";
 import type {
   Category,
   VendorProfile,
@@ -43,7 +43,10 @@ import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
 import { PricingInsightsPanel } from "@/src/components/premium/PricingInsightsPanel";
 import { QrCheckInSection } from "@/src/components/premium/QrCheckInSection";
 import { VendorPipelineSection } from "@/src/components/premium/VendorPipelineSection";
-import { VendorServiceMediaManager } from "@/src/components/premium/VendorServiceMediaManager";
+import { VendorCouponsSection } from "@/src/components/commerce/VendorCouponsSection";
+import { VendorPromotionsSection } from "@/src/components/commerce/VendorPromotionsSection";
+import { VendorServiceMediaPanel } from "@/src/components/commerce/VendorServiceMediaPanel";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 function defaultForm(): VendorServicePayload {
@@ -210,7 +213,7 @@ function DashboardContent() {
       );
       if (err instanceof ApiError) {
         console.error("Backend error response", err.body);
-        setErrorMessage(formatApiErrorMessage(err, err.message));
+        setErrorMessage(formatUiErrorMessage(err, "İşlem başarısız."));
       } else if (err instanceof Error) {
         setErrorMessage(err.message);
       } else {
@@ -239,6 +242,8 @@ function DashboardContent() {
     { id: "dashboard-review-intel", label: "Yorum Özeti" },
     { id: "dashboard-profile", label: "İşletme Profili" },
     { id: "dashboard-services", label: "Hizmetlerim" },
+    { id: "dashboard-coupons", label: "Kuponlar" },
+    { id: "dashboard-promotions", label: "Tanıtımlar" },
     { id: "dashboard-offers", label: "Gelen Teklifler" },
     { id: "dashboard-reservations", label: "Rezervasyonlar" },
     { id: "dashboard-availability", label: "Müsaitlik Takvimi" },
@@ -329,9 +334,42 @@ function DashboardContent() {
 
       <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (
-          <p className="mt-3 text-sm text-zinc-400">
-            {user.fullName ?? user.name ?? user.email}
-          </p>
+          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                Ad
+              </dt>
+              <dd className="text-white">
+                {user.fullName ?? user.name ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                E-posta
+              </dt>
+              <dd className="text-white">{user.email ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                İşletme adı
+              </dt>
+              <dd className="text-white">
+                {profile?.businessName?.trim() || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                Onay durumu
+              </dt>
+              <dd className={isApproved ? "text-emerald-300" : "text-amber-300"}>
+                {profileLoading
+                  ? "…"
+                  : isApproved
+                    ? "Onaylı"
+                    : "Onay bekliyor"}
+              </dd>
+            </div>
+          </dl>
         ) : (
           <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
         )}
@@ -438,6 +476,14 @@ function DashboardContent() {
         )}
       </DashboardSection>
 
+      <section id="dashboard-coupons" className="scroll-mt-24 mb-8">
+        <VendorCouponsSection />
+      </section>
+
+      <section id="dashboard-promotions" className="scroll-mt-24 mb-8">
+        <VendorPromotionsSection />
+      </section>
+
       <section id="dashboard-offers" className="scroll-mt-24 mb-8">
         <VendorOfferRequestsPanel />
       </section>
@@ -511,18 +557,11 @@ function DashboardContent() {
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Başlangıç fiyatı (₺)</span>
-            <input
-              type="number"
-              className={inputClass}
-              value={form.basePrice || ""}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  basePrice: Number(e.target.value),
-                }))
-              }
-              required
+            <NumericInput
+              value={form.basePrice ?? 0}
+              onChange={(basePrice) => setForm((f) => ({ ...f, basePrice }))}
               min={1}
+              required
             />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -550,30 +589,20 @@ function DashboardContent() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm">
               <span className="mb-1.5 block text-xs text-zinc-400">Minimum kapasite</span>
-              <input
-                type="number"
-                className={inputClass}
-                value={form.capacityMin}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    capacityMin: Number(e.target.value),
-                  }))
+              <NumericInput
+                value={form.capacityMin ?? 0}
+                onChange={(capacityMin) =>
+                  setForm((f) => ({ ...f, capacityMin }))
                 }
                 min={0}
               />
             </label>
             <label className="block text-sm">
               <span className="mb-1.5 block text-xs text-zinc-400">Maksimum kapasite</span>
-              <input
-                type="number"
-                className={inputClass}
-                value={form.capacityMax}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    capacityMax: Number(e.target.value),
-                  }))
+              <NumericInput
+                value={form.capacityMax ?? 0}
+                onChange={(capacityMax) =>
+                  setForm((f) => ({ ...f, capacityMax }))
                 }
                 min={0}
               />
@@ -628,7 +657,9 @@ function DashboardContent() {
                 city={form.city}
                 basePrice={form.basePrice}
               />
-              <VendorServiceMediaManager serviceId={editingId} />
+              <div id="dashboard-service-media" className="scroll-mt-24">
+                <VendorServiceMediaPanel serviceId={editingId} />
+              </div>
             </>
           ) : null}
         </form>

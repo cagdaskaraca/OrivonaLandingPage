@@ -45,9 +45,14 @@ export function ServiceMediaGallery({ serviceId }: ServiceMediaGalleryProps) {
 
   return (
     <section className="mt-8">
-      <h2 className="mb-4 text-lg font-semibold text-white">Galeri</h2>
+      <h2 className="mb-1 text-lg font-semibold text-white">Medya galerisi</h2>
+      <p className="mb-4 text-sm text-zinc-500">
+        Kapak görseli ve ek fotoğraf/video içerikleri.
+      </p>
       {active ? (
-        <div className={`${glassCard} relative mb-4 aspect-video overflow-hidden !p-0`}>
+        <div
+          className={`${glassCard} relative mb-4 aspect-video overflow-hidden !p-0 ring-1 ring-violet-400/20`}
+        >
           {active.mediaType.toLowerCase().includes("video") ? (
             <video
               src={active.url}

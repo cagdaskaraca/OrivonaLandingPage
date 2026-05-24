@@ -94,7 +94,7 @@ export function PublicEventPageView() {
             ) : null}
             {data.inviteUrl ? (
               <Link href={data.inviteUrl} className={`${btnPrimary} mt-8 inline-flex`}>
-                RSVP / Davetiye
+                Katılım Yanıtı / Davetiye
               </Link>
             ) : null}
           </article>

@@ -24,6 +24,7 @@ import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createCustomerEventRequest,
   deleteCustomerEventRequest,
+  fetchAccountProfile,
   fetchCustomerEventRequests,
   fetchEventRequestById,
   updateCustomerEventRequest,
@@ -34,7 +35,11 @@ import {
   logApiError,
 } from "@/src/lib/api/client";
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
-import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
+import type {
+  AccountProfile,
+  EventRequest,
+  EventRequestFormPayload,
+} from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
@@ -42,6 +47,7 @@ import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSectio
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
 import { PublicEventPageSection } from "@/src/components/premium/PublicEventPageSection";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const EVENT_REQUEST_STATUS_OPTIONS = [
@@ -115,6 +121,27 @@ function DashboardContent() {
   const [loadingList, setLoadingList] = useState(true);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [accountProfile, setAccountProfile] = useState<AccountProfile | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAccountProfile()
+      .then((profile) => {
+        if (!cancelled) setAccountProfile(profile);
+      })
+      .catch(() => {
+        if (!cancelled) setAccountProfile(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const customerPhone =
+    accountProfile?.phoneNumber?.trim() ||
+    accountProfile?.phone?.trim() ||
+    user?.phoneNumber?.trim() ||
+    "";
 
   async function load() {
     setLoadingList(true);
@@ -234,7 +261,7 @@ function DashboardContent() {
     { id: "event-os-board", label: "Etkinlik Panosu" },
     { id: "event-os-checklist", label: "Checklist" },
     { id: "event-os-guests", label: "Davetliler" },
-    { id: "event-os-rsvp", label: "RSVP" },
+    { id: "event-os-rsvp", label: "Katılım Durumu" },
     { id: "event-os-seating", label: "Masa Planı" },
     { id: "event-os-public-invite", label: "Ortak Davet Linki" },
     { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
@@ -288,24 +315,31 @@ function DashboardContent() {
           <dl className="mt-4 space-y-2 text-sm text-zinc-400">
             <div>
               <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                E-posta
-              </dt>
-              <dd className="text-white">{user.email ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
                 Ad
               </dt>
               <dd className="text-white">
-                {user.fullName ?? user.name ?? "—"}
+                {accountProfile?.fullName ??
+                  user.fullName ??
+                  user.name ??
+                  "—"}
               </dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                Rol
+                E-posta
               </dt>
-              <dd className="text-white">{user.role ?? "Customer"}</dd>
+              <dd className="text-white">
+                {accountProfile?.email ?? user.email ?? "—"}
+              </dd>
             </div>
+            {customerPhone ? (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                  Telefon
+                </dt>
+                <dd className="text-white">{customerPhone}</dd>
+              </div>
+            ) : null}
           </dl>
         ) : (
           <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
@@ -336,7 +370,7 @@ function DashboardContent() {
         <EventOsGuestsSection />
       </DashboardSection>
 
-      <DashboardSection id="event-os-rsvp" title="RSVP">
+      <DashboardSection id="event-os-rsvp" title="Katılım Durumu">
         <EventOsRsvpSection />
       </DashboardSection>
 
@@ -452,44 +486,25 @@ function DashboardContent() {
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Misafir</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.guestCount}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  guestCount: Number(e.target.value),
-                }))
+              onChange={(guestCount) =>
+                setForm((f) => ({ ...f, guestCount }))
               }
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Min bütçe</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.budgetMin}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  budgetMin: Number(e.target.value),
-                }))
-              }
+              onChange={(budgetMin) => setForm((f) => ({ ...f, budgetMin }))}
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-xs text-zinc-400">Max bütçe</span>
-            <input
-              type="number"
-              className={inputClass}
+            <NumericInput
               value={form.budgetMax}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  budgetMax: Number(e.target.value),
-                }))
-              }
+              onChange={(budgetMax) => setForm((f) => ({ ...f, budgetMax }))}
             />
           </label>
         </div>

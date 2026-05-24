@@ -79,7 +79,7 @@ export function taskProgressPercent(
 
 export function rsvpStatusLabel(status?: string): string {
   const s = status?.trim().toLowerCase();
-  if (!s) return "Bekliyor";
+  if (!s || s === "rsvp") return "Bekliyor";
   if (
     s === "attending" ||
     s === "yes" ||

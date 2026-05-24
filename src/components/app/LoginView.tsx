@@ -6,8 +6,12 @@ import { useState } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { getDashboardPathForRole, login } from "@/src/lib/auth";
+import { isEmailNotVerifiedError } from "@/src/lib/authEmail";
+import { formatLoginError } from "@/src/lib/api/errorMessages";
 import { getSafeReturnUrl } from "@/src/lib/authRedirect";
-import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
+import { ForgotPasswordModal } from "@/src/components/auth/ForgotPasswordModal";
+import { EmailField } from "@/src/components/ui/EmailField";
+import { isValidEmail } from "@/src/lib/contactValidation";
 import { btnPrimary, glassCard, inputClass } from "@/src/lib/ui";
 
 export function LoginView() {
@@ -18,11 +22,20 @@ export function LoginView() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailVerificationBlocked, setEmailVerificationBlocked] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+  const [emailValid, setEmailValid] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setShowValidation(true);
+    if (!isValidEmail(email)) {
+      return;
+    }
     setLoading(true);
     setError(null);
+    setEmailVerificationBlocked(false);
     try {
       const { role } = await login(email, password);
       if (!role) {
@@ -37,12 +50,11 @@ export function LoginView() {
         router.push(getDashboardPathForRole(role));
       }
     } catch (err) {
-      setError(
-        formatApiErrorMessage(
-          err,
-          "Giriş başarısız. Bilgilerinizi kontrol edin.",
-        ),
-      );
+      const message = formatLoginError(err);
+      if (isEmailNotVerifiedError(err)) {
+        setEmailVerificationBlocked(true);
+      }
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -60,35 +72,57 @@ export function LoginView() {
         </p>
       ) : null}
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => void handleSubmit(e)}
         className={`${glassCard} mx-auto max-w-md space-y-4`}
       >
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">E-posta</span>
-          <input
-            type="email"
-            className={inputClass}
+          <EmailField
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={setEmail}
             required
-            autoComplete="email"
+            showValidation={showValidation}
+            onValidityChange={setEmailValid}
           />
         </label>
-        <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Şifre</span>
-          <input
-            type="password"
-            className={inputClass}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-        </label>
+        <div>
+          <label className="block text-sm">
+            <span className="mb-1.5 block text-xs text-zinc-400">Şifre</span>
+            <input
+              type="password"
+              className={inputClass}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+          </label>
+          <p className="mt-2 text-right">
+            <button
+              type="button"
+              className="text-xs text-violet-300 hover:text-white"
+              onClick={() => setForgotOpen(true)}
+            >
+              Şifremi unuttum
+            </button>
+          </p>
+        </div>
         {error ? (
-          <p className="text-sm text-red-300">{error}</p>
+          <p
+            className={
+              emailVerificationBlocked
+                ? "rounded-xl border border-violet-400/25 bg-violet-500/10 px-4 py-3 text-sm leading-relaxed text-violet-100"
+                : "text-sm text-red-300"
+            }
+          >
+            {error}
+          </p>
         ) : null}
-        <button type="submit" className={`${btnPrimary} w-full`} disabled={loading}>
+        <button
+          type="submit"
+          className={`${btnPrimary} w-full`}
+          disabled={loading || !emailValid || !password.trim()}
+        >
           {loading ? "Giriş yapılıyor…" : "Giriş Yap"}
         </button>
         <p className="text-center text-xs text-zinc-500">
@@ -105,6 +139,11 @@ export function LoginView() {
           </Link>
         </p>
       </form>
+      <ForgotPasswordModal
+        open={forgotOpen}
+        initialEmail={email}
+        onClose={() => setForgotOpen(false)}
+      />
     </DemoShell>
   );
 }

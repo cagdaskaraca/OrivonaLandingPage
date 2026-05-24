@@ -15,6 +15,7 @@ import {
 } from "@/src/lib/api/eventPlans";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventGuest, SeatingTable } from "@/src/lib/api/types";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 function SeatingPanel({ planId }: { planId: string | number }) {
@@ -164,12 +165,11 @@ function SeatingPanel({ planId }: { planId: string | number }) {
         </label>
         <label className="block text-sm">
           <span className="mb-1 block text-xs text-zinc-400">Kapasite</span>
-          <input
-            type="number"
+          <NumericInput
             min={1}
             className={`${inputClass} w-24`}
             value={capacity}
-            onChange={(e) => setCapacity(Number(e.target.value))}
+            onChange={setCapacity}
           />
         </label>
         <button type="submit" className={btnSecondary}>

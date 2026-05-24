@@ -10,6 +10,7 @@ type AdminServiceTableProps = {
   loading?: boolean;
   actionServiceId?: string | number | null;
   onToggleFeature: (service: AdminService) => void;
+  onPromote?: (service: AdminService) => void;
 };
 
 export function AdminServiceTable({
@@ -17,6 +18,7 @@ export function AdminServiceTable({
   loading,
   actionServiceId,
   onToggleFeature,
+  onPromote,
 }: AdminServiceTableProps) {
   if (loading) {
     return <div className={`${skeletonClass} mt-4 h-48`} />;
@@ -106,18 +108,30 @@ export function AdminServiceTable({
                 </td>
                 <td className="px-4 py-3 text-right">
                   {id != null ? (
-                    <button
-                      type="button"
-                      className={`${s.isFeatured ? btnSecondary : btnPrimary} !px-4 !py-1.5 text-xs`}
-                      disabled={busy}
-                      onClick={() => onToggleFeature(s)}
-                    >
-                      {busy
-                        ? "…"
-                        : s.isFeatured
-                          ? "Öne çıkarmayı kaldır"
-                          : "Öne çıkar"}
-                    </button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      {onPromote ? (
+                        <button
+                          type="button"
+                          className={`${btnSecondary} !px-3 !py-1.5 text-xs`}
+                          disabled={busy}
+                          onClick={() => onPromote(s)}
+                        >
+                          Tanıt
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={`${s.isFeatured ? btnSecondary : btnPrimary} !px-4 !py-1.5 text-xs`}
+                        disabled={busy}
+                        onClick={() => onToggleFeature(s)}
+                      >
+                        {busy
+                          ? "…"
+                          : s.isFeatured
+                            ? "Öne çıkarmayı kaldır"
+                            : "Öne çıkar"}
+                      </button>
+                    </div>
                   ) : (
                     <span className="text-xs text-zinc-500">—</span>
                   )}

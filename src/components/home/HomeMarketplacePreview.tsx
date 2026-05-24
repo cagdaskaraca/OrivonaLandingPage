@@ -13,6 +13,7 @@ import {
 } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { Category, MarketplaceItem } from "@/src/lib/api/types";
+import { ActiveCampaignBanner } from "@/src/components/commerce/ActiveCampaignBanner";
 import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
 import { buildMarketplaceHref } from "@/src/lib/marketplaceUrl";
 import { sortMarketplaceItems } from "@/src/lib/marketplacePremium";
@@ -92,7 +93,8 @@ export function HomeMarketplacePreview() {
           </Link>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-0">
+          <ActiveCampaignBanner />
           <MarketplaceEducationBanner />
         </div>
 

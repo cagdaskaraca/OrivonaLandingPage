@@ -11,6 +11,7 @@ import {
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { InviteDetails, InviteTicket } from "@/src/lib/api/types";
 import { formatEventLocation } from "@/src/lib/invites";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
 type InvitePublicViewProps = {
@@ -244,16 +245,12 @@ export function InvitePublicView({ token }: InvitePublicViewProps) {
                     <span className="mb-1 block text-xs text-zinc-400">
                       Yanınızda getireceğiniz kişi sayısı (+1)
                     </span>
-                    <input
-                      type="number"
+                    <NumericInput
                       min={0}
                       max={maxPlus}
-                      className={inputClass}
                       value={plusOneCount}
-                      onChange={(e) =>
-                        setPlusOneCount(
-                          Math.min(maxPlus, Math.max(0, Number(e.target.value))),
-                        )
+                      onChange={(n) =>
+                        setPlusOneCount(Math.min(maxPlus, Math.max(0, n)))
                       }
                     />
                   </label>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AccountQuickNavDropdown } from "@/src/components/nav/AccountQuickNavDropdown";
 import { useAuth } from "@/src/contexts/AuthContext";
 
 const linkClass =
@@ -13,7 +14,7 @@ type AuthNavLinksProps = {
 };
 
 export function AuthNavLinks({ variant = "demo" }: AuthNavLinksProps) {
-  const { loading, isAuthenticated, hesabimPath, logout } = useAuth();
+  const { loading, isAuthenticated, logout } = useAuth();
   const cls = variant === "landing" ? linkClass : compactLinkClass;
 
   if (loading) {
@@ -23,9 +24,7 @@ export function AuthNavLinks({ variant = "demo" }: AuthNavLinksProps) {
   if (isAuthenticated) {
     return (
       <>
-        <Link href={hesabimPath} className={cls}>
-          Hesabım
-        </Link>
+        <AccountQuickNavDropdown variant={variant} />
         <button
           type="button"
           className={cls}

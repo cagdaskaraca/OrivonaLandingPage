@@ -33,7 +33,7 @@ function RsvpPanel({ planId }: { planId: string | number }) {
     } catch (err) {
       logApiError("RSVP summary", err);
       setSummary(null);
-      setError(formatUiErrorMessage(err, "RSVP özeti yüklenemedi."));
+      setError(formatUiErrorMessage(err, "Katılım özeti yüklenemedi."));
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ function RsvpPanel({ planId }: { planId: string | number }) {
       <EventOsPlanPicker />
       {error ? <EventOsError message={error} onRetry={() => void load()} /> : null}
       {loading ? (
-        <p className="text-sm text-zinc-500">RSVP özeti yükleniyor…</p>
+        <p className="text-sm text-zinc-500">Katılım özeti yükleniyor…</p>
       ) : !summary ? (
         <p className="text-sm text-zinc-500">Özet bulunamadı.</p>
       ) : (

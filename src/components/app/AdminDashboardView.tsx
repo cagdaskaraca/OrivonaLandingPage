@@ -28,12 +28,19 @@ import type {
 } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useToast } from "@/src/contexts/ToastContext";
+import { AdminCampaignsSection } from "@/src/components/commerce/AdminCampaignsSection";
+import { AdminCouponsSection } from "@/src/components/commerce/AdminCouponsSection";
+import { AdminPromotionsSection } from "@/src/components/commerce/AdminPromotionsSection";
+import { PromoteServiceModal } from "@/src/components/commerce/PromoteServiceModal";
+import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
+import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 
 function DashboardContent() {
   const { user, logout } = useAuth();
   const toast = useToast();
+  useDashboardHashScroll();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [vendors, setVendors] = useState<AdminVendor[]>([]);
   const [services, setServices] = useState<AdminService[]>([]);
@@ -48,6 +55,7 @@ function DashboardContent() {
     null,
   );
   const [rejectTarget, setRejectTarget] = useState<AdminVendor | null>(null);
+  const [promoteTarget, setPromoteTarget] = useState<AdminService | null>(null);
 
   const loadSummaryAndServices = useCallback(async () => {
     setSummaryLoading(true);
@@ -205,19 +213,34 @@ function DashboardContent() {
         <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
       </div>
 
-      <section className="mb-8">
+      <section id="admin-summary" className="mb-8 scroll-mt-24">
         <h2 className="mb-4 text-lg font-semibold text-white">Platform özeti</h2>
         <AdminSummaryCards summary={summary} loading={summaryLoading} />
       </section>
 
-      <section className={`${glassCard} mb-8`}>
+      <section id="admin-activity" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Son Aktiviteler</h2>
         <div className="mt-4">
           <ActivityFeedSection role="admin" />
         </div>
       </section>
 
-      <section className={`${glassCard} mb-8`}>
+      <section id="admin-campaigns" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Kampanyalar</h2>
+        <AdminCampaignsSection />
+      </section>
+
+      <section id="admin-coupons" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Kupon yönetimi</h2>
+        <AdminCouponsSection />
+      </section>
+
+      <section id="admin-promotions" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Sponsorlu / öne çıkan tanıtımlar</h2>
+        <AdminPromotionsSection />
+      </section>
+
+      <section id="admin-categories" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Kategori yönetimi</h2>
         <AdminCategoryManagement
           onToastSuccess={toast.success}
@@ -225,7 +248,7 @@ function DashboardContent() {
         />
       </section>
 
-      <section className={`${glassCard} mb-8`}>
+      <section id="admin-vendors" className={`${glassCard} mb-8 scroll-mt-24`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">İşletme yönetimi</h2>
@@ -255,7 +278,7 @@ function DashboardContent() {
         />
       </section>
 
-      <section className={`${glassCard} mb-8`}>
+      <section id="admin-users" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Kullanıcı yönetimi</h2>
         <p className="mt-1 text-sm text-zinc-500">
           Müşteri, işletme ve yönetici hesaplarının durumu.
@@ -266,7 +289,12 @@ function DashboardContent() {
         />
       </section>
 
-      <section className={glassCard}>
+      <section id="admin-notifications" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Bildirimler</h2>
+        <NotificationsPanel />
+      </section>
+
+      <section className={`${glassCard} scroll-mt-24`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">Hizmetler</h2>
@@ -280,8 +308,20 @@ function DashboardContent() {
           loading={servicesLoading}
           actionServiceId={actionServiceId}
           onToggleFeature={handleToggleFeature}
+          onPromote={setPromoteTarget}
         />
       </section>
+
+      <PromoteServiceModal
+        open={promoteTarget != null}
+        serviceId={promoteTarget?.id ?? null}
+        serviceTitle={promoteTarget?.title}
+        onClose={() => setPromoteTarget(null)}
+        onSuccess={() => {
+          toast.success("Tanıtım kaydı oluşturuldu.");
+          void loadSummaryAndServices();
+        }}
+      />
     </DemoShell>
   );
 }

@@ -5,6 +5,7 @@ import { Modal } from "@/src/components/ui/Modal";
 import { sendVendorOffer } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { OfferRequest } from "@/src/lib/api/types";
+import { NumericInput } from "@/src/components/ui/NumericInput";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 type VendorSendOfferModalProps = {
@@ -20,7 +21,7 @@ export function VendorSendOfferModal({
   onClose,
   onSuccess,
 }: VendorSendOfferModalProps) {
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(0);
   const [description, setDescription] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,7 +33,7 @@ export function VendorSendOfferModal({
       setLoading(false);
       return;
     }
-    setPrice("");
+    setPrice(0);
     setDescription("");
     setValidUntil(
       new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
@@ -45,7 +46,7 @@ export function VendorSendOfferModal({
       setError("Talep kimliği bulunamadı.");
       return;
     }
-    if (!price.trim() || !description.trim()) {
+    if (price <= 0 || !description.trim()) {
       setError("Fiyat ve açıklama zorunludur.");
       return;
     }
@@ -53,7 +54,7 @@ export function VendorSendOfferModal({
     setError(null);
     try {
       await sendVendorOffer(request.id, {
-        price: Number(price),
+        price,
         description: description.trim(),
         validUntil: validUntil.trim(),
       });
@@ -74,12 +75,10 @@ export function VendorSendOfferModal({
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Fiyat (₺)</span>
-          <input
-            type="number"
-            min={0}
-            className={inputClass}
+          <NumericInput
+            min={1}
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={setPrice}
             required
             disabled={loading}
           />

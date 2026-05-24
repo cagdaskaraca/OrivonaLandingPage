@@ -208,3 +208,34 @@ export type {
   QrCheckInVerifyResult,
 } from "@/src/lib/api/premiumSaas";
 export type { AiRecommendationsHttpResponse } from "@/src/lib/api/index";
+export {
+  uploadVendorServiceMedia,
+  setVendorServiceMediaCover,
+  fetchVendorPromotions,
+  fetchAdminPromotions,
+  promoteAdminService,
+  disableAdminPromotion,
+  validateCoupon,
+  fetchVendorCoupons,
+  createVendorCoupon,
+  updateVendorCoupon,
+  deleteVendorCoupon,
+  fetchAdminCoupons,
+  createAdminCoupon,
+  updateAdminCoupon,
+  deleteAdminCoupon,
+  fetchActiveCampaigns,
+  fetchAdminCampaigns,
+  createAdminCampaign,
+  updateAdminCampaign,
+  deleteAdminCampaign,
+} from "@/src/lib/api/commerce";
+export type {
+  Promotion,
+  PromotionType,
+  Coupon,
+  CouponValidation,
+  CouponDiscountType,
+  Campaign,
+  CampaignTarget,
+} from "@/src/lib/api/commerce";

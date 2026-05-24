@@ -7,6 +7,7 @@ import { DemoShell } from "@/src/components/app/DemoShell";
 import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
 import { StartConversationModal } from "@/src/components/messaging/StartConversationModal";
+import { ActiveCampaignBanner } from "@/src/components/commerce/ActiveCampaignBanner";
 import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
@@ -216,6 +217,7 @@ export function MarketplaceView() {
       title="Marketplace"
       subtitle="Şehir, kategori ve bütçe filtreleriyle doğrulanmış hizmet sağlayıcılarını keşfedin."
     >
+      <ActiveCampaignBanner />
       <MarketplaceEducationBanner />
       <form
         onSubmit={handleSubmit}

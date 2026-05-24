@@ -1,3 +1,4 @@
+import { humanizeKnownApiError } from "@/src/lib/api/errorMessages";
 import { getToken, removeToken } from "@/src/lib/auth";
 
 export class ApiError extends Error {
@@ -70,32 +71,7 @@ export function formatUiErrorMessage(err: unknown, fallback: string): string {
 export function formatApiErrorMessage(err: unknown, fallback: string): string {
   if (isApiNotFound(err)) return fallback;
   if (!(err instanceof ApiError)) return fallback;
-
-  const lines: string[] = [];
-  if (err.message && !messageLooksLikeNotFound(err.message)) {
-    lines.push(err.message);
-  }
-
-  const body = err.body;
-  if (body && typeof body === "object") {
-    const record = body as Record<string, unknown>;
-    const errors = record.errors;
-    if (errors && typeof errors === "object" && !Array.isArray(errors)) {
-      for (const [field, value] of Object.entries(
-        errors as Record<string, unknown>,
-      )) {
-        const msgs = Array.isArray(value)
-          ? value.map(String)
-          : [String(value)];
-        for (const msg of msgs) {
-          if (msg) lines.push(`${field}: ${msg}`);
-        }
-      }
-    }
-  }
-
-  const unique = [...new Set(lines.filter(Boolean))];
-  return unique.length > 0 ? unique.join("\n") : fallback;
+  return humanizeKnownApiError(err, fallback);
 }
 
 export function getApiBaseUrl(): string {

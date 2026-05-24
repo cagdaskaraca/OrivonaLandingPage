@@ -9,11 +9,15 @@ import {
   isLocalMarketplaceImage,
 } from "@/src/lib/serviceImage";
 import type { MarketplaceItem } from "@/src/lib/api/types";
+import { useServiceCoverUrl } from "@/src/hooks/useServiceCoverUrl";
 import {
   featuredBadgeClass,
   featuredCardClasses,
   isPremiumVendor,
+  isServiceSponsored,
   premiumBadgeClass,
+  sponsoredBadgeClass,
+  sponsoredCardClasses,
 } from "@/src/lib/marketplacePremium";
 import { ServiceBadgeChips } from "@/src/components/premium/ServiceBadgeChips";
 import { badgeClass, btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
@@ -56,16 +60,12 @@ export function MarketplaceServiceCard({
         ? String(item.guestCapacity)
         : null;
 
+  const coverFromMedia = useServiceCoverUrl(item);
   const [imageSrc, setImageSrc] = useState(() => getServiceImageUrl(item));
 
   useEffect(() => {
-    setImageSrc(getServiceImageUrl(item));
-  }, [
-    item.coverImageUrl,
-    item.imageUrl,
-    item.categoryName,
-    item.category,
-  ]);
+    setImageSrc(coverFromMedia);
+  }, [coverFromMedia]);
 
   function handleImageError() {
     if (imageSrc !== DEFAULT_CATEGORY_IMAGE) {
@@ -78,6 +78,7 @@ export function MarketplaceServiceCard({
     (imageSrc.startsWith("http://") || imageSrc.startsWith("https://"));
 
   const featured = item.isFeatured === true;
+  const sponsored = isServiceSponsored(item);
   const premium = isPremiumVendor(item);
   const apiBadges = (item.badges ?? []).filter(
     (b) =>
@@ -96,8 +97,14 @@ export function MarketplaceServiceCard({
 
   return (
     <article
-      className={`${glassCard} ${cardHover} ${featuredCardClasses(featured)} group relative flex h-full flex-col overflow-hidden p-0`}
+      className={`${glassCard} ${cardHover} ${featuredCardClasses(featured)} ${sponsoredCardClasses(sponsored)} group relative flex h-full flex-col overflow-hidden p-0`}
     >
+      {sponsored ? (
+        <div
+          className="pointer-events-none absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-fuchsia-500/[0.06] via-transparent to-violet-500/[0.08]"
+          aria-hidden
+        />
+      ) : null}
       {featured ? (
         <div
           className="pointer-events-none absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-amber-400/[0.07] via-transparent to-violet-500/[0.08]"
@@ -124,6 +131,9 @@ export function MarketplaceServiceCard({
           aria-hidden
         />
         <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+          {sponsored ? (
+            <span className={sponsoredBadgeClass}>Sponsorlu</span>
+          ) : null}
           {featured ? (
             <span className={featuredBadgeClass}>Öne Çıkan</span>
           ) : null}

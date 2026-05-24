@@ -137,6 +137,11 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
       str("coverImageUrl", "CoverImageUrl") ?? str("imageUrl", "ImageUrl"),
     reviewCount: num("reviewCount", "ReviewCount"),
     isFeatured: o.isFeatured === true || o.IsFeatured === true,
+    isSponsored:
+      o.isSponsored === true ||
+      o.IsSponsored === true ||
+      o.isPromoted === true,
+    promotionType: str("promotionType", "PromotionType"),
     isFavorite: o.isFavorite === true || o.IsFavorite === true,
     isVendorPremium:
       vendorPremium ||
