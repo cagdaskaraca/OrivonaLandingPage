@@ -9,7 +9,7 @@ export function FaqPageView() {
     <div className="orivona-landing-with-mobile-nav relative min-h-screen">
       <HomeNavbar />
 
-      <main className="orivona-landing-main relative z-[2]">
+      <main className="orivona-landing-main relative z-0">
         <section className="border-b border-violet-200/[0.06] py-14 sm:py-20">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-300/90">

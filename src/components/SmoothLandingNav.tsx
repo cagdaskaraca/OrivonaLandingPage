@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { ComponentProps, ReactNode } from "react";
 import {
   homeSectionHref,
@@ -17,36 +17,35 @@ export function SmoothScrollToSection({
   sectionId,
   className,
   children,
+  onClick,
   ...rest
 }: {
   sectionId: string;
   children: ReactNode;
-} & Omit<ComponentProps<"a">, "href" | "onClick">) {
+} & Omit<ComponentProps<typeof Link>, "href">) {
   const pathname = usePathname() ?? "";
-  const router = useRouter();
   const href = homeSectionHref(sectionId);
   const onHome = isHomePath(pathname);
 
+  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    onClick?.(e);
+    if (e.defaultPrevented) return;
+
+    if (onHome) {
+      e.preventDefault();
+      scrollToHomeHashWhenReady(`#${sectionId}`, {
+        highlight: false,
+        forceSameHash: true,
+        updateHash: true,
+      });
+      return;
+    }
+
+    setPendingHashScroll(sectionId);
+  }
+
   return (
-    <Link
-      {...rest}
-      href={href}
-      className={className}
-      onClick={(e) => {
-        if (onHome) {
-          e.preventDefault();
-          scrollToHomeHashWhenReady(`#${sectionId}`, {
-            highlight: false,
-            forceSameHash: true,
-            updateHash: true,
-          });
-          return;
-        }
-        setPendingHashScroll(sectionId);
-        e.preventDefault();
-        router.push(href);
-      }}
-    >
+    <Link {...rest} href={href} className={className} onClick={handleClick}>
       {children}
     </Link>
   );
@@ -58,7 +57,7 @@ export function SmoothScrollToTop({
   ...rest
 }: {
   children: ReactNode;
-} & Omit<ComponentProps<"a">, "href" | "onClick">) {
+} & Omit<ComponentProps<typeof Link>, "href">) {
   const pathname = usePathname();
 
   if (!isHomePath(pathname ?? "")) {
@@ -70,16 +69,16 @@ export function SmoothScrollToTop({
   }
 
   return (
-    <a
-      {...rest}
+    <Link
       href="/"
       className={className}
+      {...rest}
       onClick={(e) => {
         e.preventDefault();
         window.scrollTo({ top: 0, behavior: "smooth" });
       }}
     >
       {children}
-    </a>
+    </Link>
   );
 }

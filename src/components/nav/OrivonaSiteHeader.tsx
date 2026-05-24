@@ -119,13 +119,13 @@ export function OrivonaSiteHeader({
 
         <HeaderCenter variant={variant} showSearch={showSearch} />
 
-        <div className={`${orivonaHeaderEnd} col-start-2 md:col-start-3`}>
+        <div className={orivonaHeaderEnd}>
           <LandingNavAuth className={`${orivonaHeaderActions} flex`} />
         </div>
       </div>
 
       {variant === "marketing" ? (
-        <div className="orivona-header-mobile-row mx-auto flex max-w-6xl flex-wrap justify-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-2.5 md:hidden">
+        <div className="orivona-header-mobile-row pointer-events-auto relative z-[1] mx-auto flex max-w-6xl flex-wrap justify-center gap-x-4 gap-y-2 border-t border-white/10 px-4 py-2.5 md:hidden">
           <Link href="/marketplace" className={orivonaNavLinkMobile}>
             Marketplace
           </Link>
