@@ -7,7 +7,10 @@ import { logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
 import { isSyntheticNotification } from "@/src/lib/notificationMessages";
 import { resolveNotificationActionUrl } from "@/src/lib/notificationNavigation";
-import { navigateToResolvedLink } from "@/src/lib/scrollToDashboardSection";
+import {
+  navigateToResolvedLink,
+  scrollToHashWhenReady,
+} from "@/src/lib/scrollToDashboardSection";
 
 type UseNotificationActionOptions = {
   onAfterNavigate?: () => void;
@@ -46,7 +49,24 @@ export function useNotificationAction(options?: UseNotificationActionOptions) {
       if (!resolved) return;
 
       options?.onAfterNavigate?.();
+
+      const sectionId = resolved.hash.replace(/^#/, "");
+      const samePath =
+        typeof window !== "undefined" &&
+        window.location.pathname.replace(/\/$/, "") ===
+          resolved.pathname.replace(/\/$/, "");
+
       navigateToResolvedLink(router, resolved);
+
+      if (!samePath && sectionId) {
+        window.setTimeout(() => {
+          scrollToHashWhenReady(resolved.hash, {
+            highlight: true,
+            forceSameHash: true,
+            updateHash: true,
+          });
+        }, 50);
+      }
     },
     [router, options],
   );

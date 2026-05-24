@@ -5,6 +5,7 @@ import {
   createVendorCoupon,
   deleteVendorCoupon,
   fetchVendorCoupons,
+  mapCouponDiscountTypeFromApi,
   updateVendorCoupon,
   type Coupon,
 } from "@/src/lib/api/commerce";
@@ -17,12 +18,24 @@ import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/
 function emptyForm(): Omit<Coupon, "id"> {
   return {
     code: "",
-    discountType: "Percent",
+    discountType: "Percentage",
     value: 10,
     startDate: "",
     endDate: "",
     usageLimit: 100,
     isActive: true,
+  };
+}
+
+function couponToForm(c: Coupon): Omit<Coupon, "id"> {
+  return {
+    code: c.code,
+    discountType: mapCouponDiscountTypeFromApi(c.discountType),
+    value: c.value,
+    startDate: c.startDate ?? "",
+    endDate: c.endDate ?? "",
+    usageLimit: c.usageLimit,
+    isActive: c.isActive,
   };
 }
 
@@ -135,8 +148,8 @@ export function VendorCouponsSection() {
                 setForm((f) => ({ ...f, discountType: e.target.value }))
               }
             >
-              <option value="Percent">Yüzde (%)</option>
-              <option value="Fixed">Sabit tutar (₺)</option>
+              <option value="Percentage">Yüzde (%)</option>
+              <option value="FixedAmount">Sabit Tutar</option>
             </select>
           </label>
           <label className="block text-sm">
@@ -211,7 +224,7 @@ export function VendorCouponsSection() {
               <div>
                 <p className="font-mono font-semibold text-violet-200">{c.code}</p>
                 <p className="text-xs text-zinc-500">
-                  {c.discountType === "Fixed" ? `${c.value} ₺` : `%${c.value}`}
+                  {c.discountType === "FixedAmount" ? `${c.value} ₺` : `%${c.value}`}
                   {c.startDate ? ` · ${c.startDate}` : ""}
                   {c.endDate ? ` – ${c.endDate}` : ""}
                 </p>
@@ -222,15 +235,7 @@ export function VendorCouponsSection() {
                   className={`${btnSecondary} text-xs`}
                   onClick={() => {
                     setEditingId(c.id);
-                    setForm({
-                      code: c.code,
-                      discountType: c.discountType,
-                      value: c.value,
-                      startDate: c.startDate,
-                      endDate: c.endDate,
-                      usageLimit: c.usageLimit,
-                      isActive: c.isActive,
-                    });
+                    setForm(couponToForm(c));
                     setShowForm(true);
                   }}
                 >

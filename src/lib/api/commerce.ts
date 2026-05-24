@@ -187,7 +187,61 @@ export async function disableAdminPromotion(id: string | number): Promise<void> 
 
 // —— Coupons ——
 
-export type CouponDiscountType = "Percent" | "Fixed" | "Percentage" | string;
+export type CouponDiscountType =
+  | "Percentage"
+  | "FixedAmount"
+  | "Percent"
+  | "Fixed"
+  | string;
+
+export type CouponFormInput = Omit<Coupon, "id">;
+
+function toApiDateOrNull(value?: string): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  return null;
+}
+
+/** Map UI / legacy values to backend enum strings. */
+export function mapCouponDiscountTypeToApi(
+  discountType?: string,
+): "Percentage" | "FixedAmount" {
+  const t = (discountType ?? "").toLowerCase();
+  if (
+    t === "fixedamount" ||
+    t === "fixed" ||
+    t.includes("sabit")
+  ) {
+    return "FixedAmount";
+  }
+  return "Percentage";
+}
+
+/** Map API enum to form select values. */
+export function mapCouponDiscountTypeFromApi(
+  discountType?: string,
+): "Percentage" | "FixedAmount" {
+  const t = (discountType ?? "").toLowerCase();
+  if (t === "fixedamount" || t === "fixed") return "FixedAmount";
+  return "Percentage";
+}
+
+function buildCouponRequestEnvelope(
+  payload: Partial<CouponFormInput>,
+): { request: Record<string, unknown> } {
+  const code = payload.code?.trim().toUpperCase() ?? "";
+  return {
+    request: {
+      code,
+      discountType: mapCouponDiscountTypeToApi(payload.discountType),
+      discountValue: payload.value ?? 0,
+      startsAt: toApiDateOrNull(payload.startDate),
+      endsAt: toApiDateOrNull(payload.endDate),
+      usageLimit: payload.usageLimit ?? null,
+    },
+  };
+}
 
 export type Coupon = {
   id: string | number;
@@ -219,16 +273,19 @@ function normalizeCoupon(raw: unknown): Coupon | null {
   const id = pickId(o, "id", "Id");
   const code = pickStr(o, "code", "Code");
   if (id == null || !code) return null;
-  const discountType =
-    pickStr(o, "discountType", "DiscountType", "type") ?? "Percent";
-  const value = pickNum(o, "value", "Value", "discountValue") ?? 0;
+  const discountTypeRaw =
+    pickStr(o, "discountType", "DiscountType", "type") ?? "Percentage";
+  const discountType = mapCouponDiscountTypeFromApi(discountTypeRaw);
+  const value = pickNum(o, "value", "Value", "discountValue", "DiscountValue") ?? 0;
+  const startsAt = pickStr(o, "startsAt", "StartsAt", "startDate", "StartDate");
+  const endsAt = pickStr(o, "endsAt", "EndsAt", "endDate", "EndDate");
   return {
     id,
     code,
     discountType,
     value,
-    startDate: pickStr(o, "startDate", "StartDate"),
-    endDate: pickStr(o, "endDate", "EndDate"),
+    startDate: startsAt,
+    endDate: endsAt,
     usageLimit: pickNum(o, "usageLimit", "UsageLimit"),
     usageCount: pickNum(o, "usageCount", "UsageCount"),
     vendorServiceId: pickId(o, "vendorServiceId", "VendorServiceId", "serviceId"),
@@ -283,9 +340,12 @@ export async function fetchVendorCoupons(): Promise<Coupon[]> {
 }
 
 export async function createVendorCoupon(
-  payload: Omit<Coupon, "id">,
+  payload: CouponFormInput,
 ): Promise<Coupon> {
-  const raw = await apiPost<unknown>("/vendor/coupons", payload);
+  const raw = await apiPost<unknown>(
+    "/vendor/coupons",
+    buildCouponRequestEnvelope(payload),
+  );
   const normalized = normalizeCoupon(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kupon yanıtı işlenemedi.");
   return normalized;
@@ -293,9 +353,12 @@ export async function createVendorCoupon(
 
 export async function updateVendorCoupon(
   id: string | number,
-  payload: Partial<Coupon>,
+  payload: Partial<CouponFormInput>,
 ): Promise<Coupon> {
-  const raw = await apiPutRaw<unknown>(`/vendor/coupons/${id}`, payload);
+  const raw = await apiPutRaw<unknown>(
+    `/vendor/coupons/${id}`,
+    buildCouponRequestEnvelope(payload),
+  );
   const normalized = normalizeCoupon(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kupon yanıtı işlenemedi.");
   return normalized;
@@ -316,9 +379,12 @@ export async function fetchAdminCoupons(): Promise<Coupon[]> {
 }
 
 export async function createAdminCoupon(
-  payload: Omit<Coupon, "id">,
+  payload: CouponFormInput,
 ): Promise<Coupon> {
-  const raw = await apiPost<unknown>("/admin/coupons", payload);
+  const raw = await apiPost<unknown>(
+    "/admin/coupons",
+    buildCouponRequestEnvelope(payload),
+  );
   const normalized = normalizeCoupon(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kupon yanıtı işlenemedi.");
   return normalized;
@@ -326,9 +392,12 @@ export async function createAdminCoupon(
 
 export async function updateAdminCoupon(
   id: string | number,
-  payload: Partial<Coupon>,
+  payload: Partial<CouponFormInput>,
 ): Promise<Coupon> {
-  const raw = await apiPutRaw<unknown>(`/admin/coupons/${id}`, payload);
+  const raw = await apiPutRaw<unknown>(
+    `/admin/coupons/${id}`,
+    buildCouponRequestEnvelope(payload),
+  );
   const normalized = normalizeCoupon(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kupon yanıtı işlenemedi.");
   return normalized;

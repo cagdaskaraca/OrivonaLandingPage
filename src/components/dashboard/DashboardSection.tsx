@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { glassCard } from "@/src/lib/ui";
+import { glassCard, orivonaDashboardAnchor } from "@/src/lib/ui";
 
 type DashboardSectionProps = {
   id: string;
@@ -17,7 +17,7 @@ export function DashboardSection({
   return (
     <section
       id={id}
-      className={`scroll-mt-[calc(var(--orivona-dashboard-nav-h)+5rem)] ${className}`}
+      className={`${orivonaDashboardAnchor} ${className}`}
       aria-labelledby={title ? `${id}-heading` : undefined}
     >
       <div className={`${glassCard} mb-8`}>

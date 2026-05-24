@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { scrollToHashWhenReady } from "@/src/lib/scrollToDashboardSection";
 
 type NavItem = { id: string; label: string; href?: string };
 
@@ -29,9 +30,11 @@ export function DashboardMobileNav({ items }: DashboardMobileNavProps) {
                 type="button"
                 className="flex w-full flex-col items-center rounded-lg px-1 py-2 text-[10px] font-medium text-zinc-400 hover:bg-white/[0.06] hover:text-violet-200"
                 onClick={() => {
-                  document
-                    .getElementById(item.id)
-                    ?.scrollIntoView({ behavior: "smooth" });
+                  scrollToHashWhenReady(`#${item.id}`, {
+                    highlight: false,
+                    forceSameHash: true,
+                    updateHash: true,
+                  });
                 }}
               >
                 {item.label}

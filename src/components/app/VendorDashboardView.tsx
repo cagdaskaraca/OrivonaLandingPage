@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ServiceImageManager,
   VendorReservationsPanel,
@@ -37,6 +37,7 @@ import { formatCityForApi } from "@/src/lib/turkish";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
+import { notifyDashboardLayoutReady } from "@/src/lib/scrollToDashboardSection";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { AvailabilityHeatmapPanel } from "@/src/components/premium/AvailabilityHeatmapPanel";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -47,7 +48,14 @@ import { VendorCouponsSection } from "@/src/components/commerce/VendorCouponsSec
 import { VendorPromotionsSection } from "@/src/components/commerce/VendorPromotionsSection";
 import { VendorServiceMediaPanel } from "@/src/components/commerce/VendorServiceMediaPanel";
 import { NumericInput } from "@/src/components/ui/NumericInput";
-import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
+import {
+  btnPrimary,
+  btnSecondary,
+  glassCard,
+  inputClass,
+  orivonaDashboardAnchor,
+  selectClass,
+} from "@/src/lib/ui";
 
 function defaultForm(): VendorServicePayload {
   return {
@@ -78,7 +86,6 @@ function serviceToForm(service: VendorService): VendorServicePayload {
 }
 
 function DashboardContent() {
-  useDashboardHashScroll();
   const { user, logout } = useAuth();
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -92,6 +99,17 @@ function DashboardContent() {
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const serviceFormRef = useRef<HTMLFormElement>(null);
+
+  useDashboardHashScroll({
+    isLoading: profileLoading || servicesLoading,
+  });
+
+  useEffect(() => {
+    if (!profileLoading && !servicesLoading) {
+      notifyDashboardLayoutReady();
+    }
+  }, [profileLoading, servicesLoading]);
 
   const loadServices = useCallback(async () => {
     setServicesLoading(true);
@@ -100,12 +118,9 @@ function DashboardContent() {
       setServices(list);
     } catch (err) {
       console.error("Vendor services fetch failed", err);
-      if (err instanceof ApiError) {
-        console.error("Backend error response", err.body);
-        setErrorMessage(err.message);
-      } else {
-        setErrorMessage("Hizmetler yüklenemedi.");
-      }
+      setErrorMessage(
+        formatUiErrorMessage(err, "Hizmetler yüklenemedi."),
+      );
       setServices([]);
     } finally {
       setServicesLoading(false);
@@ -141,12 +156,22 @@ function DashboardContent() {
     setErrorMessage(null);
   }
 
+  function scrollToServiceForm() {
+    requestAnimationFrame(() => {
+      serviceFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
   function openCreate() {
     setSuccessMessage(null);
     setErrorMessage(null);
     setEditingId(null);
     setForm(defaultForm());
     setShowForm(true);
+    scrollToServiceForm();
   }
 
   function openEdit(service: VendorService) {
@@ -156,6 +181,7 @@ function DashboardContent() {
     setEditingId(service.id);
     setForm(serviceToForm(service));
     setShowForm(true);
+    scrollToServiceForm();
   }
 
   async function handleDelete(service: VendorService) {
@@ -411,12 +437,173 @@ function DashboardContent() {
 
       <DashboardSection id="dashboard-services" title="Hizmetlerim">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {!showForm ? (
-            <button type="button" className={`${btnSecondary} text-xs`} onClick={openCreate}>
-              Yeni Hizmet Ekle
-            </button>
-          ) : null}
+          <button type="button" className={btnPrimary} onClick={openCreate}>
+            Yeni Hizmet Ekle
+          </button>
         </div>
+
+        {successMessage ? (
+          <p className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+            {successMessage}
+          </p>
+        ) : null}
+        {errorMessage ? (
+          <p className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        {showForm ? (
+          <form
+            ref={serviceFormRef}
+            onSubmit={handleSubmit}
+            className={`${glassCard} mt-4 space-y-4 scroll-mt-28`}
+          >
+            <h3 className="text-lg font-semibold text-white">
+              {editingId != null ? "Hizmeti düzenle" : "Yeni hizmet ekle"}
+            </h3>
+            <label className="block text-sm">
+              <span className="mb-1.5 block text-xs text-zinc-400">Başlık</span>
+              <input
+                className={inputClass}
+                value={form.title}
+                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                required
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1.5 block text-xs text-zinc-400">Kategori</span>
+              <select
+                className={selectClass}
+                value={String(form.categoryId ?? "")}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, categoryId: e.target.value }))
+                }
+                required
+              >
+                <option value="">Seçin</option>
+                {categories.map((c) => (
+                  <option key={String(c.id)} value={String(c.id ?? "")}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs text-zinc-400">Şehir</span>
+                <input
+                  className={inputClass}
+                  value={form.city}
+                  onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                  required
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs text-zinc-400">İlçe</span>
+                <input
+                  className={inputClass}
+                  value={form.district}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, district: e.target.value }))
+                  }
+                  required
+                />
+              </label>
+            </div>
+            <label className="block text-sm">
+              <span className="mb-1.5 block text-xs text-zinc-400">Açıklama</span>
+              <textarea
+                className={`${inputClass} min-h-[80px] resize-y`}
+                value={form.description}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+                required
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1.5 block text-xs text-zinc-400">Fiyat (₺)</span>
+              <NumericInput
+                value={form.basePrice ?? 0}
+                onChange={(basePrice) => setForm((f) => ({ ...f, basePrice }))}
+                min={1}
+                required
+              />
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs text-zinc-400">
+                  Minimum kapasite
+                </span>
+                <NumericInput
+                  value={form.capacityMin ?? 0}
+                  onChange={(capacityMin) =>
+                    setForm((f) => ({ ...f, capacityMin }))
+                  }
+                  min={0}
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1.5 block text-xs text-zinc-400">
+                  Maksimum kapasite
+                </span>
+                <NumericInput
+                  value={form.capacityMax ?? 0}
+                  onChange={(capacityMax) =>
+                    setForm((f) => ({ ...f, capacityMax }))
+                  }
+                  min={0}
+                />
+              </label>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, isActive: e.target.checked }))
+                }
+                className="rounded border-white/20"
+              />
+              Aktif (marketplace&apos;te göster)
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <button type="submit" className={btnPrimary} disabled={saving}>
+                {saving
+                  ? "Kaydediliyor…"
+                  : editingId != null
+                    ? "Değişiklikleri Kaydet"
+                    : "Hizmeti Oluştur"}
+              </button>
+              <button
+                type="button"
+                className={btnSecondary}
+                onClick={cancelForm}
+                disabled={saving}
+              >
+                İptal
+              </button>
+            </div>
+            {editingId != null ? (
+              <>
+                <ServiceImageManager
+                  service={services.find((s) => s.id === editingId) ?? { id: editingId }}
+                />
+                <PricingInsightsPanel
+                  serviceId={editingId}
+                  categoryId={form.categoryId}
+                  city={form.city}
+                  basePrice={form.basePrice}
+                />
+                <div id="dashboard-service-media" className="scroll-mt-24">
+                  <VendorServiceMediaPanel serviceId={editingId} />
+                </div>
+              </>
+            ) : null}
+          </form>
+        ) : null}
+
         {servicesLoading ? (
           <p className="mt-3 text-sm text-zinc-500">Hizmetler yükleniyor…</p>
         ) : services.length === 0 ? (
@@ -484,15 +671,15 @@ function DashboardContent() {
         <VendorPromotionsSection />
       </section>
 
-      <section id="dashboard-offers" className="scroll-mt-24 mb-8">
+      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
         <VendorOfferRequestsPanel />
       </section>
 
-      <section id="dashboard-reservations" className="scroll-mt-24 mb-8">
+      <section id="dashboard-reservations" className={`${orivonaDashboardAnchor} mb-8`}>
         <VendorReservationsPanel />
       </section>
 
-      <section id="dashboard-availability" className="scroll-mt-24 mb-8">
+      <section id="dashboard-availability" className={`${orivonaDashboardAnchor} mb-8`}>
         <VendorAvailabilityPanel />
       </section>
 
@@ -504,7 +691,7 @@ function DashboardContent() {
         <QrCheckInSection />
       </DashboardSection>
 
-      <section id="dashboard-messages" className="scroll-mt-24 mb-8">
+      <section id="dashboard-messages" className={`${orivonaDashboardAnchor} mb-8`}>
         <MessagingPanel viewerRole="Vendor" />
       </section>
 
@@ -512,158 +699,6 @@ function DashboardContent() {
         <NotificationsPanel />
       </DashboardSection>
 
-      {showForm ? (
-        <form onSubmit={handleSubmit} className={`${glassCard} space-y-4`}>
-          <h2 className="text-lg font-semibold text-white">
-            {editingId != null ? "Hizmeti düzenle" : "Yeni hizmet ekle"}
-          </h2>
-          <label className="block text-sm">
-            <span className="mb-1.5 block text-xs text-zinc-400">Hizmet başlığı</span>
-            <input
-              className={inputClass}
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              required
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block text-xs text-zinc-400">Kategori</span>
-            <select
-              className={selectClass}
-              value={String(form.categoryId ?? "")}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, categoryId: e.target.value }))
-              }
-              required
-            >
-              <option value="">Seçin</option>
-              {categories.map((c) => (
-                <option key={String(c.id)} value={String(c.id ?? "")}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block text-xs text-zinc-400">Açıklama</span>
-            <textarea
-              className={`${inputClass} min-h-[80px] resize-y`}
-              value={form.description}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, description: e.target.value }))
-              }
-              required
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1.5 block text-xs text-zinc-400">Başlangıç fiyatı (₺)</span>
-            <NumericInput
-              value={form.basePrice ?? 0}
-              onChange={(basePrice) => setForm((f) => ({ ...f, basePrice }))}
-              min={1}
-              required
-            />
-          </label>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-zinc-400">Şehir</span>
-              <input
-                className={inputClass}
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                required
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-zinc-400">İlçe</span>
-              <input
-                className={inputClass}
-                value={form.district}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, district: e.target.value }))
-                }
-                required
-              />
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-zinc-400">Minimum kapasite</span>
-              <NumericInput
-                value={form.capacityMin ?? 0}
-                onChange={(capacityMin) =>
-                  setForm((f) => ({ ...f, capacityMin }))
-                }
-                min={0}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1.5 block text-xs text-zinc-400">Maksimum kapasite</span>
-              <NumericInput
-                value={form.capacityMax ?? 0}
-                onChange={(capacityMax) =>
-                  setForm((f) => ({ ...f, capacityMax }))
-                }
-                min={0}
-              />
-            </label>
-          </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, isActive: e.target.checked }))
-              }
-              className="rounded border-white/20"
-            />
-            Aktif (marketplace&apos;te göster)
-          </label>
-          {successMessage ? (
-            <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-              {successMessage}
-            </p>
-          ) : null}
-          {errorMessage ? (
-            <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-              {errorMessage}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-3">
-            <button type="submit" className={btnPrimary} disabled={saving}>
-              {saving
-                ? "Kaydediliyor…"
-                : editingId != null
-                  ? "Değişiklikleri Kaydet"
-                  : "Hizmeti Oluştur"}
-            </button>
-            <button
-              type="button"
-              className={btnSecondary}
-              onClick={cancelForm}
-              disabled={saving}
-            >
-              İptal
-            </button>
-          </div>
-          {editingId != null ? (
-            <>
-              <ServiceImageManager
-                service={services.find((s) => s.id === editingId) ?? { id: editingId }}
-              />
-              <PricingInsightsPanel
-                serviceId={editingId}
-                categoryId={form.categoryId}
-                city={form.city}
-                basePrice={form.basePrice}
-              />
-              <div id="dashboard-service-media" className="scroll-mt-24">
-                <VendorServiceMediaPanel serviceId={editingId} />
-              </div>
-            </>
-          ) : null}
-        </form>
-      ) : null}
     </DashboardLayout>
   );
 }

@@ -40,7 +40,7 @@ export function VendorOfferRequestsPanel() {
       logApiError("Vendor offer requests", e);
       if (e instanceof ApiError) console.log("Vendor offer requests failed", e.body);
       setOffers([]);
-      setError(formatApiErrorMessage(e, "Teklif talepleri yüklenemedi."));
+      setError("Gelen teklif verileri şu anda alınamadı.");
     } finally {
       setLoading(false);
     }

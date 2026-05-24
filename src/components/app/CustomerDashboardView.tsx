@@ -11,7 +11,7 @@ import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOffe
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
 import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPanel";
-import { EventOsProvider } from "@/src/components/event-os/EventOsContext";
+import { EventOsProvider, useEventOs } from "@/src/components/event-os/EventOsContext";
 import { EventOsChecklistSection } from "@/src/components/event-os/EventOsChecklistSection";
 import { EventOsGuestsSection } from "@/src/components/event-os/EventOsGuestsSection";
 import { EventOsPublicInviteSection } from "@/src/components/event-os/EventOsPublicInviteSection";
@@ -43,12 +43,20 @@ import type {
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
+import { notifyDashboardLayoutReady } from "@/src/lib/scrollToDashboardSection";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
 import { PublicEventPageSection } from "@/src/components/premium/PublicEventPageSection";
 import { NumericInput } from "@/src/components/ui/NumericInput";
-import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
+import {
+  btnPrimary,
+  btnSecondary,
+  glassCard,
+  inputClass,
+  orivonaDashboardAnchor,
+  selectClass,
+} from "@/src/lib/ui";
 
 const EVENT_REQUEST_STATUS_OPTIONS = [
   { value: "", label: "Değiştirme" },
@@ -107,8 +115,8 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
   };
 }
 
-function DashboardContent() {
-  useDashboardHashScroll();
+function DashboardContentInner() {
+  const { loadingPlans } = useEventOs();
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("conversation");
   const { user, logout } = useAuth();
@@ -119,6 +127,14 @@ function DashboardContent() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [loadingList, setLoadingList] = useState(true);
+
+  useDashboardHashScroll({ isLoading: loadingList || loadingPlans });
+
+  useEffect(() => {
+    if (!loadingList && !loadingPlans) {
+      notifyDashboardLayoutReady();
+    }
+  }, [loadingList, loadingPlans]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [accountProfile, setAccountProfile] = useState<AccountProfile | null>(null);
@@ -299,7 +315,6 @@ function DashboardContent() {
   );
 
   return (
-    <EventOsProvider>
     <DashboardLayout
       title="Müşteri Paneli"
       subtitle="Profiliniz, Smart Event OS ve etkinlik talepleriniz."
@@ -570,7 +585,7 @@ function DashboardContent() {
         <CustomerFavoritesSection />
       </DashboardSection>
 
-      <section id="dashboard-offers" className="scroll-mt-24 mb-8">
+      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
         <CustomerOfferRequestsPanel
           onAfterAccept={() => setReservationsKey((k) => k + 1)}
         />
@@ -580,7 +595,7 @@ function DashboardContent() {
         <CustomerReservationsSection key={reservationsKey} />
       </DashboardSection>
 
-      <section id="dashboard-messages" className="scroll-mt-24 mb-8">
+      <section id="dashboard-messages" className={`${orivonaDashboardAnchor} mb-8`}>
         <MessagingPanel
           viewerRole="Customer"
           initialConversationId={conversationId}
@@ -591,6 +606,13 @@ function DashboardContent() {
         <NotificationsPanel />
       </DashboardSection>
     </DashboardLayout>
+  );
+}
+
+function DashboardContent() {
+  return (
+    <EventOsProvider>
+      <DashboardContentInner />
     </EventOsProvider>
   );
 }

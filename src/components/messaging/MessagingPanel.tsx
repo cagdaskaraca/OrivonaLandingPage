@@ -19,7 +19,17 @@ import {
 import { formatChatTimestamp, formatRelativeTime } from "@/src/lib/relativeTime";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
-import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
+import {
+  btnPrimary,
+  btnSecondary,
+  glassCard,
+  inputClass,
+  orivonaChatScroll,
+} from "@/src/lib/ui";
+
+/** Fixed chat shell height — messages scroll inside, not the dashboard page. */
+const CHAT_SHELL_HEIGHT =
+  "h-[min(620px,calc(100vh-180px))] min-h-[min(420px,calc(100vh-220px))] max-h-[calc(100vh-180px)]";
 
 const CONVERSATION_POLL_MS = 5000;
 const MESSAGE_POLL_MS = 4000;
@@ -160,6 +170,11 @@ export function MessagingPanel({
   }, [selectedId, loadMessages]);
 
   useEffect(() => {
+    if (!selectedId || messagesLoading) return;
+    scrollMessagesToBottom("auto");
+  }, [selectedId, messagesLoading, scrollMessagesToBottom]);
+
+  useEffect(() => {
     if (!selectedId) return;
     const interval = setInterval(() => {
       void loadMessages(selectedId, { silent: true, scrollAfter: false });
@@ -239,8 +254,8 @@ export function MessagingPanel({
     !messagesLoading && !messagesError && messages.length === 0;
 
   return (
-    <div className={`${glassCard} mb-8`}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className={`${glassCard} mb-8 flex flex-col`}>
+      <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-white">Mesajlar</h2>
           <p className="mt-1 text-sm text-zinc-400">
@@ -256,10 +271,12 @@ export function MessagingPanel({
         ) : null}
       </div>
 
-      <div className="grid min-h-[420px] gap-0 overflow-hidden rounded-2xl border border-white/10 bg-black/20 lg:grid-cols-[minmax(0,280px)_1fr]">
-        <div className="border-b border-white/10 lg:border-b-0 lg:border-r">
+      <div
+        className={`grid ${CHAT_SHELL_HEIGHT} min-h-0 gap-0 overflow-hidden rounded-2xl border border-white/10 bg-black/20 grid-rows-[minmax(0,9rem)_minmax(0,1fr)] lg:grid-cols-[minmax(0,280px)_minmax(0,1fr)] lg:grid-rows-1`}
+      >
+        <div className="flex min-h-0 flex-col overflow-hidden border-b border-white/10 lg:border-b-0 lg:border-r">
           {listLoading && conversations.length === 0 ? (
-            <div className="space-y-0 divide-y divide-white/[0.06] p-2">
+            <div className={`${orivonaChatScroll} min-h-0 flex-1 space-y-0 divide-y divide-white/[0.06] overflow-y-auto p-2`}>
               {[0, 1, 2].map((i) => (
                 <div key={i} className="animate-pulse px-3 py-4">
                   <div className="h-3.5 w-2/3 rounded bg-white/[0.08]" />
@@ -268,7 +285,7 @@ export function MessagingPanel({
               ))}
             </div>
           ) : listError && conversations.length === 0 ? (
-            <div className="px-4 py-8 text-center">
+            <div className="flex min-h-0 flex-1 items-center justify-center px-4 py-8 text-center">
               <p className="text-sm text-red-300/90">{listError}</p>
               <button
                 type="button"
@@ -279,7 +296,7 @@ export function MessagingPanel({
               </button>
             </div>
           ) : conversations.length === 0 ? (
-            <div className="px-3 py-6">
+            <div className={`${orivonaChatScroll} min-h-0 flex-1 overflow-y-auto px-3 py-6`}>
               <EmptyState
                 icon={EMPTY_STATE_PRESETS.messages.icon}
                 title={
@@ -305,7 +322,9 @@ export function MessagingPanel({
               />
             </div>
           ) : (
-            <ul className="max-h-[min(420px,50vh)] divide-y divide-white/[0.06] overflow-y-auto lg:max-h-[480px]">
+            <ul
+              className={`${orivonaChatScroll} min-h-0 flex-1 divide-y divide-white/[0.06] overflow-y-auto overflow-x-hidden`}
+            >
               {conversations.map((conversation) => {
                 const id = conversation.id;
                 if (id == null) return null;
@@ -367,9 +386,9 @@ export function MessagingPanel({
           )}
         </div>
 
-        <div className="flex min-h-[320px] flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-col overflow-hidden">
           {!selectedId ? (
-            <div className="flex flex-1 items-center justify-center px-6 py-12 text-center">
+            <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-12 text-center">
               <p className="text-sm text-zinc-500">
                 Mesajları görmek için bir konuşma seçin.
               </p>
@@ -389,7 +408,7 @@ export function MessagingPanel({
 
               <div
                 ref={messagesScrollRef}
-                className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4"
+                className={`${orivonaChatScroll} min-h-0 flex-1 space-y-3 overflow-y-auto overflow-x-hidden overscroll-contain px-4 py-4`}
               >
                 {messagesLoading && messages.length === 0 ? (
                   <div className="space-y-3">

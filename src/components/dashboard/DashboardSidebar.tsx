@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { scrollToHashWhenReady } from "@/src/lib/scrollToDashboardSection";
 import { orivonaScrollY } from "@/src/lib/ui";
 
 export type DashboardNavItem = {
@@ -30,11 +31,12 @@ export function DashboardSidebar({
 
   const scrollToSection = useCallback(
     (id: string) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        setActiveId(id);
-      }
+      scrollToHashWhenReady(`#${id}`, {
+        highlight: false,
+        forceSameHash: true,
+        updateHash: true,
+      });
+      setActiveId(id);
       onMobileOpenChange(false);
     },
     [onMobileOpenChange],

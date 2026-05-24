@@ -37,5 +37,11 @@ export const orivonaScrollY = "orivona-scroll-y";
 /** Themed vertical scroll for dropdowns / floating menus (see globals.css). */
 export const orivonaDropdownScroll = "orivona-dropdown-scroll";
 
+/** Subtle scroll for in-panel chat message lists (see globals.css). */
+export const orivonaChatScroll = "orivona-chat-scroll";
+
+/** Hash scroll targets on role dashboards (scroll-margin-top: 120px). */
+export const orivonaDashboardAnchor = "orivona-dashboard-anchor";
+
 /** Wrapper for wide tables inside dashboard content. */
 export const dashboardTableWrap = `${orivonaScrollX} rounded-xl border border-white/[0.08] pb-0.5`;

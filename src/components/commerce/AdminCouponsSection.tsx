@@ -17,7 +17,7 @@ import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui"
 function emptyForm(): Omit<Coupon, "id"> {
   return {
     code: "",
-    discountType: "Percent",
+    discountType: "Percentage",
     value: 10,
     startDate: "",
     endDate: "",
@@ -111,8 +111,8 @@ export function AdminCouponsSection() {
                 setForm((f) => ({ ...f, discountType: e.target.value }))
               }
             >
-              <option value="Percent">Yüzde</option>
-              <option value="Fixed">Sabit ₺</option>
+              <option value="Percentage">Yüzde (%)</option>
+              <option value="FixedAmount">Sabit Tutar</option>
             </select>
           </label>
           <label className="block text-sm">
@@ -160,7 +160,7 @@ export function AdminCouponsSection() {
             >
               <span className="font-mono text-violet-200">{c.code}</span>
               <span className="text-zinc-500">
-                {c.discountType === "Fixed" ? `${c.value}₺` : `%${c.value}`}
+                {c.discountType === "FixedAmount" ? `${c.value}₺` : `%${c.value}`}
               </span>
               <button
                 type="button"

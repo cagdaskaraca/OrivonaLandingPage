@@ -204,6 +204,39 @@ html {
   );
 }
 
+/* Chat message / conversation lists — subtle purple thumb, minimal track */
+.orivona-chat-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.38) rgba(10, 6, 18, 0.4);
+}
+
+.orivona-chat-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.orivona-chat-scroll::-webkit-scrollbar-track {
+  margin: 4px 0;
+  background: rgba(10, 6, 18, 0.45);
+  border-radius: 9999px;
+}
+
+.orivona-chat-scroll::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.38);
+  border-radius: 9999px;
+}
+
+.orivona-chat-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.58);
+}
+
+/* Dashboard anchor sections — clear sticky nav when scrolling to hash */
+.orivona-dashboard-anchor {
+  scroll-margin-top: 120px;
+}
+
 /* Brief highlight when navigating to a dashboard section via notification */
 .orivona-section-highlight {
   outline: 2px solid rgba(168, 85, 247, 0.45);

@@ -52,13 +52,17 @@ export function VendorReservationsPanel() {
   const toast = useToast();
   const [list, setList] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
+    setError(null);
     try {
       setList(await fetchVendorReservations());
     } catch (e) {
       if (e instanceof ApiError) console.log("Vendor reservations failed", e.body);
+      setList([]);
+      setError("Rezervasyon verileri şu anda alınamadı.");
     } finally {
       setLoading(false);
     }
@@ -71,6 +75,11 @@ export function VendorReservationsPanel() {
   return (
     <div className={`${glassCard} mb-8`}>
       <h2 className="text-lg font-semibold text-white">Rezervasyonlar</h2>
+      {error ? (
+        <p className="mt-3 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          {error}
+        </p>
+      ) : null}
       {loading ? (
         <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
       ) : list.length === 0 ? (

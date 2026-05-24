@@ -569,23 +569,20 @@ export async function fetchCategories(): Promise<Category[]> {
   }));
 }
 
-function isGuidLike(value: string | number | undefined): boolean {
-  if (value == null || value === "") return false;
-  const s = String(value);
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-}
-
 function buildVendorServiceBody(payload: VendorServicePayload) {
-  if (!isGuidLike(payload.categoryId)) {
+  const categoryId = payload.categoryId;
+  if (categoryId == null || String(categoryId).trim() === "") {
     throw new Error("Geçerli bir kategori seçin.");
   }
+  const price = payload.basePrice;
   return {
-    categoryId: payload.categoryId,
-    title: payload.title,
-    description: payload.description,
-    basePrice: payload.basePrice,
-    city: payload.city,
-    district: payload.district,
+    categoryId,
+    title: payload.title.trim(),
+    description: payload.description.trim(),
+    basePrice: price,
+    price,
+    city: payload.city.trim(),
+    district: payload.district.trim(),
     capacityMin: payload.capacityMin,
     capacityMax: payload.capacityMax,
     isActive: payload.isActive,

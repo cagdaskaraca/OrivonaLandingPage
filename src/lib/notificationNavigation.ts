@@ -22,6 +22,10 @@ const HASH_ALIASES: Record<string, string> = {
   "event-plans": "event-os-plans",
   eventplans: "event-os-plans",
   etkinlikplanlari: "event-os-plans",
+  checklist: "event-os-checklist",
+  availability: "dashboard-availability",
+  analytics: "dashboard-analytics",
+  crm: "dashboard-crm",
 };
 
 export type ResolvedNotificationLink = {
@@ -30,7 +34,8 @@ export type ResolvedNotificationLink = {
   href: string;
 };
 
-function normalizeHash(raw: string): string {
+/** Map #messages / #offers aliases to dashboard section element ids. */
+export function hashToSectionId(raw: string): string {
   const key = raw.replace(/^#/, "").trim().toLowerCase();
   if (!key) return "";
   return HASH_ALIASES[key] ?? raw.replace(/^#/, "");
@@ -47,12 +52,12 @@ export function resolveNotificationActionUrl(
   try {
     const url = new URL(trimmed, baseOrigin);
     const pathname = url.pathname || "/";
-    const sectionId = normalizeHash(url.hash);
+    const sectionId = hashToSectionId(url.hash);
     const hash = sectionId ? `#${sectionId}` : "";
     return { pathname, hash, href: `${pathname}${hash}` };
   } catch {
     if (trimmed.startsWith("#")) {
-      const sectionId = normalizeHash(trimmed);
+      const sectionId = hashToSectionId(trimmed);
       return {
         pathname: "/",
         hash: sectionId ? `#${sectionId}` : "",
@@ -63,7 +68,7 @@ export function resolveNotificationActionUrl(
       const hashIdx = trimmed.indexOf("#");
       const pathname = hashIdx >= 0 ? trimmed.slice(0, hashIdx) : trimmed;
       const hashPart = hashIdx >= 0 ? trimmed.slice(hashIdx) : "";
-      const sectionId = normalizeHash(hashPart);
+      const sectionId = hashToSectionId(hashPart);
       const hash = sectionId ? `#${sectionId}` : "";
       return { pathname, hash, href: `${pathname}${hash}` };
     }
