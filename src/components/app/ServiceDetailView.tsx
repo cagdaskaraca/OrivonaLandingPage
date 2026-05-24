@@ -23,13 +23,16 @@ import { trackServiceView } from "@/src/lib/api/vendorIntelligence";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
 import { getServiceGalleryUrls } from "@/src/lib/serviceImage";
+import { AvailabilityHeatmapPanel } from "@/src/components/premium/AvailabilityHeatmapPanel";
+import { ServiceBadgeChips } from "@/src/components/premium/ServiceBadgeChips";
+import { ServiceMediaGallery } from "@/src/components/premium/ServiceMediaGallery";
 import {
   featuredBadgeClass,
   isPremiumVendor,
   premiumBadgeClass,
 } from "@/src/lib/marketplacePremium";
+import { formatBadgeLabel } from "@/src/lib/premiumLabels";
 import {
-  badgeClass,
   btnPrimary,
   btnSecondary,
   glassCard,
@@ -223,8 +226,11 @@ export function ServiceDetailView() {
                   {(service.badges ?? [])
                     .filter((b) => !b.toLowerCase().includes("premium"))
                     .map((b) => (
-                      <span key={b} className={badgeClass}>
-                        {b}
+                      <span
+                        key={b}
+                        className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100"
+                      >
+                        {formatBadgeLabel(b)}
                       </span>
                     ))}
                 </div>
@@ -264,6 +270,7 @@ export function ServiceDetailView() {
               <p className="mt-2 text-base text-violet-100/90">
                 {vendor}
               </p>
+              <ServiceBadgeChips badges={service.badges} className="mt-3" />
               {(service.city || service.district) && (
                 <p className="mt-3 text-sm text-zinc-400">
                   {[service.city, service.district].filter(Boolean).join(" · ")}
@@ -279,12 +286,16 @@ export function ServiceDetailView() {
             </div>
 
             {id ? (
-              <ServiceReviewsSection
-                serviceId={id}
-                canSubmit={canReview}
-                fallbackRating={rating}
-                fallbackReviewCount={service.reviewCount}
-              />
+              <>
+                <ServiceMediaGallery serviceId={id} />
+                <AvailabilityHeatmapPanel variant="service" serviceId={id} />
+                <ServiceReviewsSection
+                  serviceId={id}
+                  canSubmit={canReview}
+                  fallbackRating={rating}
+                  fallbackReviewCount={service.reviewCount}
+                />
+              </>
             ) : null}
           </div>
 

@@ -35,6 +35,13 @@ import type {
 } from "@/src/lib/api/types";
 import { formatCityForApi } from "@/src/lib/turkish";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
+import { AvailabilityHeatmapPanel } from "@/src/components/premium/AvailabilityHeatmapPanel";
+import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
+import { PricingInsightsPanel } from "@/src/components/premium/PricingInsightsPanel";
+import { QrCheckInSection } from "@/src/components/premium/QrCheckInSection";
+import { VendorPipelineSection } from "@/src/components/premium/VendorPipelineSection";
+import { VendorServiceMediaManager } from "@/src/components/premium/VendorServiceMediaManager";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 function defaultForm(): VendorServicePayload {
@@ -219,8 +226,12 @@ function DashboardContent() {
 
   const navItems: DashboardNavItem[] = [
     { id: "dashboard-account", label: "Hesabım" },
+    { id: "dashboard-activity", label: "Son Aktiviteler" },
+    { id: "dashboard-pipeline", label: "CRM Pipeline" },
     { id: "dashboard-analytics", label: "Analitik" },
     { id: "dashboard-crm", label: "CRM / Leadler" },
+    { id: "dashboard-heatmap", label: "Yoğunluk" },
+    { id: "dashboard-checkin", label: "QR Check-in" },
     { id: "dashboard-review-intel", label: "Yorum Özeti" },
     { id: "dashboard-profile", label: "İşletme Profili" },
     { id: "dashboard-services", label: "Hizmetlerim" },
@@ -264,6 +275,8 @@ function DashboardContent() {
       navItems={navItems}
       toolbar={toolbar}
     >
+      <MobileHomeSummary />
+
       {!profileLoading && profile && profile.isApproved === false ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           İşletme profiliniz henüz doğrulanmadı. Hizmetleriniz marketplace&apos;te
@@ -281,6 +294,14 @@ function DashboardContent() {
       <section id="dashboard-summary" className="scroll-mt-24 mb-8">
         <VendorSummaryCards />
       </section>
+
+      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
+        <ActivityFeedSection role="vendor" />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-pipeline" title="CRM Pipeline">
+        <VendorPipelineSection />
+      </DashboardSection>
 
       <DashboardSection id="dashboard-analytics" title="Analitik">
         <p className="mb-4 text-sm text-zinc-400">
@@ -422,6 +443,14 @@ function DashboardContent() {
       <section id="dashboard-availability" className="scroll-mt-24 mb-8">
         <VendorAvailabilityPanel />
       </section>
+
+      <DashboardSection id="dashboard-heatmap" title="Yoğunluk takvimi">
+        <AvailabilityHeatmapPanel variant="vendor" />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-checkin" title="QR Check-in">
+        <QrCheckInSection />
+      </DashboardSection>
 
       <section id="dashboard-messages" className="scroll-mt-24 mb-8">
         <MessagingPanel viewerRole="Vendor" />
@@ -583,9 +612,18 @@ function DashboardContent() {
             </button>
           </div>
           {editingId != null ? (
-            <ServiceImageManager
-              service={services.find((s) => s.id === editingId) ?? { id: editingId }}
-            />
+            <>
+              <ServiceImageManager
+                service={services.find((s) => s.id === editingId) ?? { id: editingId }}
+              />
+              <PricingInsightsPanel
+                serviceId={editingId}
+                categoryId={form.categoryId}
+                city={form.city}
+                basePrice={form.basePrice}
+              />
+              <VendorServiceMediaManager serviceId={editingId} />
+            </>
           ) : null}
         </form>
       ) : null}

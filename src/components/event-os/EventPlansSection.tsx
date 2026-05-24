@@ -19,6 +19,7 @@ import {
   planDisplayTitle,
   taskProgressPercent,
 } from "@/src/lib/eventOs";
+import { EventPlanCountdown } from "@/src/components/premium/EventPlanCountdown";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 function planToForm(plan: EventPlan): EventPlanFormPayload {
@@ -167,6 +168,7 @@ export function EventPlansSection() {
                     {p.eventDate ? ` · ${p.eventDate.slice(0, 10)}` : ""}
                     {p.guestCount != null ? ` · ${p.guestCount} kişi` : ""}
                   </p>
+                  <EventPlanCountdown eventDate={p.eventDate} className="mt-1.5" />
                 </button>
                 <div className="flex flex-wrap gap-2">
                   <button

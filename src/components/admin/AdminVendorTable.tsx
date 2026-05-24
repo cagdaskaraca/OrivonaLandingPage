@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminBadgeControls } from "@/src/components/premium/AdminBadgeControls";
 import type { AdminVendor } from "@/src/lib/api/types";
 import {
   activeStatusClass,
@@ -108,6 +109,7 @@ export function AdminVendorTable({
             const rejectionReason = v.rejectionReason?.trim();
 
             return (
+              <>
               <tr
                 key={String(id ?? v.email)}
                 className="bg-white/[0.02] transition-colors hover:bg-white/[0.04]"
@@ -194,6 +196,14 @@ export function AdminVendorTable({
                   </div>
                 </td>
               </tr>
+              {id != null ? (
+                <tr key={`${String(id)}-badges`} className="bg-white/[0.01]">
+                  <td colSpan={7} className="px-4 py-2">
+                    <AdminBadgeControls entityType="vendor" entityId={id} />
+                  </td>
+                </tr>
+              ) : null}
+              </>
             );
           })}
         </tbody>

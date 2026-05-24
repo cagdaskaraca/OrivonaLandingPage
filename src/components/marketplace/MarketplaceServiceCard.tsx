@@ -15,6 +15,7 @@ import {
   isPremiumVendor,
   premiumBadgeClass,
 } from "@/src/lib/marketplacePremium";
+import { ServiceBadgeChips } from "@/src/components/premium/ServiceBadgeChips";
 import { badgeClass, btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
 
 type MarketplaceServiceCardProps = {
@@ -78,8 +79,11 @@ export function MarketplaceServiceCard({
 
   const featured = item.isFeatured === true;
   const premium = isPremiumVendor(item);
-  const extraBadges = (item.badges ?? []).filter(
-    (b) => !b.toLowerCase().includes("premium") && b !== "Öne Çıkan",
+  const apiBadges = (item.badges ?? []).filter(
+    (b) =>
+      !b.toLowerCase().includes("premium") &&
+      b !== "Öne Çıkan" &&
+      !b.toLowerCase().includes("featured"),
   );
 
   const actionBtnBase =
@@ -124,7 +128,7 @@ export function MarketplaceServiceCard({
             <span className={featuredBadgeClass}>Öne Çıkan</span>
           ) : null}
           {premium ? <span className={premiumBadgeClass}>Premium</span> : null}
-          {extraBadges.slice(0, featured && premium ? 1 : 2).map((b) => (
+          {apiBadges.slice(0, featured && premium ? 1 : 2).map((b) => (
             <span key={b} className={badgeClass}>
               {b}
             </span>
@@ -178,6 +182,7 @@ export function MarketplaceServiceCard({
               ) : null}
             </p>
           </div>
+          <ServiceBadgeChips badges={item.badges} className="mt-1" />
           {(item.city || item.district) && (
             <p className="text-xs text-zinc-500">
               {[item.city, item.district].filter(Boolean).join(" · ")}

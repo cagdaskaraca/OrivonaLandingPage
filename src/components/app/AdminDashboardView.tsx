@@ -28,6 +28,7 @@ import type {
 } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
 import { useToast } from "@/src/contexts/ToastContext";
+import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 
 function DashboardContent() {
@@ -207,6 +208,13 @@ function DashboardContent() {
       <section className="mb-8">
         <h2 className="mb-4 text-lg font-semibold text-white">Platform özeti</h2>
         <AdminSummaryCards summary={summary} loading={summaryLoading} />
+      </section>
+
+      <section className={`${glassCard} mb-8`}>
+        <h2 className="text-lg font-semibold text-white">Son Aktiviteler</h2>
+        <div className="mt-4">
+          <ActivityFeedSection role="admin" />
+        </div>
       </section>
 
       <section className={`${glassCard} mb-8`}>

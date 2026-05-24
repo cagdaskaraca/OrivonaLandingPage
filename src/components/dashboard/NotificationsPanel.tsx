@@ -9,6 +9,7 @@ import {
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { AppNotification } from "@/src/lib/api/types";
 import { formatRelativeTime } from "@/src/lib/relativeTime";
+import { SmartNotificationsButton } from "@/src/components/premium/SmartNotificationsButton";
 import { btnSecondary } from "@/src/lib/ui";
 
 export function NotificationsPanel() {
@@ -60,6 +61,7 @@ export function NotificationsPanel() {
 
   return (
     <>
+      <SmartNotificationsButton onGenerated={() => void load()} />
       {unread > 0 ? (
         <div className="mb-4 flex justify-end">
           <button

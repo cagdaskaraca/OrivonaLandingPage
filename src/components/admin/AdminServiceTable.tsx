@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AdminBadgeControls } from "@/src/components/premium/AdminBadgeControls";
 import type { AdminService } from "@/src/lib/api/types";
 import { btnPrimary, btnSecondary, skeletonClass } from "@/src/lib/ui";
 
@@ -56,6 +57,7 @@ export function AdminServiceTable({
             const active = s.isActive !== false;
 
             return (
+              <>
               <tr
                 key={String(id ?? s.title)}
                 className="bg-white/[0.02] transition-colors hover:bg-white/[0.04]"
@@ -121,6 +123,14 @@ export function AdminServiceTable({
                   )}
                 </td>
               </tr>
+              {id != null ? (
+                <tr key={`${String(id)}-badges`} className="bg-white/[0.01]">
+                  <td colSpan={8} className="px-4 py-2">
+                    <AdminBadgeControls entityType="service" entityId={id} />
+                  </td>
+                </tr>
+              ) : null}
+              </>
             );
           })}
         </tbody>

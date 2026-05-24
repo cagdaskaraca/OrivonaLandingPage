@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { GlobalSearch } from "@/src/components/premium/GlobalSearch";
 import { AuthNavLinks } from "@/src/components/nav/AuthNavLinks";
 import { NotificationBell } from "@/src/components/nav/NotificationBell";
 
@@ -46,7 +47,7 @@ export function DemoShell({
         <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
           <Link
             href="/"
-            className="flex items-center gap-3 transition-opacity hover:opacity-90"
+            className="flex shrink-0 items-center gap-3 transition-opacity hover:opacity-90"
           >
             <span className="flex items-center rounded-xl border border-violet-200/10 bg-white/[0.03] px-3 py-2">
               <Image
@@ -58,6 +59,13 @@ export function DemoShell({
               />
             </span>
           </Link>
+          {stickyNav ? (
+            <div className="order-last w-full min-w-0 flex-1 sm:order-none sm:max-w-xs md:max-w-md lg:mx-4">
+              <Suspense fallback={null}>
+                <GlobalSearch />
+              </Suspense>
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-medium text-zinc-400 sm:gap-x-4 sm:text-sm">
             <Link href="/marketplace" className="hover:text-violet-200">
               Marketplace

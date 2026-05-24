@@ -6,6 +6,7 @@ import {
   DashboardSidebar,
   type DashboardNavItem,
 } from "@/src/components/dashboard/DashboardSidebar";
+import { DashboardMobileNav } from "@/src/components/premium/DashboardMobileNav";
 
 type DashboardLayoutProps = {
   title: string;
@@ -36,8 +37,11 @@ export function DashboardLayout({
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
         />
-        <div className="min-w-0 flex-1 overflow-x-clip">{children}</div>
+        <div className="min-w-0 flex-1 overflow-x-clip pb-20 lg:pb-0">
+          {children}
+        </div>
       </div>
+      <DashboardMobileNav items={navItems} />
     </DemoShell>
   );
 }

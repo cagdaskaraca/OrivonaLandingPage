@@ -36,6 +36,10 @@ import {
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 import type { EventRequest, EventRequestFormPayload } from "@/src/lib/api/types";
 import { useAuth } from "@/src/contexts/AuthContext";
+import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
+import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
+import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
+import { PublicEventPageSection } from "@/src/components/premium/PublicEventPageSection";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const EVENT_REQUEST_STATUS_OPTIONS = [
@@ -221,12 +225,15 @@ function DashboardContent() {
 
   const navItems: DashboardNavItem[] = [
     { id: "dashboard-account", label: "Hesabım" },
+    { id: "dashboard-activity", label: "Son Aktiviteler" },
     { id: "event-os-plans", label: "Etkinlik Planlarım" },
+    { id: "event-os-board", label: "Etkinlik Panosu" },
     { id: "event-os-checklist", label: "Checklist" },
     { id: "event-os-guests", label: "Davetliler" },
     { id: "event-os-rsvp", label: "RSVP" },
     { id: "event-os-seating", label: "Masa Planı" },
     { id: "event-os-public-invite", label: "Ortak Davet Linki" },
+    { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
     { id: "event-os-reminders", label: "Hatırlatmalar" },
     { id: "dashboard-events", label: "Etkinlik Talepleri" },
     { id: "dashboard-favorites", label: "Favoriler" },
@@ -254,6 +261,9 @@ function DashboardContent() {
       <Link href="/marketplace" className={btnSecondary}>
         Marketplace
       </Link>
+      <Link href="/event-wizard" className={btnSecondary}>
+        Etkinlik Sihirbazı
+      </Link>
     </>
   );
 
@@ -265,6 +275,8 @@ function DashboardContent() {
       navItems={navItems}
       toolbar={toolbar}
     >
+      <MobileHomeSummary />
+
       <DashboardSection id="dashboard-account" title="Hesabım">
         {user ? (
           <dl className="mt-4 space-y-2 text-sm text-zinc-400">
@@ -298,8 +310,16 @@ function DashboardContent() {
         </div>
       </DashboardSection>
 
+      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
+        <ActivityFeedSection role="customer" />
+      </DashboardSection>
+
       <DashboardSection id="event-os-plans" title="Etkinlik Planlarım">
         <EventPlansSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-board" title="Etkinlik Panosu">
+        <EventBoardSection />
       </DashboardSection>
 
       <DashboardSection id="event-os-checklist" title="Checklist">
@@ -320,6 +340,10 @@ function DashboardContent() {
 
       <DashboardSection id="event-os-public-invite" title="Ortak Davet Linki">
         <EventOsPublicInviteSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-public-page" title="Herkese Açık Etkinlik Sayfası">
+        <PublicEventPageSection />
       </DashboardSection>
 
       <DashboardSection id="event-os-reminders" title="Hatırlatmalar">

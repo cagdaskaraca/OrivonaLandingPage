@@ -44,6 +44,8 @@ import {
   type AiPlannerTabId,
   submitLabelForTab,
 } from "@/src/lib/aiIntelligenceUi";
+import { SavedAiPlansPanel } from "@/src/components/premium/SavedAiPlansPanel";
+import { VendorMatchSection } from "@/src/components/premium/VendorMatchSection";
 import { btnPrimary, glassCard } from "@/src/lib/ui";
 
 const PROMPT_PLACEHOLDER =
@@ -273,6 +275,35 @@ export function AiPlannerView() {
       </form>
 
       <div ref={resultsRef}>{renderTabResults()}</div>
+
+      {activeTab === "plan" && plan ? (
+        <div className={`${glassCard} mt-8 space-y-6`}>
+          <SavedAiPlansPanel
+            planPayload={plan}
+            onOpenPlan={() => {
+              toast.success("Kayıtlı plan yüklendi.");
+            }}
+          />
+          <VendorMatchSection
+            matchPayload={plan}
+            onOfferRequest={(serviceId) => {
+              const rec = plan.recommendations?.find(
+                (r) =>
+                  String(r.vendorServiceId ?? r.serviceId) ===
+                  String(serviceId),
+              );
+              if (rec) {
+                openOfferModal(rec);
+                return;
+              }
+              openOfferModal({
+                vendorServiceId: serviceId,
+                serviceId,
+              });
+            }}
+          />
+        </div>
+      ) : null}
 
       <OfferRequestModal
         item={offerItem}
