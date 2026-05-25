@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Dokümantasyon
+
+Türkçe proje dokümantasyonu (mimari, API, iş akışları, roller): **[docs/DOKUMANTASYON.md](docs/DOKUMANTASYON.md)**
+
 ## Getting Started
 
 First, run the development server:
