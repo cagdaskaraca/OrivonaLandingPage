@@ -57,7 +57,7 @@ export function EventOsBudgetSummary({
   if (lines.length === 0 && totalSpent === 0 && totalBudget == null) {
     return (
       <p className="rounded-xl border border-dashed border-white/10 px-4 py-4 text-center text-sm text-zinc-500">
-        Henüz anlaşılan firma yok. Checklist maddelerinden anlaşma ekleyin; harcamalar burada görünür.
+        Henüz kabul edilmiş teklif yok. «Tekliflerim» bölümünden teklif kabul ettiğinizde harcamalar burada görünür.
       </p>
     );
   }

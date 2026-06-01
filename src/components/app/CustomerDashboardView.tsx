@@ -116,7 +116,7 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 }
 
 function DashboardContentInner() {
-  const { loadingPlans } = useEventOs();
+  const { loadingPlans, bumpDataRefresh } = useEventOs();
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("conversation");
   const { user, logout } = useAuth();
@@ -587,7 +587,10 @@ function DashboardContentInner() {
 
       <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
         <CustomerOfferRequestsPanel
-          onAfterAccept={() => setReservationsKey((k) => k + 1)}
+          onAfterAccept={() => {
+            setReservationsKey((k) => k + 1);
+            bumpDataRefresh();
+          }}
         />
       </section>
 

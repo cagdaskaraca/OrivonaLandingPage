@@ -1,16 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AcceptedOfferChecklistDetail } from "@/src/components/event-os/AcceptedOfferChecklistDetail";
+import { EventOsBudgetSummary } from "@/src/components/event-os/EventOsBudgetSummary";
+import { EventOsChecklistPlanDropdown } from "@/src/components/event-os/EventOsChecklistPlanDropdown";
 import {
   EventOsError,
   EventOsNeedPlan,
-  EventOsPlanPicker,
   EventOsProgressBar,
 } from "@/src/components/event-os/EventOsShared";
-import { CustomerAgreementModal } from "@/src/components/event-os/CustomerAgreementModal";
-import { EventOsBudgetSummary } from "@/src/components/event-os/EventOsBudgetSummary";
 import { useEventOs } from "@/src/components/event-os/EventOsContext";
-import { useToast } from "@/src/contexts/ToastContext";
 import {
   buildTaskUpdateFromExisting,
   createEventPlanTask,
@@ -19,11 +18,7 @@ import {
   generateEventPlanTasks,
   updateEventPlanTask,
 } from "@/src/lib/api/eventPlans";
-import {
-  deleteAgreement,
-  getAgreements,
-  getBudgetSummary,
-} from "@/src/lib/api/customerAgreements";
+import { getAgreements, getBudgetSummary } from "@/src/lib/api/customerAgreements";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type {
   CustomerAgreement,
@@ -31,20 +26,28 @@ import type {
   EventTask,
   EventTaskStatus,
 } from "@/src/lib/api/types";
-import {
-  agreementForTask,
-  formatAgreementSummary,
-} from "@/src/lib/customerAgreementsUi";
+import { agreementForTaskCategory } from "@/src/lib/customerAgreementsUi";
 import {
   EVENT_TASK_STATUSES,
   normalizeTaskStatus,
-  taskProgressPercent,
 } from "@/src/lib/eventOs";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
+function checklistProgressPercent(
+  tasks: EventTask[],
+  agreements: CustomerAgreement[],
+): number {
+  if (tasks.length === 0) return 0;
+  const done = tasks.filter((t) => {
+    if (agreementForTaskCategory(agreements, t)) return true;
+    const s = normalizeTaskStatus(t.status);
+    return s === "Done" || s === "Skipped";
+  }).length;
+  return Math.round((done / tasks.length) * 100);
+}
+
 function ChecklistPanel({ planId }: { planId: string | number }) {
-  const { selectedPlan } = useEventOs();
-  const toast = useToast();
+  const { dataRefreshKey } = useEventOs();
   const [tasks, setTasks] = useState<EventTask[]>([]);
   const [agreements, setAgreements] = useState<CustomerAgreement[]>([]);
   const [budget, setBudget] = useState<EventPlanBudgetSummary | null>(null);
@@ -55,14 +58,6 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
   const [generating, setGenerating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [savingId, setSavingId] = useState<string | number | null>(null);
-  const [removingAgreementId, setRemovingAgreementId] = useState<
-    string | number | null
-  >(null);
-  const [modalTask, setModalTask] = useState<EventTask | null>(null);
-  const [modalAgreement, setModalAgreement] = useState<CustomerAgreement | null>(
-    null,
-  );
-  const [modalOpen, setModalOpen] = useState(false);
 
   const loadBudget = useCallback(async () => {
     setBudgetLoading(true);
@@ -84,14 +79,14 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
     setLoading(true);
     setError(null);
     try {
-      const [taskList, agreementList] = await Promise.all([
+      const [taskList, acceptedOffers] = await Promise.all([
         fetchEventPlanTasks(planId),
         getAgreements(planId),
       ]);
       setTasks(taskList);
-      setAgreements(agreementList);
+      setAgreements(acceptedOffers);
     } catch (err) {
-      logApiError("Event tasks / agreements", err);
+      logApiError("Event tasks / accepted offers", err);
       setTasks([]);
       setAgreements([]);
       setError(formatUiErrorMessage(err, "Checklist yüklenemedi."));
@@ -105,30 +100,8 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
   }, [load, loadBudget]);
 
   useEffect(() => {
-    void load();
-    void loadBudget();
-  }, [load, loadBudget]);
-
-  async function syncTaskStatus(task: EventTask, status: EventTaskStatus) {
-    if (task.id == null) return;
-    await updateEventPlanTask(
-      planId,
-      task.id,
-      buildTaskUpdateFromExisting(task, { status }),
-    );
-  }
-
-  function openAgreementModal(task: EventTask, agreement?: CustomerAgreement) {
-    setModalTask(task);
-    setModalAgreement(agreement ?? null);
-    setModalOpen(true);
-  }
-
-  function closeAgreementModal() {
-    setModalOpen(false);
-    setModalTask(null);
-    setModalAgreement(null);
-  }
+    void refreshAll();
+  }, [planId, dataRefreshKey, refreshAll]);
 
   async function handleGenerate() {
     setGenerating(true);
@@ -163,10 +136,9 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function setStatus(task: EventTask, status: EventTaskStatus) {
     if (task.id == null) return;
-    const linked = agreementForTask(agreements, task.id);
-    if (linked && status !== "Done") {
+    if (agreementForTaskCategory(agreements, task)) {
       setError(
-        "Bu madde için aktif anlaşma var. Önce «Anlaşmayı Kaldır» ile anlaşmayı silin.",
+        "Bu kategori için kabul edilmiş teklif var; durum teklif üzerinden yönetilir.",
       );
       return;
     }
@@ -178,8 +150,12 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
     setSavingId(task.id);
     setError(null);
     try {
-      await syncTaskStatus(task, status);
-      await refreshAll();
+      await updateEventPlanTask(
+        planId,
+        task.id,
+        buildTaskUpdateFromExisting(task, { status }),
+      );
+      await load();
     } catch (err) {
       logApiError("Update task status", err);
       setError(
@@ -195,9 +171,10 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function handleDelete(task: EventTask) {
     if (task.id == null) return;
-    const linked = agreementForTask(agreements, task.id);
-    if (linked?.id != null) {
-      setError("Görev silinmeden önce anlaşmayı kaldırın.");
+    if (agreementForTaskCategory(agreements, task)) {
+      setError(
+        "Kabul edilmiş teklif bağlı görev silinemez. Önce teklifi «Tekliflerim» bölümünden yönetin.",
+      );
       return;
     }
     try {
@@ -209,55 +186,23 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
     }
   }
 
-  async function handleRemoveAgreement(task: EventTask, agreement: CustomerAgreement) {
-    if (agreement.id == null || task.id == null) return;
-    setRemovingAgreementId(agreement.id);
-    setError(null);
-    try {
-      await deleteAgreement(planId, agreement.id);
-      if (normalizeTaskStatus(task.status) === "Done") {
-        try {
-          await syncTaskStatus(task, "Todo");
-        } catch (syncErr) {
-          logApiError("Revert task after agreement remove", syncErr);
-        }
-      }
-      toast.success("Anlaşma kaldırıldı.");
-      await refreshAll();
-    } catch (err) {
-      logApiError("Delete agreement", err);
-      setError(formatUiErrorMessage(err, "Anlaşma kaldırılamadı."));
-    } finally {
-      setRemovingAgreementId(null);
-    }
-  }
+  const progress = useMemo(
+    () => checklistProgressPercent(tasks, agreements),
+    [tasks, agreements],
+  );
 
-  async function handleAgreementSaved() {
-    if (modalTask?.id != null && normalizeTaskStatus(modalTask.status) !== "Done") {
-      try {
-        await syncTaskStatus(modalTask, "Done");
-      } catch (syncErr) {
-        logApiError("Mark task done after agreement", syncErr);
-      }
-    }
-    toast.success(
-      modalAgreement?.id != null ? "Anlaşma güncellendi." : "Anlaşma kaydedildi.",
-    );
-    await refreshAll();
-  }
-
-  const progress = taskProgressPercent(tasks, selectedPlan);
-
-  const tasksWithAgreement = useMemo(() => {
-    return tasks.map((task) => ({
-      task,
-      agreement: agreementForTask(agreements, task.id),
-    }));
-  }, [tasks, agreements]);
+  const tasksWithOffer = useMemo(
+    () =>
+      tasks.map((task) => ({
+        task,
+        acceptedOffer: agreementForTaskCategory(agreements, task),
+      })),
+    [tasks, agreements],
+  );
 
   return (
     <div className="space-y-4">
-      <EventOsPlanPicker />
+      <EventOsChecklistPlanDropdown />
       <EventOsProgressBar percent={progress} />
       <EventOsBudgetSummary
         summary={budget}
@@ -265,6 +210,10 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
         error={budgetError}
         onRetry={() => void loadBudget()}
       />
+      <p className="text-xs text-zinc-500">
+        Kabul ettiğiniz işletme teklifleri, seçili plan ve kategori ile eşleşen
+        checklist maddelerinde otomatik görünür.
+      </p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -287,16 +236,16 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
         </p>
       ) : (
         <ul className="space-y-3">
-          {tasksWithAgreement.map(({ task, agreement }) => {
+          {tasksWithOffer.map(({ task, acceptedOffer }) => {
             const current = normalizeTaskStatus(task.status);
-            const hasAgreement = agreement != null;
-            const displayDone = hasAgreement || current === "Done";
+            const hasAcceptedOffer = acceptedOffer != null;
+            const displayDone = hasAcceptedOffer || current === "Done";
 
             return (
               <li
                 key={String(task.id)}
                 className={`rounded-xl border px-4 py-3 ${
-                  hasAgreement
+                  hasAcceptedOffer
                     ? "border-emerald-400/25 bg-emerald-500/[0.06]"
                     : "border-white/10 bg-white/[0.02]"
                 }`}
@@ -325,12 +274,10 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
                         {task.title ?? "Görev"}
                       </p>
                     </div>
-                    {hasAgreement ? (
-                      <p className="mt-1.5 text-sm font-medium text-emerald-200/90">
-                        {formatAgreementSummary(agreement)}
-                      </p>
+                    {hasAcceptedOffer ? (
+                      <AcceptedOfferChecklistDetail agreement={acceptedOffer} />
                     ) : null}
-                    {task.description?.trim() ? (
+                    {task.description?.trim() && !hasAcceptedOffer ? (
                       <p className="mt-1 text-xs text-zinc-500">
                         {task.description}
                       </p>
@@ -341,73 +288,46 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
                       </span>
                     ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="text-[11px] text-zinc-600 hover:text-red-300"
-                    onClick={() => void handleDelete(task)}
-                  >
-                    Kaldır
-                  </button>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {hasAgreement ? (
-                    <>
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-medium text-emerald-100 ring-1 ring-emerald-400/30">
-                        Anlaşıldı
-                      </span>
-                      <button
-                        type="button"
-                        className={btnSecondary}
-                        onClick={() => openAgreementModal(task, agreement)}
-                      >
-                        Düzenle
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full border border-red-400/30 px-2.5 py-1 text-[11px] font-medium text-red-200/90 transition hover:bg-red-500/10"
-                        disabled={removingAgreementId === agreement.id}
-                        onClick={() => void handleRemoveAgreement(task, agreement)}
-                      >
-                        {removingAgreementId === agreement.id
-                          ? "Kaldırılıyor…"
-                          : "Vazgeç / Anlaşmayı Kaldır"}
-                      </button>
-                    </>
-                  ) : (
+                  {!hasAcceptedOffer ? (
                     <button
                       type="button"
-                      className={btnPrimary}
-                      onClick={() => openAgreementModal(task)}
+                      className="text-[11px] text-zinc-600 hover:text-red-300"
+                      onClick={() => void handleDelete(task)}
                     >
-                      Anlaşma Ekle
+                      Kaldır
                     </button>
-                  )}
+                  ) : null}
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3">
-                  {EVENT_TASK_STATUSES.map(({ value, label }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      disabled={savingId === task.id || (hasAgreement && value !== "Done")}
-                      onClick={() => void setStatus(task, value)}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                        (hasAgreement && value === "Done") || current === value
-                          ? value === "Done"
-                            ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/35"
-                            : value === "Skipped"
-                              ? "bg-zinc-500/20 text-zinc-300 ring-1 ring-zinc-400/25"
-                              : value === "InProgress"
-                                ? "bg-amber-500/15 text-amber-100 ring-1 ring-amber-400/30"
-                                : "bg-violet-500/25 text-violet-100 ring-1 ring-violet-400/35"
-                          : "border border-white/10 text-zinc-500 hover:border-violet-400/25 hover:text-zinc-300"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                {hasAcceptedOffer ? (
+                  <p className="mt-2 text-[11px] text-zinc-500">
+                    Bu madde, kabul ettiğiniz teklif ile otomatik tamamlandı.
+                  </p>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {EVENT_TASK_STATUSES.map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        disabled={savingId === task.id}
+                        onClick={() => void setStatus(task, value)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
+                          current === value
+                            ? value === "Done"
+                              ? "bg-emerald-500/20 text-emerald-100 ring-1 ring-emerald-400/35"
+                              : value === "Skipped"
+                                ? "bg-zinc-500/20 text-zinc-300 ring-1 ring-zinc-400/25"
+                                : value === "InProgress"
+                                  ? "bg-amber-500/15 text-amber-100 ring-1 ring-amber-400/30"
+                                  : "bg-violet-500/25 text-violet-100 ring-1 ring-violet-400/35"
+                            : "border border-white/10 text-zinc-500 hover:border-violet-400/25 hover:text-zinc-300"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </li>
             );
           })}
@@ -424,15 +344,6 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
           Ekle
         </button>
       </form>
-
-      <CustomerAgreementModal
-        open={modalOpen}
-        planId={planId}
-        task={modalTask}
-        agreement={modalAgreement}
-        onClose={closeAgreementModal}
-        onSuccess={() => void handleAgreementSaved()}
-      />
     </div>
   );
 }

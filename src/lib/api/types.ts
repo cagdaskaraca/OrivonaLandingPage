@@ -818,31 +818,29 @@ export type EventTaskFormPayload = {
   dueDate?: string;
 };
 
-/** Müşteri checklist anlaşması (Event OS) */
+/** Kabul edilmiş teklif — checklist / bütçe (GET agreements) */
 export type CustomerAgreement = {
   id?: string | number;
+  offerId?: string | number;
+  offerRequestId?: string | number;
   eventPlanId?: string | number;
   taskId?: string | number;
   companyName?: string;
+  vendorName?: string;
+  businessName?: string;
+  serviceTitle?: string;
+  categoryName?: string;
+  serviceType?: string;
+  serviceCategoryName?: string;
+  categoryId?: string | number;
   agreedPrice?: number;
   agreementDate?: string;
+  description?: string;
+  vendorOfferDescription?: string;
   note?: string;
+  status?: string;
+  statusLabel?: string;
   isActive?: boolean;
-};
-
-export type CustomerAgreementFormPayload = {
-  taskId: string | number;
-  companyName: string;
-  agreedPrice: number;
-  agreementDate: string;
-  note?: string;
-};
-
-export type CustomerAgreementUpdatePayload = {
-  companyName: string;
-  agreedPrice: number;
-  agreementDate: string;
-  note?: string;
 };
 
 export type EventPlanBudgetLine = {

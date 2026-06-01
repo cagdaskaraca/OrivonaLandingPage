@@ -1,15 +1,8 @@
-import {
-  apiDeleteRaw,
-  apiGetRaw,
-  apiPostRaw,
-  apiPutRaw,
-} from "@/src/lib/api/client";
+import { apiGetRaw } from "@/src/lib/api/client";
 import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   CustomerAgreement,
-  CustomerAgreementFormPayload,
-  CustomerAgreementUpdatePayload,
   EventPlanBudgetLine,
   EventPlanBudgetSummary,
 } from "@/src/lib/api/types";
@@ -35,6 +28,7 @@ function toList(data: unknown): unknown[] {
       "agreements",
       "lines",
       "budgetLines",
+      "acceptedOffers",
     ]) {
       if (Array.isArray(obj[key])) return obj[key] as unknown[];
     }
@@ -53,31 +47,95 @@ function extractPayload(data: unknown): unknown {
 export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const nestedOffer =
+    o.offer && typeof o.offer === "object"
+      ? (o.offer as Record<string, unknown>)
+      : null;
+
+  const companyName =
+    recordStr(o, "companyName", "CompanyName") ??
+    recordStr(o, "vendorName", "VendorName") ??
+    recordStr(o, "businessName", "BusinessName") ??
+    (nestedOffer
+      ? recordStr(nestedOffer, "vendorName", "VendorName")
+      : undefined);
+
+  const agreedPrice =
+    recordNum(o, "agreedPrice", "AgreedPrice") ??
+    recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
+    recordNum(o, "offeredPrice", "OfferedPrice") ??
+    recordNum(o, "price", "Price") ??
+    recordNum(o, "amount", "Amount") ??
+    (nestedOffer
+      ? recordNum(nestedOffer, "price", "Price") ??
+        recordNum(nestedOffer, "vendorOfferPrice", "VendorOfferPrice")
+      : undefined);
+
+  const description =
+    recordStr(o, "description", "Description") ??
+    recordStr(o, "vendorOfferDescription", "VendorOfferDescription") ??
+    recordStr(o, "serviceDescription", "ServiceDescription") ??
+    recordStr(o, "responseDescription", "ResponseDescription") ??
+    (nestedOffer
+      ? recordStr(nestedOffer, "description", "Description")
+      : undefined);
+
   return {
-    id: recordId(o),
+    id:
+      recordId(o) ??
+      recordId(o, "offerId", "OfferId") ??
+      recordId(o, "offerRequestId", "OfferRequestId"),
+    offerId: recordId(o, "offerId", "OfferId"),
+    offerRequestId:
+      recordId(o, "offerRequestId", "OfferRequestId") ?? recordId(o),
     eventPlanId:
       recordId(o, "eventPlanId", "EventPlanId") ??
       recordId(o, "planId", "PlanId"),
     taskId: recordId(o, "taskId", "TaskId"),
-    companyName:
-      recordStr(o, "companyName", "CompanyName") ??
+    companyName,
+    vendorName:
       recordStr(o, "vendorName", "VendorName") ??
-      recordStr(o, "firmName", "FirmName"),
-    agreedPrice:
-      recordNum(o, "agreedPrice", "AgreedPrice") ??
-      recordNum(o, "price", "Price") ??
-      recordNum(o, "amount", "Amount"),
+      (nestedOffer
+        ? recordStr(nestedOffer, "vendorName", "VendorName")
+        : undefined),
+    businessName: recordStr(o, "businessName", "BusinessName"),
+    serviceTitle:
+      recordStr(o, "serviceTitle", "ServiceTitle") ??
+      recordStr(o, "serviceName", "ServiceName"),
+    categoryName:
+      recordStr(o, "categoryName", "CategoryName") ??
+      recordStr(o, "serviceCategoryName", "ServiceCategoryName"),
+    serviceType:
+      recordStr(o, "serviceType", "ServiceType") ??
+      recordStr(o, "category", "Category"),
+    serviceCategoryName: recordStr(
+      o,
+      "serviceCategoryName",
+      "ServiceCategoryName",
+    ),
+    categoryId: recordId(o, "categoryId", "CategoryId"),
+    agreedPrice,
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
-      recordStr(o, "agreedAt", "AgreedAt"),
+      recordStr(o, "agreedAt", "AgreedAt") ??
+      recordStr(o, "acceptedAt", "AcceptedAt") ??
+      recordStr(o, "eventDate", "EventDate"),
+    description,
+    vendorOfferDescription: recordStr(
+      o,
+      "vendorOfferDescription",
+      "VendorOfferDescription",
+    ),
     note: recordStr(o, "note", "Note") ?? recordStr(o, "notes", "Notes"),
+    status:
+      recordStr(o, "status", "Status") ??
+      recordStr(o, "offerStatus", "OfferStatus"),
+    statusLabel: recordStr(o, "statusLabel", "StatusLabel"),
     isActive:
       recordBool(o, "isActive", "IsActive") ??
-      (recordStr(o, "status", "Status")?.toLowerCase() === "active"
-        ? true
-        : recordStr(o, "status", "Status")?.toLowerCase() === "inactive"
-          ? false
-          : undefined),
+      (recordStr(o, "status", "Status")?.toLowerCase() === "inactive"
+        ? false
+        : undefined),
   };
 }
 
@@ -85,11 +143,13 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
   return {
-    agreementId: recordId(o),
+    agreementId:
+      recordId(o) ?? recordId(o, "offerId", "OfferId"),
     taskId: recordId(o, "taskId", "TaskId"),
     label:
       recordStr(o, "label", "Label") ??
       recordStr(o, "companyName", "CompanyName") ??
+      recordStr(o, "vendorName", "VendorName") ??
       recordStr(o, "categoryName", "CategoryName"),
     companyName:
       recordStr(o, "companyName", "CompanyName") ??
@@ -98,6 +158,7 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
     amount:
       recordNum(o, "amount", "Amount") ??
       recordNum(o, "agreedPrice", "AgreedPrice") ??
+      recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
       recordNum(o, "price", "Price"),
   };
 }
@@ -114,6 +175,8 @@ export function normalizeEventPlanBudgetSummary(
     o.BudgetLines ??
     o.agreements ??
     o.Agreements ??
+    o.acceptedOffers ??
+    o.AcceptedOffers ??
     o.items ??
     o.Items;
   return {
@@ -134,22 +197,7 @@ export function normalizeEventPlanBudgetSummary(
   };
 }
 
-function buildAgreementBody(
-  payload: CustomerAgreementFormPayload | CustomerAgreementUpdatePayload,
-  includeTaskId: boolean,
-): Record<string, unknown> {
-  const body: Record<string, unknown> = {
-    companyName: payload.companyName.trim(),
-    agreedPrice: payload.agreedPrice,
-    agreementDate: payload.agreementDate.trim(),
-    note: payload.note?.trim() ?? "",
-  };
-  if (includeTaskId && "taskId" in payload && payload.taskId != null) {
-    body.taskId = payload.taskId;
-  }
-  return body;
-}
-
+/** Seçili plan için kabul edilmiş teklifler (checklist eşlemesi). */
 export async function getAgreements(
   planId: string | number,
 ): Promise<CustomerAgreement[]> {
@@ -162,41 +210,7 @@ export async function getAgreements(
     .filter((a) => a.id != null && a.isActive !== false);
 }
 
-export async function createAgreement(
-  planId: string | number,
-  payload: CustomerAgreementFormPayload,
-): Promise<CustomerAgreement> {
-  const body = await apiPostRaw<ApiEnvelope>(
-    `/event-plans/${planId}/agreements`,
-    buildAgreementBody(payload, true),
-  );
-  assertSuccess(body);
-  return normalizeCustomerAgreement(extractPayload(body.data) ?? body.data);
-}
-
-export async function updateAgreement(
-  planId: string | number,
-  agreementId: string | number,
-  payload: CustomerAgreementUpdatePayload,
-): Promise<CustomerAgreement> {
-  const body = await apiPutRaw<ApiEnvelope>(
-    `/event-plans/${planId}/agreements/${agreementId}`,
-    buildAgreementBody(payload, false),
-  );
-  assertSuccess(body);
-  return normalizeCustomerAgreement(extractPayload(body.data) ?? body.data);
-}
-
-export async function deleteAgreement(
-  planId: string | number,
-  agreementId: string | number,
-): Promise<void> {
-  const body = await apiDeleteRaw<ApiEnvelope>(
-    `/event-plans/${planId}/agreements/${agreementId}`,
-  );
-  assertSuccess(body);
-}
-
+/** Kabul edilmiş tekliflerden bütçe özeti. */
 export async function getBudgetSummary(
   planId: string | number,
 ): Promise<EventPlanBudgetSummary> {
