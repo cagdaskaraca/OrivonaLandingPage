@@ -960,6 +960,68 @@ export type SeatingTableFormPayload = {
   capacity: number;
 };
 
+export type TablePlanTableType =
+  | "Square4"
+  | "Rectangle6"
+  | "Rectangle8"
+  | "Round6"
+  | "Round8"
+  | "Round10"
+  | "Stage"
+  | "DanceFloor"
+  | "CustomArea";
+
+export type TablePlanSeat = {
+  id?: string | number;
+  seatNumber?: number;
+  guestId?: string | number | null;
+  guestName?: string | null;
+};
+
+export type TablePlanTable = {
+  id?: string | number;
+  name?: string;
+  tableType?: TablePlanTableType | string;
+  capacity?: number;
+  occupiedCount?: number;
+  emptyCount?: number;
+  positionX?: number;
+  positionY?: number;
+  rotation?: number;
+  seats?: TablePlanSeat[];
+};
+
+export type TablePlanGuest = {
+  id?: string | number;
+  fullName?: string;
+  assignedTableId?: string | number | null;
+  assignedTableName?: string | null;
+  assignedSeatId?: string | number | null;
+  assignedSeatNumber?: number | null;
+  isAssigned?: boolean;
+};
+
+export type TablePlanData = {
+  eventPlanId?: string | number;
+  tables?: TablePlanTable[];
+  guests?: TablePlanGuest[];
+};
+
+export type CreateTablePayload = {
+  name: string;
+  tableType: TablePlanTableType;
+  positionX: number;
+  positionY: number;
+  rotation?: number;
+};
+
+export type UpdateTablePayload = {
+  name: string;
+  positionX: number;
+  positionY: number;
+  rotation?: number;
+};
+
 export type EventReminder = {
   id?: string | number;
   title?: string;
