@@ -216,6 +216,7 @@ export function MarketplaceView() {
     <DemoShell
       title="Marketplace"
       subtitle="Şehir, kategori ve bütçe filtreleriyle doğrulanmış hizmet sağlayıcılarını keşfedin."
+      stickyNav
     >
       <ActiveCampaignBanner />
       <MarketplaceEducationBanner />

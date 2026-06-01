@@ -11,6 +11,14 @@ import { formatUiErrorMessage, isApiNotFound, logApiError } from "@/src/lib/api/
 import { BOARD_STATUS_OPTIONS } from "@/src/lib/premiumLabels";
 import { glassCard, selectClass } from "@/src/lib/ui";
 
+function BoardColumnEmpty() {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-3 py-8 text-center">
+      <p className="text-xs text-zinc-500">Boş</p>
+    </div>
+  );
+}
+
 export function EventBoardSection() {
   const { selectedPlanId } = useEventOs();
   const [items, setItems] = useState<EventBoardItem[]>([]);
@@ -89,58 +97,73 @@ export function EventBoardSection() {
     ),
   }));
 
+  const boardEmpty = items.length === 0;
+
   return (
-    <div className="grid gap-4 overflow-x-auto pb-2 lg:grid-cols-5">
-      {columns.map((col) => (
+    <div className="space-y-4">
+      {boardEmpty ? (
         <div
-          key={col.value}
-          className={`${glassCard} min-w-[12rem] !p-4`}
+          className={`${glassCard} border-violet-400/15 bg-violet-500/[0.04] py-8 text-center`}
         >
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-violet-300/90">
-            {col.label}
-            <span className="ml-1 text-zinc-600">({col.items.length})</span>
-          </h3>
-          <ul className="space-y-2">
-            {col.items.length === 0 ? (
-              <li className="text-xs text-zinc-600">Boş</li>
-            ) : (
-              col.items.map((item) => (
-                <li
-                  key={String(item.id)}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-3"
-                >
-                  <p className="text-sm font-medium text-white">{item.title}</p>
-                  {item.description ? (
-                    <p className="mt-1 text-xs text-zinc-500 line-clamp-2">
-                      {item.description}
-                    </p>
-                  ) : null}
-                  <label className="mt-2 block text-[10px] text-zinc-500">
-                    Durum
-                    <select
-                      className={`${selectClass} mt-1 text-xs`}
-                      value={item.status}
-                      disabled={updatingId === item.id}
-                      onChange={(e) => void changeStatus(item, e.target.value)}
-                    >
-                      {BOARD_STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </li>
-              ))
-            )}
-          </ul>
+          <p className="text-sm text-zinc-400">Panoda henüz görev yok.</p>
+          <p className="mt-1 text-xs text-zinc-600">
+            Görevler eklendiğinde kolonlarda görünecek.
+          </p>
         </div>
-      ))}
-      {items.length === 0 ? (
-        <p className="col-span-full text-center text-sm text-zinc-500">
-          Panoda henüz görev yok.
-        </p>
       ) : null}
+
+      <div className="orivona-event-board" role="list" aria-label="Etkinlik panosu kolonları">
+        {columns.map((col) => (
+          <div
+            key={col.value}
+            role="listitem"
+            className={`orivona-event-board-column ${glassCard} !flex !flex-col !p-4`}
+          >
+            <h3 className="mb-3 shrink-0 text-xs font-semibold uppercase tracking-wider text-violet-300/90">
+              {col.label}
+              <span className="ml-1 font-normal text-zinc-600">
+                ({col.items.length})
+              </span>
+            </h3>
+            <ul className="flex min-h-0 flex-1 flex-col gap-2">
+              {col.items.length === 0 ? (
+                <li className="flex flex-1">
+                  <BoardColumnEmpty />
+                </li>
+              ) : (
+                col.items.map((item) => (
+                  <li
+                    key={String(item.id)}
+                    className="shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.03] p-3"
+                  >
+                    <p className="text-sm font-medium text-white">{item.title}</p>
+                    {item.description ? (
+                      <p className="mt-1 line-clamp-2 text-xs text-zinc-500">
+                        {item.description}
+                      </p>
+                    ) : null}
+                    <label className="mt-2 block text-[10px] text-zinc-500">
+                      Durum
+                      <select
+                        className={`${selectClass} mt-1 text-xs`}
+                        value={item.status}
+                        disabled={updatingId === item.id}
+                        onChange={(e) => void changeStatus(item, e.target.value)}
+                      >
+                        {BOARD_STATUS_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </li>
+                ))
+              )}
+            </ul>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
