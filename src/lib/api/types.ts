@@ -818,6 +818,49 @@ export type EventTaskFormPayload = {
   dueDate?: string;
 };
 
+/** Müşteri checklist anlaşması (Event OS) */
+export type CustomerAgreement = {
+  id?: string | number;
+  eventPlanId?: string | number;
+  taskId?: string | number;
+  companyName?: string;
+  agreedPrice?: number;
+  agreementDate?: string;
+  note?: string;
+  isActive?: boolean;
+};
+
+export type CustomerAgreementFormPayload = {
+  taskId: string | number;
+  companyName: string;
+  agreedPrice: number;
+  agreementDate: string;
+  note?: string;
+};
+
+export type CustomerAgreementUpdatePayload = {
+  companyName: string;
+  agreedPrice: number;
+  agreementDate: string;
+  note?: string;
+};
+
+export type EventPlanBudgetLine = {
+  agreementId?: string | number;
+  taskId?: string | number;
+  label?: string;
+  companyName?: string;
+  categoryName?: string;
+  amount?: number;
+};
+
+export type EventPlanBudgetSummary = {
+  totalBudget?: number;
+  totalSpent?: number;
+  remainingBudget?: number;
+  lines?: EventPlanBudgetLine[];
+};
+
 export type EventGuest = {
   id?: string | number;
   fullName?: string;

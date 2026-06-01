@@ -113,6 +113,15 @@ export {
   generateEventPlanReminders,
 } from "@/src/lib/api/eventPlans";
 export {
+  getAgreements,
+  createAgreement,
+  updateAgreement,
+  deleteAgreement,
+  getBudgetSummary,
+  normalizeCustomerAgreement,
+  normalizeEventPlanBudgetSummary,
+} from "@/src/lib/api/customerAgreements";
+export {
   sendGuestInvite,
   sendGuestInvitesBulk,
   fetchInviteByToken,
