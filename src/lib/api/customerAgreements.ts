@@ -1,12 +1,12 @@
 import { apiGetRaw, logApiError } from "@/src/lib/api/client";
 import {
-  fetchEventPlanBoard,
-  type EventBoard,
-} from "@/src/lib/api/premiumSaas";
+  getEventPlanBoard as fetchEventPlanBoardCore,
+} from "@/src/lib/api/eventPlans";
 import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   CustomerAgreement,
+  EventPlanBoardData,
   EventPlanBudgetLine,
   EventPlanBudgetSummary,
 } from "@/src/lib/api/types";
@@ -155,12 +155,12 @@ function parseBudgetPayload(raw: unknown): EventPlanBudgetSummary {
   return normalizeEventPlanBudgetSummary(extractPayload(raw) ?? raw);
 }
 
-/** GET /event-plans/{eventPlanId}/board — hata olursa null. */
+/** GET /event-plans/{eventPlanId}/board — hata olursa null (prefetch / opsiyonel). */
 export async function getEventPlanBoard(
   eventPlanId: string | number,
-): Promise<EventBoard | null> {
+): Promise<EventPlanBoardData | null> {
   try {
-    return await fetchEventPlanBoard(eventPlanId);
+    return await fetchEventPlanBoardCore(eventPlanId);
   } catch (err) {
     logApiError("Event plan board", err);
     return null;

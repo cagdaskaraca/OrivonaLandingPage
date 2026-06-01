@@ -111,9 +111,9 @@ export {
   assignGuestToTable,
   fetchEventPlanReminders,
   generateEventPlanReminders,
+  getEventPlanBoard,
 } from "@/src/lib/api/eventPlans";
 export {
-  getEventPlanBoard,
   getEventPlanAgreements,
   getEventPlanBudgetSummary,
   getAgreements,

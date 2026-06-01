@@ -47,9 +47,11 @@ export function boardStatusLabel(status?: string): string {
   const map: Record<string, string> = {
     todo: "Yapılacak",
     inprogress: "Devam ediyor",
+    waitingvendor: "İşletme bekleniyor",
     waitingforvendor: "İşletme bekleniyor",
     approved: "Onaylandı",
     completed: "Tamamlandı",
+    waitingvendorresponse: "İşletme bekleniyor",
   };
   return map[status.toLowerCase().replace(/[_\s-]/g, "")] ?? status;
 }

@@ -11,6 +11,9 @@ import type {
   EventGuest,
   EventGuestFormPayload,
   EventPlan,
+  EventPlanBoardColumn,
+  EventPlanBoardData,
+  EventPlanBoardItem,
   EventPlanFormPayload,
   EventReminder,
   EventTask,
@@ -596,4 +599,75 @@ export async function generateEventPlanReminders(
   );
   assertSuccess(body);
   return toList(extractPayload(body.data)).map(normalizeReminder);
+}
+
+// ——— Event board ———
+
+function normalizeEventPlanBoardItem(raw: unknown): EventPlanBoardItem {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const priceRaw = o.price ?? o.Price;
+  return {
+    id: recordId(o),
+    type: recordStr(o, "type", "Type"),
+    title: recordStr(o, "title", "Title"),
+    category: recordStr(o, "category", "Category"),
+    description: recordStr(o, "description", "Description"),
+    vendorName: (() => {
+      const v = o.vendorName ?? o.VendorName;
+      if (v === null) return null;
+      return recordStr(o, "vendorName", "VendorName") ?? null;
+    })(),
+    price:
+      priceRaw === null || priceRaw === undefined
+        ? null
+        : recordNum(o, "price", "Price"),
+    status: recordStr(o, "status", "Status"),
+    createdAt: recordStr(o, "createdAt", "CreatedAt"),
+    updatedAt:
+      recordStr(o, "updatedAt", "UpdatedAt") ??
+      (o.updatedAt === null || o.UpdatedAt === null ? null : undefined),
+  };
+}
+
+function normalizeEventPlanBoardColumn(raw: unknown): EventPlanBoardColumn {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const itemsRaw = o.items ?? o.Items;
+  const items = Array.isArray(itemsRaw)
+    ? itemsRaw.map(normalizeEventPlanBoardItem)
+    : [];
+  const count =
+    recordNum(o, "count", "Count") ??
+    items.length;
+  return {
+    key: recordStr(o, "key", "Key") ?? recordStr(o, "columnKey", "ColumnKey"),
+    title: recordStr(o, "title", "Title"),
+    count,
+    items,
+  };
+}
+
+function normalizeEventPlanBoardData(raw: unknown): EventPlanBoardData {
+  if (!raw || typeof raw !== "object") return { columns: [] };
+  const o = raw as Record<string, unknown>;
+  const columnsRaw = o.columns ?? o.Columns;
+  return {
+    eventPlanId:
+      recordId(o, "eventPlanId", "EventPlanId") ?? recordId(o),
+    columns: Array.isArray(columnsRaw)
+      ? columnsRaw.map(normalizeEventPlanBoardColumn)
+      : [],
+  };
+}
+
+export async function getEventPlanBoard(
+  eventPlanId: string | number,
+): Promise<EventPlanBoardData> {
+  const body = await apiGetRaw<ApiEnvelope>(
+    `/event-plans/${eventPlanId}/board`,
+  );
+  assertSuccess(body);
+  const payload = extractPayload(body.data);
+  return normalizeEventPlanBoardData(payload);
 }

@@ -1022,6 +1022,31 @@ export type UpdateTablePayload = {
   rotation?: number;
 };
 
+export type EventPlanBoardItem = {
+  id?: string | number;
+  type?: string;
+  title?: string;
+  category?: string;
+  description?: string;
+  vendorName?: string | null;
+  price?: number | null;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string | null;
+};
+
+export type EventPlanBoardColumn = {
+  key?: string;
+  title?: string;
+  count?: number;
+  items?: EventPlanBoardItem[];
+};
+
+export type EventPlanBoardData = {
+  eventPlanId?: string | number;
+  columns?: EventPlanBoardColumn[];
+};
+
 export type EventReminder = {
   id?: string | number;
   title?: string;

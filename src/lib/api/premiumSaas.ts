@@ -184,28 +184,24 @@ export async function fetchEventPlanBoard(
 ): Promise<EventBoard | null> {
   return withOptionalNotFound(
     async () => {
-      const raw = await apiGet<unknown>(`/event-plans/${planId}/board`);
-      const o = toRecord(raw);
-      const items = toList(raw, ["items", "boardItems", "tasks"]).map(normalizeBoardItem).filter(Boolean) as EventBoardItem[];
-      const columnsRaw = toList(o.columns ? { items: o.columns } : raw, ["columns"]);
-      let columns: EventBoardColumn[] = columnsRaw.map((col) => {
-        const c = toRecord(col);
-        const status = pickStr(c, "status", "Status", "columnKey") ?? "Todo";
-        const colItems = toList(c.items ?? c.Items).map(normalizeBoardItem).filter(Boolean) as EventBoardItem[];
-        return { status, items: colItems };
-      });
-      if (columns.length === 0 && items.length > 0) {
-        const byStatus = new Map<string, EventBoardItem[]>();
-        for (const item of items) {
-          const list = byStatus.get(item.status) ?? [];
-          list.push(item);
-          byStatus.set(item.status, list);
-        }
-        columns = [...byStatus.entries()].map(([status, colItems]) => ({
-          status,
+      const { getEventPlanBoard } = await import("@/src/lib/api/eventPlans");
+      const data = await getEventPlanBoard(planId);
+      const items: EventBoardItem[] = [];
+      const columns: EventBoardColumn[] = (data.columns ?? []).map((col) => {
+        const colItems = (col.items ?? [])
+          .filter((item) => item.id != null)
+          .map((item) => ({
+            id: item.id as string | number,
+            title: item.title ?? "Görev",
+            description: item.description,
+            status: item.status ?? col.key ?? "Todo",
+          }));
+        items.push(...colItems);
+        return {
+          status: col.key ?? col.title ?? "Todo",
           items: colItems,
-        }));
-      }
+        };
+      });
       return { columns, items };
     },
     null,
