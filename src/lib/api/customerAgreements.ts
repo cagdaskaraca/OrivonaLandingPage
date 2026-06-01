@@ -1,5 +1,9 @@
-import { apiGetRaw } from "@/src/lib/api/client";
-import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
+import { apiGetRaw, logApiError } from "@/src/lib/api/client";
+import {
+  fetchEventPlanBoard,
+  type EventBoard,
+} from "@/src/lib/api/premiumSaas";
+import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   CustomerAgreement,
@@ -7,15 +11,15 @@ import type {
   EventPlanBudgetSummary,
 } from "@/src/lib/api/types";
 
-function assertSuccess(envelope: ApiEnvelope): void {
-  if (envelope.success === false) {
-    throw new Error(
-      typeof envelope.message === "string"
-        ? envelope.message
-        : "İstek başarısız.",
-    );
-  }
-}
+export type EventPlanAgreementsResult = {
+  items: CustomerAgreement[];
+  error: string | null;
+};
+
+export type EventPlanBudgetSummaryResult = {
+  summary: EventPlanBudgetSummary | null;
+  error: string | null;
+};
 
 function toList(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
@@ -28,7 +32,6 @@ function toList(data: unknown): unknown[] {
       "agreements",
       "lines",
       "budgetLines",
-      "acceptedOffers",
     ]) {
       if (Array.isArray(obj[key])) return obj[key] as unknown[];
     }
@@ -44,122 +47,70 @@ function extractPayload(data: unknown): unknown {
   return data;
 }
 
+function parseAgreementsList(raw: unknown): CustomerAgreement[] {
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeCustomerAgreement).filter((a) => a.id != null);
+  }
+  if (raw && typeof raw === "object") {
+    const envelope = raw as ApiEnvelope;
+    if (envelope.success === false) {
+      throw new Error(
+        typeof envelope.message === "string"
+          ? envelope.message
+          : "Anlaşmalar alınamadı.",
+      );
+    }
+    const payload = extractPayload(raw);
+    if (Array.isArray(payload)) {
+      return payload.map(normalizeCustomerAgreement).filter((a) => a.id != null);
+    }
+    return toList(payload).map(normalizeCustomerAgreement).filter((a) => a.id != null);
+  }
+  return [];
+}
+
 export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  const nestedOffer =
-    o.offer && typeof o.offer === "object"
-      ? (o.offer as Record<string, unknown>)
-      : null;
-
-  const companyName =
-    recordStr(o, "companyName", "CompanyName") ??
-    recordStr(o, "vendorName", "VendorName") ??
-    recordStr(o, "businessName", "BusinessName") ??
-    (nestedOffer
-      ? recordStr(nestedOffer, "vendorName", "VendorName")
-      : undefined);
-
-  const agreedPrice =
-    recordNum(o, "agreedPrice", "AgreedPrice") ??
-    recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
-    recordNum(o, "offeredPrice", "OfferedPrice") ??
-    recordNum(o, "price", "Price") ??
-    recordNum(o, "amount", "Amount") ??
-    (nestedOffer
-      ? recordNum(nestedOffer, "price", "Price") ??
-        recordNum(nestedOffer, "vendorOfferPrice", "VendorOfferPrice")
-      : undefined);
-
-  const description =
-    recordStr(o, "description", "Description") ??
-    recordStr(o, "vendorOfferDescription", "VendorOfferDescription") ??
-    recordStr(o, "serviceDescription", "ServiceDescription") ??
-    recordStr(o, "responseDescription", "ResponseDescription") ??
-    (nestedOffer
-      ? recordStr(nestedOffer, "description", "Description")
-      : undefined);
+  const category =
+    recordStr(o, "category", "Category") ??
+    recordStr(o, "categoryName", "CategoryName");
 
   return {
-    id:
-      recordId(o) ??
-      recordId(o, "offerId", "OfferId") ??
-      recordId(o, "offerRequestId", "OfferRequestId"),
-    offerId: recordId(o, "offerId", "OfferId"),
-    offerRequestId:
-      recordId(o, "offerRequestId", "OfferRequestId") ?? recordId(o),
-    eventPlanId:
-      recordId(o, "eventPlanId", "EventPlanId") ??
-      recordId(o, "planId", "PlanId"),
-    taskId: recordId(o, "taskId", "TaskId"),
-    companyName,
-    vendorName:
-      recordStr(o, "vendorName", "VendorName") ??
-      (nestedOffer
-        ? recordStr(nestedOffer, "vendorName", "VendorName")
-        : undefined),
-    businessName: recordStr(o, "businessName", "BusinessName"),
-    serviceTitle:
-      recordStr(o, "serviceTitle", "ServiceTitle") ??
-      recordStr(o, "serviceName", "ServiceName"),
-    categoryName:
-      recordStr(o, "categoryName", "CategoryName") ??
-      recordStr(o, "serviceCategoryName", "ServiceCategoryName"),
-    serviceType:
-      recordStr(o, "serviceType", "ServiceType") ??
-      recordStr(o, "category", "Category"),
-    serviceCategoryName: recordStr(
-      o,
-      "serviceCategoryName",
-      "ServiceCategoryName",
-    ),
-    categoryId: recordId(o, "categoryId", "CategoryId"),
-    agreedPrice,
+    id: recordId(o),
+    eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
+    category,
+    categoryName: category,
+    serviceType: recordStr(o, "serviceType", "ServiceType"),
+    vendorId: recordId(o, "vendorId", "VendorId") ?? null,
+    vendorName: recordStr(o, "vendorName", "VendorName"),
+    agreedPrice: recordNum(o, "agreedPrice", "AgreedPrice"),
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
-      recordStr(o, "agreedAt", "AgreedAt") ??
-      recordStr(o, "acceptedAt", "AcceptedAt") ??
-      recordStr(o, "eventDate", "EventDate"),
-    description,
-    vendorOfferDescription: recordStr(
-      o,
-      "vendorOfferDescription",
-      "VendorOfferDescription",
-    ),
-    note: recordStr(o, "note", "Note") ?? recordStr(o, "notes", "Notes"),
-    status:
-      recordStr(o, "status", "Status") ??
-      recordStr(o, "offerStatus", "OfferStatus"),
-    statusLabel: recordStr(o, "statusLabel", "StatusLabel"),
-    isActive:
-      recordBool(o, "isActive", "IsActive") ??
-      (recordStr(o, "status", "Status")?.toLowerCase() === "inactive"
-        ? false
-        : undefined),
+      recordStr(o, "agreedAt", "AgreedAt"),
+    note: recordStr(o, "note", "Note"),
+    status: recordStr(o, "status", "Status"),
   };
 }
 
 function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const category =
+    recordStr(o, "category", "Category") ??
+    recordStr(o, "categoryName", "CategoryName");
+  const agreedPrice = recordNum(o, "agreedPrice", "AgreedPrice");
+
   return {
-    agreementId:
-      recordId(o) ?? recordId(o, "offerId", "OfferId"),
-    taskId: recordId(o, "taskId", "TaskId"),
-    label:
-      recordStr(o, "label", "Label") ??
-      recordStr(o, "companyName", "CompanyName") ??
-      recordStr(o, "vendorName", "VendorName") ??
-      recordStr(o, "categoryName", "CategoryName"),
-    companyName:
-      recordStr(o, "companyName", "CompanyName") ??
-      recordStr(o, "vendorName", "VendorName"),
-    categoryName: recordStr(o, "categoryName", "CategoryName"),
-    amount:
-      recordNum(o, "amount", "Amount") ??
-      recordNum(o, "agreedPrice", "AgreedPrice") ??
-      recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
-      recordNum(o, "price", "Price"),
+    id: recordId(o),
+    category,
+    categoryName: category,
+    serviceType: recordStr(o, "serviceType", "ServiceType"),
+    vendorName: recordStr(o, "vendorName", "VendorName"),
+    agreedPrice,
+    amount: agreedPrice ?? recordNum(o, "amount", "Amount"),
+    agreementDate: recordStr(o, "agreementDate", "AgreementDate"),
+    note: recordStr(o, "note", "Note"),
   };
 }
 
@@ -168,55 +119,96 @@ export function normalizeEventPlanBudgetSummary(
 ): EventPlanBudgetSummary {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  const linesRaw =
-    o.lines ??
-    o.Lines ??
-    o.budgetLines ??
-    o.BudgetLines ??
-    o.agreements ??
-    o.Agreements ??
-    o.acceptedOffers ??
-    o.AcceptedOffers ??
-    o.items ??
-    o.Items;
+  const itemsRaw = o.items ?? o.Items ?? o.lines ?? o.Lines;
+  const spent =
+    recordNum(o, "spentBudget", "SpentBudget") ??
+    recordNum(o, "totalSpent", "TotalSpent");
+
+  const items = Array.isArray(itemsRaw)
+    ? itemsRaw.map(normalizeBudgetLine)
+    : toList(itemsRaw).map(normalizeBudgetLine);
+
   return {
-    totalBudget:
-      recordNum(o, "totalBudget", "TotalBudget") ??
-      recordNum(o, "estimatedBudget", "EstimatedBudget") ??
-      recordNum(o, "budgetMax", "BudgetMax"),
-    totalSpent:
-      recordNum(o, "totalSpent", "TotalSpent") ??
-      recordNum(o, "spentTotal", "SpentTotal") ??
-      recordNum(o, "totalAgreed", "TotalAgreed"),
+    eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
+    totalBudget: recordNum(o, "totalBudget", "TotalBudget"),
+    spentBudget: spent,
+    totalSpent: spent,
     remainingBudget:
       recordNum(o, "remainingBudget", "RemainingBudget") ??
       recordNum(o, "remaining", "Remaining"),
-    lines: Array.isArray(linesRaw)
-      ? linesRaw.map(normalizeBudgetLine)
-      : toList(linesRaw).map(normalizeBudgetLine),
+    items,
+    lines: items,
   };
 }
 
-/** Seçili plan için kabul edilmiş teklifler (checklist eşlemesi). */
-export async function getAgreements(
-  planId: string | number,
-): Promise<CustomerAgreement[]> {
-  const body = await apiGetRaw<ApiEnvelope>(
-    `/event-plans/${planId}/agreements`,
-  );
-  assertSuccess(body);
-  return toList(extractPayload(body.data))
-    .map(normalizeCustomerAgreement)
-    .filter((a) => a.id != null && a.isActive !== false);
+function parseBudgetPayload(raw: unknown): EventPlanBudgetSummary {
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const envelope = raw as ApiEnvelope;
+    if ("success" in envelope && envelope.success === false) {
+      throw new Error(
+        typeof envelope.message === "string"
+          ? envelope.message
+          : "Bütçe özeti alınamadı.",
+      );
+    }
+  }
+  return normalizeEventPlanBudgetSummary(extractPayload(raw) ?? raw);
 }
 
-/** Kabul edilmiş tekliflerden bütçe özeti. */
-export async function getBudgetSummary(
-  planId: string | number,
-): Promise<EventPlanBudgetSummary> {
-  const body = await apiGetRaw<ApiEnvelope>(
-    `/event-plans/${planId}/budget-summary`,
-  );
-  assertSuccess(body);
-  return normalizeEventPlanBudgetSummary(extractPayload(body.data) ?? body.data);
+/** GET /event-plans/{eventPlanId}/board — hata olursa null. */
+export async function getEventPlanBoard(
+  eventPlanId: string | number,
+): Promise<EventBoard | null> {
+  try {
+    return await fetchEventPlanBoard(eventPlanId);
+  } catch (err) {
+    logApiError("Event plan board", err);
+    return null;
+  }
 }
+
+/** GET /event-plans/{eventPlanId}/agreements — hata olursa boş liste + mesaj. */
+export async function getEventPlanAgreements(
+  eventPlanId: string | number,
+): Promise<EventPlanAgreementsResult> {
+  try {
+    const raw = await apiGetRaw<unknown>(
+      `/event-plans/${eventPlanId}/agreements`,
+    );
+    return { items: parseAgreementsList(raw), error: null };
+  } catch (err) {
+    logApiError("Event plan agreements", err);
+    return {
+      items: [],
+      error: "Kabul edilmiş teklifler şu an yüklenemedi.",
+    };
+  }
+}
+
+/** GET /event-plans/{eventPlanId}/budget-summary */
+export async function getEventPlanBudgetSummary(
+  eventPlanId: string | number,
+): Promise<EventPlanBudgetSummaryResult> {
+  try {
+    const raw = await apiGetRaw<unknown>(
+      `/event-plans/${eventPlanId}/budget-summary`,
+    );
+    return { summary: parseBudgetPayload(raw), error: null };
+  } catch (err) {
+    logApiError("Event plan budget summary", err);
+    return { summary: null, error: "Bütçe bilgisi yüklenemedi" };
+  }
+}
+
+/** @deprecated use getEventPlanAgreements */
+export const getAgreements = async (planId: string | number) =>
+  (await getEventPlanAgreements(planId)).items;
+
+/** @deprecated use getEventPlanBudgetSummary */
+export const getBudgetSummary = async (planId: string | number) => {
+  const result = await getEventPlanBudgetSummary(planId);
+  if (result.error || !result.summary) {
+    throw new Error(result.error ?? "Bütçe bilgisi yüklenemedi");
+  }
+  return result.summary;
+};

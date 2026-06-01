@@ -818,44 +818,40 @@ export type EventTaskFormPayload = {
   dueDate?: string;
 };
 
-/** Kabul edilmiş teklif — checklist / bütçe (GET agreements) */
+/** Kabul edilmiş teklif — GET /event-plans/{id}/agreements */
 export type CustomerAgreement = {
   id?: string | number;
-  offerId?: string | number;
-  offerRequestId?: string | number;
   eventPlanId?: string | number;
-  taskId?: string | number;
-  companyName?: string;
-  vendorName?: string;
-  businessName?: string;
-  serviceTitle?: string;
+  category?: string;
   categoryName?: string;
   serviceType?: string;
-  serviceCategoryName?: string;
-  categoryId?: string | number;
+  vendorId?: string | number | null;
+  vendorName?: string;
   agreedPrice?: number;
   agreementDate?: string;
-  description?: string;
-  vendorOfferDescription?: string;
   note?: string;
   status?: string;
-  statusLabel?: string;
-  isActive?: boolean;
 };
 
 export type EventPlanBudgetLine = {
-  agreementId?: string | number;
-  taskId?: string | number;
-  label?: string;
-  companyName?: string;
+  id?: string | number;
+  category?: string;
   categoryName?: string;
+  serviceType?: string;
+  vendorName?: string;
+  agreedPrice?: number;
   amount?: number;
+  agreementDate?: string;
+  note?: string;
 };
 
 export type EventPlanBudgetSummary = {
+  eventPlanId?: string | number;
   totalBudget?: number;
+  spentBudget?: number;
   totalSpent?: number;
   remainingBudget?: number;
+  items?: EventPlanBudgetLine[];
   lines?: EventPlanBudgetLine[];
 };
 

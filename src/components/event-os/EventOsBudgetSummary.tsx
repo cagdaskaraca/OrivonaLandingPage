@@ -1,6 +1,9 @@
 "use client";
 
-import { formatTurkishLira } from "@/src/lib/customerAgreementsUi";
+import {
+  formatBudgetLineDisplay,
+  formatTryCurrency,
+} from "@/src/lib/customerAgreementsUi";
 import type { EventPlanBudgetSummary } from "@/src/lib/api/types";
 import { glassCard } from "@/src/lib/ui";
 
@@ -10,15 +13,6 @@ type EventOsBudgetSummaryProps = {
   error: string | null;
   onRetry?: () => void;
 };
-
-function lineLabel(line: NonNullable<EventPlanBudgetSummary["lines"]>[number]): string {
-  return (
-    line.label?.trim() ||
-    line.companyName?.trim() ||
-    line.categoryName?.trim() ||
-    "Kalem"
-  );
-}
 
 export function EventOsBudgetSummary({
   summary,
@@ -49,15 +43,22 @@ export function EventOsBudgetSummary({
     );
   }
 
-  const lines = summary?.lines ?? [];
-  const totalSpent = summary?.totalSpent ?? 0;
-  const remaining = summary?.remainingBudget;
+  const lines = summary?.items ?? summary?.lines ?? [];
   const totalBudget = summary?.totalBudget;
+  const spent =
+    summary?.spentBudget ?? summary?.totalSpent ?? 0;
+  const remaining = summary?.remainingBudget;
 
-  if (lines.length === 0 && totalSpent === 0 && totalBudget == null) {
+  if (
+    lines.length === 0 &&
+    spent === 0 &&
+    totalBudget == null &&
+    remaining == null
+  ) {
     return (
       <p className="rounded-xl border border-dashed border-white/10 px-4 py-4 text-center text-sm text-zinc-500">
-        Henüz kabul edilmiş teklif yok. «Tekliflerim» bölümünden teklif kabul ettiğinizde harcamalar burada görünür.
+        Henüz kabul edilmiş teklif yok. «Tekliflerim» bölümünden teklif kabul
+        ettiğinizde harcamalar burada görünür.
       </p>
     );
   }
@@ -69,36 +70,35 @@ export function EventOsBudgetSummary({
         <ul className="space-y-2 border-b border-white/10 pb-3">
           {lines.map((line, index) => (
             <li
-              key={String(line.agreementId ?? line.taskId ?? index)}
-              className="flex items-center justify-between gap-3 text-sm"
+              key={String(line.id ?? index)}
+              className="flex flex-wrap items-center justify-between gap-2 text-sm"
             >
-              <span className="text-zinc-300">{lineLabel(line)}</span>
-              <span className="shrink-0 font-medium text-violet-100">
-                {formatTurkishLira(line.amount)}
-              </span>
+              <span className="text-zinc-300">{formatBudgetLineDisplay(line)}</span>
             </li>
           ))}
         </ul>
       ) : null}
       <dl className="space-y-1.5 text-sm">
+        {totalBudget != null ? (
+          <div className="flex justify-between gap-3">
+            <dt className="text-zinc-400">Toplam Bütçe</dt>
+            <dd className="font-medium text-zinc-200">
+              {formatTryCurrency(totalBudget)}
+            </dd>
+          </div>
+        ) : null}
         <div className="flex justify-between gap-3">
           <dt className="text-zinc-400">Toplam Harcanan</dt>
           <dd className="font-semibold text-emerald-200">
-            {formatTurkishLira(totalSpent)}
+            {formatTryCurrency(spent)}
           </dd>
         </div>
         {remaining != null ? (
           <div className="flex justify-between gap-3">
             <dt className="text-zinc-400">Kalan Bütçe</dt>
             <dd className="font-semibold text-white">
-              {formatTurkishLira(remaining)}
+              {formatTryCurrency(remaining)}
             </dd>
-          </div>
-        ) : null}
-        {totalBudget != null ? (
-          <div className="flex justify-between gap-3 text-xs">
-            <dt className="text-zinc-500">Plan bütçe üst limiti</dt>
-            <dd className="text-zinc-400">{formatTurkishLira(totalBudget)}</dd>
           </div>
         ) : null}
       </dl>

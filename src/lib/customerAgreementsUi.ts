@@ -1,10 +1,46 @@
-import type { CustomerAgreement, EventTask } from "@/src/lib/api/types";
-import { formatOfferStatus } from "@/src/lib/offerRequest";
+import type {
+  CustomerAgreement,
+  EventPlanBudgetLine,
+  EventTask,
+} from "@/src/lib/api/types";
 
-/** Örn. 10.000 TL */
-export function formatTurkishLira(amount?: number): string {
+const tryCurrency = new Intl.NumberFormat("tr-TR", {
+  style: "currency",
+  currency: "TRY",
+  maximumFractionDigits: 0,
+});
+
+export function formatTryCurrency(amount?: number): string {
   if (amount == null || Number.isNaN(amount)) return "—";
-  return `${amount.toLocaleString("tr-TR")} TL`;
+  return tryCurrency.format(amount);
+}
+
+/** @deprecated use formatTryCurrency */
+export const formatTurkishLira = formatTryCurrency;
+
+export function formatAgreementDate(value?: string): string | null {
+  if (!value?.trim()) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value.trim();
+  return d.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+const AGREEMENT_STATUS_LABELS: Record<string, string> = {
+  customeraccepted: "Müşteri kabul etti",
+  acceptedbycustomer: "Müşteri kabul etti",
+  accepted: "Müşteri kabul etti",
+};
+
+export function formatAgreementStatus(status?: string): string {
+  if (!status?.trim()) return "Müşteri kabul etti";
+  const key = status.trim().replace(/\s+/g, "").toLowerCase();
+  if (AGREEMENT_STATUS_LABELS[key]) return AGREEMENT_STATUS_LABELS[key];
+  if (status === "CustomerAccepted") return "Müşteri kabul etti";
+  return status.trim();
 }
 
 export function normalizeCategoryKey(value?: string | null): string {
@@ -23,10 +59,9 @@ function categoryKeysForTask(task: EventTask): string[] {
 function categoryKeysForAgreement(agreement: CustomerAgreement): string[] {
   const keys = new Set<string>();
   for (const raw of [
+    agreement.category,
     agreement.categoryName,
     agreement.serviceType,
-    agreement.serviceCategoryName,
-    agreement.serviceTitle,
   ]) {
     const k = normalizeCategoryKey(raw);
     if (k) keys.add(k);
@@ -42,20 +77,13 @@ function categoriesMatch(taskKey: string, agreementKey: string): boolean {
   return false;
 }
 
-/** Checklist maddesini kategori / serviceType ile kabul edilmiş teklife bağlar. */
+/** Checklist maddesini category / serviceType ile kabul edilmiş teklife bağlar. */
 export function agreementForTaskCategory(
   agreements: CustomerAgreement[],
   task: EventTask,
 ): CustomerAgreement | undefined {
   const taskKeys = categoryKeysForTask(task);
   if (taskKeys.length === 0) return undefined;
-
-  if (task.id != null) {
-    const byTask = agreements.find(
-      (a) => a.taskId != null && String(a.taskId) === String(task.id),
-    );
-    if (byTask) return byTask;
-  }
 
   return agreements.find((agreement) => {
     const agreementKeys = categoryKeysForAgreement(agreement);
@@ -65,30 +93,16 @@ export function agreementForTaskCategory(
   });
 }
 
-export function agreementDisplayName(agreement: CustomerAgreement): string {
-  return (
-    agreement.companyName?.trim() ||
-    agreement.vendorName?.trim() ||
-    agreement.businessName?.trim() ||
-    agreement.serviceTitle?.trim() ||
-    "İşletme"
-  );
+export function formatBudgetLineLabel(line: EventPlanBudgetLine): string {
+  const category = line.category?.trim() || line.categoryName?.trim();
+  const vendor = line.vendorName?.trim();
+  if (category && vendor) return `${category} - ${vendor}`;
+  return category || vendor || "Kalem";
 }
 
-export function agreementDisplayDescription(
-  agreement: CustomerAgreement,
-): string | undefined {
-  const text =
-    agreement.description?.trim() ||
-    agreement.vendorOfferDescription?.trim() ||
-    agreement.note?.trim();
-  return text || undefined;
-}
-
-export function agreementDisplayStatus(agreement: CustomerAgreement): string {
-  if (agreement.statusLabel?.trim()) return agreement.statusLabel.trim();
-  if (agreement.status?.trim()) return formatOfferStatus(agreement.status);
-  return "Müşteri kabul etti";
+export function formatBudgetLineDisplay(line: EventPlanBudgetLine): string {
+  const amount = line.agreedPrice ?? line.amount;
+  return `${formatBudgetLineLabel(line)}: ${formatTryCurrency(amount)}`;
 }
 
 export function formatPlanOptionLabel(
@@ -97,12 +111,6 @@ export function formatPlanOptionLabel(
 ): string {
   const name = title?.trim() || "Etkinlik planı";
   if (!eventDate?.trim()) return name;
-  const d = new Date(eventDate);
-  if (Number.isNaN(d.getTime())) return `${name} · ${eventDate}`;
-  const formatted = d.toLocaleDateString("tr-TR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  return `${name} · ${formatted}`;
+  const formatted = formatAgreementDate(eventDate);
+  return formatted ? `${name} · ${formatted}` : name;
 }

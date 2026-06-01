@@ -18,7 +18,11 @@ import {
   generateEventPlanTasks,
   updateEventPlanTask,
 } from "@/src/lib/api/eventPlans";
-import { getAgreements, getBudgetSummary } from "@/src/lib/api/customerAgreements";
+import {
+  getEventPlanAgreements,
+  getEventPlanBoard,
+  getEventPlanBudgetSummary,
+} from "@/src/lib/api/customerAgreements";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type {
   CustomerAgreement,
@@ -51,53 +55,58 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
   const [tasks, setTasks] = useState<EventTask[]>([]);
   const [agreements, setAgreements] = useState<CustomerAgreement[]>([]);
   const [budget, setBudget] = useState<EventPlanBudgetSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [loadingOffers, setLoadingOffers] = useState(true);
   const [budgetLoading, setBudgetLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [tasksError, setTasksError] = useState<string | null>(null);
+  const [agreementsWarning, setAgreementsWarning] = useState<string | null>(
+    null,
+  );
   const [budgetError, setBudgetError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [savingId, setSavingId] = useState<string | number | null>(null);
 
-  const loadBudget = useCallback(async () => {
-    setBudgetLoading(true);
-    setBudgetError(null);
-    try {
-      setBudget(await getBudgetSummary(planId));
-    } catch (err) {
-      logApiError("Budget summary", err);
-      setBudget(null);
-      setBudgetError(
-        formatUiErrorMessage(err, "Bütçe özeti yüklenemedi."),
-      );
-    } finally {
-      setBudgetLoading(false);
-    }
-  }, [planId]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [taskList, acceptedOffers] = await Promise.all([
-        fetchEventPlanTasks(planId),
-        getAgreements(planId),
-      ]);
-      setTasks(taskList);
-      setAgreements(acceptedOffers);
-    } catch (err) {
-      logApiError("Event tasks / accepted offers", err);
-      setTasks([]);
-      setAgreements([]);
-      setError(formatUiErrorMessage(err, "Checklist yüklenemedi."));
-    } finally {
-      setLoading(false);
-    }
-  }, [planId]);
-
   const refreshAll = useCallback(async () => {
-    await Promise.all([load(), loadBudget()]);
-  }, [load, loadBudget]);
+    setLoadingTasks(true);
+    setLoadingOffers(true);
+    setBudgetLoading(true);
+    setTasksError(null);
+    setAgreementsWarning(null);
+    setBudgetError(null);
+
+    const tasksPromise = (async () => {
+      try {
+        setTasks(await fetchEventPlanTasks(planId));
+      } catch (err) {
+        logApiError("Event plan tasks", err);
+        setTasks([]);
+        setTasksError(
+          formatUiErrorMessage(err, "Checklist görevleri yüklenemedi."),
+        );
+      } finally {
+        setLoadingTasks(false);
+      }
+    })();
+
+    const offersPromise = (async () => {
+      const result = await getEventPlanAgreements(planId);
+      setAgreements(result.items);
+      setAgreementsWarning(result.error);
+      setLoadingOffers(false);
+    })();
+
+    const budgetPromise = (async () => {
+      const result = await getEventPlanBudgetSummary(planId);
+      setBudget(result.summary);
+      setBudgetError(result.error);
+      setBudgetLoading(false);
+    })();
+
+    void getEventPlanBoard(planId);
+
+    await Promise.all([tasksPromise, offersPromise, budgetPromise]);
+  }, [planId]);
 
   useEffect(() => {
     void refreshAll();
@@ -105,14 +114,20 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function handleGenerate() {
     setGenerating(true);
-    setError(null);
+    setTasksError(null);
     try {
-      const list = await generateEventPlanTasks(planId);
-      setTasks(list);
-      await loadBudget();
+      setTasks(await generateEventPlanTasks(planId));
+      const [offers, budgetResult] = await Promise.all([
+        getEventPlanAgreements(planId),
+        getEventPlanBudgetSummary(planId),
+      ]);
+      setAgreements(offers.items);
+      setAgreementsWarning(offers.error);
+      setBudget(budgetResult.summary);
+      setBudgetError(budgetResult.error);
     } catch (err) {
       logApiError("Generate tasks", err);
-      setError(formatUiErrorMessage(err, "Görevler oluşturulamadı."));
+      setTasksError(formatUiErrorMessage(err, "Görevler oluşturulamadı."));
     } finally {
       setGenerating(false);
     }
@@ -127,38 +142,38 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
         status: "Todo",
       });
       setNewTitle("");
-      await load();
+      setTasks(await fetchEventPlanTasks(planId));
     } catch (err) {
       logApiError("Create task", err);
-      setError(formatUiErrorMessage(err, "Görev eklenemedi."));
+      setTasksError(formatUiErrorMessage(err, "Görev eklenemedi."));
     }
   }
 
   async function setStatus(task: EventTask, status: EventTaskStatus) {
     if (task.id == null) return;
     if (agreementForTaskCategory(agreements, task)) {
-      setError(
+      setTasksError(
         "Bu kategori için kabul edilmiş teklif var; durum teklif üzerinden yönetilir.",
       );
       return;
     }
     const title = task.title?.trim();
     if (!title) {
-      setError("Görev başlığı eksik; durum güncellenemedi.");
+      setTasksError("Görev başlığı eksik; durum güncellenemedi.");
       return;
     }
     setSavingId(task.id);
-    setError(null);
+    setTasksError(null);
     try {
       await updateEventPlanTask(
         planId,
         task.id,
         buildTaskUpdateFromExisting(task, { status }),
       );
-      await load();
+      setTasks(await fetchEventPlanTasks(planId));
     } catch (err) {
       logApiError("Update task status", err);
-      setError(
+      setTasksError(
         formatUiErrorMessage(
           err,
           "Görev durumu güncellenemedi. Lütfen tekrar deneyin.",
@@ -172,8 +187,8 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
   async function handleDelete(task: EventTask) {
     if (task.id == null) return;
     if (agreementForTaskCategory(agreements, task)) {
-      setError(
-        "Kabul edilmiş teklif bağlı görev silinemez. Önce teklifi «Tekliflerim» bölümünden yönetin.",
+      setTasksError(
+        "Kabul edilmiş teklif bağlı görev silinemez. Teklifi «Tekliflerim» bölümünden yönetin.",
       );
       return;
     }
@@ -182,7 +197,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
       await refreshAll();
     } catch (err) {
       logApiError("Delete task", err);
-      setError(formatUiErrorMessage(err, "Görev silinemedi."));
+      setTasksError(formatUiErrorMessage(err, "Görev silinemedi."));
     }
   }
 
@@ -200,6 +215,8 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
     [tasks, agreements],
   );
 
+  const listLoading = loadingTasks || loadingOffers;
+
   return (
     <div className="space-y-4">
       <EventOsChecklistPlanDropdown />
@@ -208,8 +225,13 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
         summary={budget}
         loading={budgetLoading}
         error={budgetError}
-        onRetry={() => void loadBudget()}
+        onRetry={() => void refreshAll()}
       />
+      {agreementsWarning ? (
+        <p className="rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs text-amber-100">
+          {agreementsWarning}
+        </p>
+      ) : null}
       <p className="text-xs text-zinc-500">
         Kabul ettiğiniz işletme teklifleri, seçili plan ve kategori ile eşleşen
         checklist maddelerinde otomatik görünür.
@@ -227,8 +249,10 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
           Yenile
         </button>
       </div>
-      {error ? <EventOsError message={error} onRetry={() => void refreshAll()} /> : null}
-      {loading ? (
+      {tasksError ? (
+        <EventOsError message={tasksError} onRetry={() => void refreshAll()} />
+      ) : null}
+      {listLoading ? (
         <p className="text-sm text-zinc-500">Checklist yükleniyor…</p>
       ) : tasks.length === 0 ? (
         <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-zinc-500">
@@ -271,7 +295,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
                       <p
                         className={`font-medium ${displayDone ? "text-emerald-50" : "text-white"}`}
                       >
-                        {task.title ?? "Görev"}
+                        {task.title ?? task.categoryName ?? "Görev"}
                       </p>
                     </div>
                     {hasAcceptedOffer ? (
