@@ -126,6 +126,14 @@ export type {
   EventPlanBudgetSummaryResult,
 } from "@/src/lib/api/customerAgreements";
 export {
+  getPublicPage,
+  createPublicPage,
+  updatePublicPage,
+  publishPublicPage,
+  deletePublicPage,
+  getPublicEventPage,
+} from "@/src/lib/api/publicEventPages";
+export {
   sendGuestInvite,
   sendGuestInvitesBulk,
   fetchInviteByToken,

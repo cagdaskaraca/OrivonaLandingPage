@@ -258,6 +258,10 @@ export async function apiPutRaw<T>(path: string, body: unknown): Promise<T> {
   return requestRaw<T>("PUT", path, body);
 }
 
+export async function apiPatchRaw<T>(path: string, body: unknown): Promise<T> {
+  return requestRaw<T>("PATCH", path, body);
+}
+
 export async function apiDeleteRaw<T>(path: string): Promise<T> {
   return requestRaw<T>("DELETE", path);
 }

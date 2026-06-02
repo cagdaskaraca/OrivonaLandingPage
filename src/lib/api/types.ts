@@ -100,6 +100,40 @@ export type ServiceGalleryImage = {
 
 export type DashboardSummary = Record<string, number | string | undefined>;
 
+export type EventPlanPublicPagePayload = {
+  title: string;
+  description: string;
+  dressCode: string;
+  note: string;
+  isPublished: boolean;
+};
+
+export type EventPlanPublicPage = {
+  id?: string | number;
+  eventPlanId?: string | number;
+  slug?: string;
+  publicSlug?: string;
+  title?: string;
+  description?: string;
+  dressCode?: string;
+  note?: string;
+  isPublished?: boolean;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type PublicEventPageData = {
+  title?: string;
+  eventDate?: string;
+  city?: string;
+  district?: string;
+  description?: string;
+  dressCode?: string;
+  note?: string;
+  slug?: string;
+};
+
 export type FavoriteItem = {
   id?: string | number;
   vendorServiceId?: string | number;
