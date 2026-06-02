@@ -7,7 +7,7 @@ import {
   EventOsPlanPicker,
 } from "@/src/components/event-os/EventOsShared";
 import { InvitationDesignPreview } from "@/src/components/invitation-design/InvitationDesignPreview";
-import { SimpleInvitationEditor } from "@/src/components/invitation-design/SimpleInvitationEditor";
+import { CanvaInvitationEditor } from "@/src/components/invitation-design/editor/CanvaInvitationEditor";
 import { AttachInvitationToRequestModal } from "@/src/components/invitation-design/AttachInvitationToRequestModal";
 import { InvitationDesignEditorModal } from "@/src/components/invitation-design/InvitationDesignEditorModal";
 import {
@@ -17,12 +17,24 @@ import {
   updateInvitationDesign,
   uploadInvitationDesignFile,
 } from "@/src/lib/api/invitationDesigns";
-import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
-import type { InvitationDesign, InvitationEditorJson } from "@/src/lib/api/types";
 import {
-  defaultInvitationEditorJson,
-  invitationDesignTitle,
-} from "@/src/lib/invitationDesign";
+  formatUiErrorMessage,
+  isApiNotFound,
+  logApiError,
+} from "@/src/lib/api/client";
+import { fetchEventPlanPublicInvite } from "@/src/lib/api/publicEventInvite";
+import { getPublicPage } from "@/src/lib/api/publicEventPages";
+import type { InvitationDesign } from "@/src/lib/api/types";
+import {
+  defaultInvitationDocument,
+  parseInvitationDocument,
+} from "@/src/lib/invitationEditor/document";
+import type {
+  InvitationEditorDocument,
+  InvitationQrUrls,
+} from "@/src/lib/invitationEditor/types";
+import { invitationDesignTitle } from "@/src/lib/invitationDesign";
+import { resolvePublicInviteUrl } from "@/src/lib/invites";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { useToast } from "@/src/contexts/ToastContext";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
@@ -38,9 +50,10 @@ export function InvitationDesignSection() {
   const [createMode, setCreateMode] = useState<CreateMode>(null);
   const [editing, setEditing] = useState<InvitationDesign | null>(null);
   const [title, setTitle] = useState("Davetiyem");
-  const [editorJson, setEditorJson] = useState<InvitationEditorJson>(
-    defaultInvitationEditorJson(),
+  const [editorDoc, setEditorDoc] = useState<InvitationEditorDocument>(
+    defaultInvitationDocument(),
   );
+  const [qrUrls, setQrUrls] = useState<InvitationQrUrls>({});
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
@@ -69,11 +82,42 @@ export function InvitationDesignSection() {
     }
   }, [selectedPlanId, loadDesigns]);
 
+  useEffect(() => {
+    if (activePlanId == null) {
+      setQrUrls({});
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const next: InvitationQrUrls = {};
+      try {
+        const invite = await fetchEventPlanPublicInvite(activePlanId);
+        const url = resolvePublicInviteUrl(invite);
+        if (url) next.inviteUrl = url;
+      } catch (err) {
+        if (!isApiNotFound(err)) logApiError("Invite URL for editor", err);
+      }
+      try {
+        const page = await getPublicPage(activePlanId);
+        const slug = page?.publicSlug ?? page?.slug;
+        if (slug && typeof window !== "undefined") {
+          next.publicPageUrl = `${window.location.origin}/e/${slug}`;
+        }
+      } catch (err) {
+        if (!isApiNotFound(err)) logApiError("Public page URL for editor", err);
+      }
+      if (!cancelled) setQrUrls(next);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activePlanId]);
+
   function openCreate(mode: CreateMode) {
     setEditing(null);
     setCreateMode(mode);
     setTitle("Davetiyem");
-    setEditorJson(defaultInvitationEditorJson());
+    setEditorDoc(defaultInvitationDocument());
     setUploadFile(null);
   }
 
@@ -82,11 +126,7 @@ export function InvitationDesignSection() {
     setCreateMode(design.sourceType === "Upload" ? "upload" : "editor");
     setTitle(invitationDesignTitle(design));
     if (design.sourceType === "Editor") {
-      const parsed =
-        typeof design.designJson === "object" && design.designJson
-          ? design.designJson
-          : defaultInvitationEditorJson();
-      setEditorJson(parsed as InvitationEditorJson);
+      setEditorDoc(parseInvitationDocument(design.designJson));
     }
     setUploadFile(null);
   }
@@ -136,7 +176,7 @@ export function InvitationDesignSection() {
           title: title.trim() || "Davetiye tasarımı",
           sourceType: "Editor" as const,
           status: "Ready",
-          designJson: JSON.stringify(editorJson),
+          designJson: JSON.stringify(editorDoc),
         };
         if (editing?.id != null) {
           await updateInvitationDesign(planId, editing.id, payload);
@@ -180,7 +220,7 @@ export function InvitationDesignSection() {
         <div>
           <h2 className="text-lg font-semibold text-white">Davetiye Tasarımı</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Basit editör veya dosya yükleyerek davetiye hazırlayın; teklif
+            Profesyonel editör veya dosya yükleyerek davetiye hazırlayın; teklif
             talebinize ekleyin.
           </p>
         </div>
@@ -205,12 +245,13 @@ export function InvitationDesignSection() {
 
       <InvitationDesignEditorModal
         open={modalOpen}
+        wide={createMode === "editor"}
         title={
           editing
             ? "Davetiye tasarımını düzenle"
             : createMode === "upload"
               ? "Dosya yükle"
-              : "Davetiye tasarla"
+              : "Davetiye stüdyosu"
         }
         onClose={saving ? undefined : closeModal}
         footer={
@@ -239,11 +280,12 @@ export function InvitationDesignSection() {
         {activePlanId != null ? (
           <div className="space-y-4">
             {createMode === "editor" ? (
-              <SimpleInvitationEditor
+              <CanvaInvitationEditor
                 designTitle={title}
                 onDesignTitleChange={setTitle}
-                value={editorJson}
-                onChange={setEditorJson}
+                document={editorDoc}
+                onChange={setEditorDoc}
+                qrUrls={qrUrls}
               />
             ) : (
               <>

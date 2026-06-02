@@ -1,8 +1,10 @@
 "use client";
 
+import { InvitationCanvasPreview } from "@/src/components/invitation-design/editor/InvitationCanvasPreview";
+import { InvitationEditorFontProvider } from "@/src/components/invitation-design/editor/InvitationEditorFontProvider";
 import type { InvitationDesign, InvitationEditorJson } from "@/src/lib/api/types";
+import { parseInvitationDocument } from "@/src/lib/invitationEditor/document";
 import {
-  invitationDesignFileUrl,
   invitationDesignPreviewUrl,
   parseInvitationEditorJson,
 } from "@/src/lib/invitationDesign";
@@ -22,18 +24,18 @@ function isPdfMime(mime?: string): boolean {
   return (mime ?? "").toLowerCase().includes("pdf");
 }
 
-export function InvitationDesignPreview({
+function LegacyInvitationPreview({
   design,
-  editorJson: editorJsonProp,
-  className = "",
-  compact = false,
-  variant = "default",
-  showLoadError = false,
+  editorJson,
+  className,
+  compact,
+  variant,
+  showLoadError,
 }: InvitationDesignPreviewProps) {
   const previewUrl = invitationDesignPreviewUrl(design);
-  const fileUrl = invitationDesignFileUrl(design);
-  const editorJson =
-    editorJsonProp ?? parseInvitationEditorJson(design.designJson);
+  const fileUrl = design.fileUrl?.trim();
+  const parsed =
+    editorJson ?? parseInvitationEditorJson(design.designJson);
 
   if (previewUrl) {
     return (
@@ -77,7 +79,7 @@ export function InvitationDesignPreview({
     );
   }
 
-  if (editorJson) {
+  if (parsed) {
     const minH =
       compact ? "min-h-[160px]" : variant === "editor" ? "min-h-0" : "min-h-[240px]";
     const editorShell =
@@ -88,15 +90,15 @@ export function InvitationDesignPreview({
     return (
       <div
         className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border px-6 py-8 text-center ${editorShell} ${minH} ${className}`}
-        style={{ backgroundColor: editorJson.backgroundColor }}
+        style={{ backgroundColor: parsed.backgroundColor }}
       >
-        {editorJson.imageUrl ? (
+        {parsed.imageUrl ? (
           <div
             className={`absolute inset-0 ${variant === "editor" ? "opacity-35" : "opacity-30"}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={editorJson.imageUrl}
+              src={parsed.imageUrl}
               alt=""
               className="h-full w-full object-cover"
             />
@@ -106,29 +108,29 @@ export function InvitationDesignPreview({
           <p
             className="font-semibold tracking-wide"
             style={{
-              color: editorJson.textColor,
-              fontSize: `${Math.max(16, editorJson.fontSize + 6)}px`,
+              color: parsed.textColor,
+              fontSize: `${Math.max(16, parsed.fontSize + 6)}px`,
             }}
           >
-            {editorJson.title || "Başlık"}
+            {parsed.title || "Başlık"}
           </p>
-          {editorJson.dateText ? (
+          {parsed.dateText ? (
             <p
               className="text-sm opacity-90"
-              style={{ color: editorJson.textColor }}
+              style={{ color: parsed.textColor }}
             >
-              {editorJson.dateText}
+              {parsed.dateText}
             </p>
           ) : null}
-          {editorJson.description ? (
+          {parsed.description ? (
             <p
               className="text-sm leading-relaxed opacity-85"
               style={{
-                color: editorJson.textColor,
-                fontSize: `${editorJson.fontSize}px`,
+                color: parsed.textColor,
+                fontSize: `${parsed.fontSize}px`,
               }}
             >
-              {editorJson.description}
+              {parsed.description}
             </p>
           ) : null}
         </div>
@@ -157,4 +159,27 @@ export function InvitationDesignPreview({
       Önizleme yok
     </div>
   );
+}
+
+export function InvitationDesignPreview(props: InvitationDesignPreviewProps) {
+  const { design, className, compact, variant } = props;
+
+  if (design.sourceType === "Upload") {
+    return <LegacyInvitationPreview {...props} />;
+  }
+
+  const doc = parseInvitationDocument(design.designJson);
+  if (doc.version === 2) {
+    return (
+      <InvitationEditorFontProvider>
+        <InvitationCanvasPreview
+          document={doc}
+          viewport={compact ? "mobile" : "a4"}
+          className={className}
+        />
+      </InvitationEditorFontProvider>
+    );
+  }
+
+  return <LegacyInvitationPreview {...props} />;
 }

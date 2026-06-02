@@ -43,6 +43,8 @@ type InvitationDesignEditorModalProps = {
   onClose?: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** Canva editörü için geniş panel */
+  wide?: boolean;
 };
 
 export function InvitationDesignEditorModal({
@@ -51,6 +53,7 @@ export function InvitationDesignEditorModal({
   onClose,
   children,
   footer,
+  wide = false,
 }: InvitationDesignEditorModalProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
@@ -103,7 +106,9 @@ export function InvitationDesignEditorModal({
       }}
     >
       <div
-        className="relative z-[9010] flex w-full max-h-[90vh] flex-col overflow-hidden rounded-none border border-[rgba(190,140,255,0.28)] bg-[rgba(20,14,32,0.98)] shadow-[0_30px_100px_rgba(0,0,0,0.55)] max-md:h-[100vh] max-md:max-h-[100vh] md:w-[min(1100px,96vw)] md:rounded-3xl"
+        className={`relative z-[9010] flex w-full max-h-[90vh] flex-col overflow-hidden rounded-none border border-[rgba(190,140,255,0.28)] bg-[rgba(20,14,32,0.98)] shadow-[0_30px_100px_rgba(0,0,0,0.55)] max-md:h-[100vh] max-md:max-h-[100vh] md:rounded-3xl ${
+          wide ? "md:w-[min(1400px,98vw)]" : "md:w-[min(1100px,96vw)]"
+        }`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
