@@ -353,6 +353,8 @@ function DashboardContentInner() {
       subtitle="Profiliniz, Smart Event OS ve etkinlik talepleriniz."
       navItems={navItems}
       navGroups={navGroups}
+      fullWidth
+      sidebarExpandedWidthClassName="lg:w-[17rem]"
     >
       <MobileHomeSummary />
 

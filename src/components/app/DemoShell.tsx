@@ -10,6 +10,8 @@ type DemoShellProps = {
   centerHeader?: boolean;
   /** Fixed top nav for customer/vendor/admin dashboards. */
   stickyNav?: boolean;
+  /** Override main container layout (rare; use sparingly). */
+  mainClassName?: string;
   children: ReactNode;
 };
 
@@ -18,6 +20,7 @@ export function DemoShell({
   subtitle,
   centerHeader = false,
   stickyNav = false,
+  mainClassName,
   children,
 }: DemoShellProps) {
   return (
@@ -32,7 +35,9 @@ export function DemoShell({
         showSearch={stickyNav}
       />
       <main
-        className={`relative z-10 mx-auto max-w-6xl px-4 sm:px-6 ${
+        className={`relative z-10 ${
+          mainClassName ?? "mx-auto max-w-6xl px-4 sm:px-6"
+        } ${
           stickyNav
             ? "orivona-main-below-header pb-10 sm:pb-14"
             : "orivona-main-below-header py-10 sm:py-14"

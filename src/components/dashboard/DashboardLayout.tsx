@@ -14,6 +14,8 @@ type DashboardLayoutProps = {
   subtitle?: string;
   navItems: DashboardNavItem[];
   navGroups?: DashboardNavGroup[];
+  fullWidth?: boolean;
+  sidebarExpandedWidthClassName?: string;
   toolbar?: ReactNode;
   children: ReactNode;
 };
@@ -23,6 +25,8 @@ export function DashboardLayout({
   subtitle,
   navItems,
   navGroups,
+  fullWidth = false,
+  sidebarExpandedWidthClassName,
   toolbar,
   children,
 }: DashboardLayoutProps) {
@@ -30,12 +34,20 @@ export function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <DemoShell title={title} subtitle={subtitle} stickyNav>
+    <DemoShell
+      title={title}
+      subtitle={subtitle}
+      stickyNav
+      mainClassName={
+        fullWidth ? "w-full max-w-none px-4 sm:px-6" : undefined
+      }
+    >
       {toolbar ? <div className="mb-6 flex flex-wrap gap-3">{toolbar}</div> : null}
       <div className="flex flex-col gap-0 lg:flex-row lg:items-start lg:gap-8">
         <DashboardSidebar
           items={navItems}
           groups={navGroups}
+          expandedWidthClassName={sidebarExpandedWidthClassName}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           mobileOpen={mobileOpen}

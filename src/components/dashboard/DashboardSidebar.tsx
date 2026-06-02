@@ -22,6 +22,7 @@ const DASHBOARD_SECTION_ROOT_MARGIN = "-120px 0px -60% 0px";
 type DashboardSidebarProps = {
   items: DashboardNavItem[];
   groups?: DashboardNavGroup[];
+  expandedWidthClassName?: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
@@ -31,6 +32,7 @@ type DashboardSidebarProps = {
 export function DashboardSidebar({
   items,
   groups,
+  expandedWidthClassName,
   collapsed,
   onToggleCollapsed,
   mobileOpen,
@@ -167,7 +169,7 @@ export function DashboardSidebar({
 
       <aside
         className={`hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${
-          collapsed ? "lg:w-14" : "lg:w-56"
+          collapsed ? "lg:w-14" : (expandedWidthClassName ?? "lg:w-56")
         } lg:top-24 lg:h-[calc(100vh-120px)]`}
       >
         <div

@@ -57,9 +57,8 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
         </p>
       </div>
       {role === "customer" ? (
-        <div className="orivona-scroll-x -mx-2 px-2">
-          <div className="flex min-w-max gap-4">
-            {[
+        <div className="grid gap-5 lg:grid-cols-3 md:grid-cols-2 grid-cols-1">
+          {[
               {
                 id: "customer-roadmap-1",
                 title: "Etkinlik planını oluştur",
@@ -101,10 +100,7 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
                 sectionId: "event-os-public-invite",
               },
             ].map((card) => (
-              <div
-                key={card.id}
-                className={`${glassCard} flex w-[16rem] flex-none flex-col !p-5`}
-              >
+              <div key={card.id} className={`${glassCard} flex flex-col`}>
                 <h3 className="text-sm font-semibold text-white">{card.title}</h3>
                 <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
                   {card.description}
@@ -124,7 +120,6 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
                 </button>
               </div>
             ))}
-          </div>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
