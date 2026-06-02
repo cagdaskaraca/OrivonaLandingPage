@@ -1,20 +1,21 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import {
-  ImagePlus,
-  QrCode,
-  Shapes,
-  Sparkles,
-  Type,
-} from "lucide-react";
+import { ImagePlus, QrCode, Type } from "lucide-react";
 import { InvitationCanvasPreview } from "@/src/components/invitation-design/editor/InvitationCanvasPreview";
 import { InvitationDragCanvas } from "@/src/components/invitation-design/editor/InvitationDragCanvas";
 import { InvitationEditorFontProvider } from "@/src/components/invitation-design/editor/InvitationEditorFontProvider";
+import { InvitationObjectInspector } from "@/src/components/invitation-design/editor/InvitationObjectInspector";
+import { InvitationStudioSelect } from "@/src/components/invitation-design/editor/InvitationStudioSelect";
 import { useIsMobileLayout } from "@/src/hooks/useIsMobileLayout";
 import { uploadInvitationDesignFile } from "@/src/lib/api/invitationDesigns";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import {
+  canDeleteElement,
+  deleteElementFromDoc,
+} from "@/src/lib/invitationEditor/canvasOps";
 import { finalizeDocument } from "@/src/lib/invitationEditor/document";
+import { INVITATION_FONT_OPTIONS } from "@/src/lib/invitationEditor/fonts";
 import {
   CORE_LAYOUT_IDS,
   LAYOUT_CANVAS_HEIGHT,
@@ -22,7 +23,10 @@ import {
   newLayoutId,
   updateLayoutElement,
 } from "@/src/lib/invitationEditor/layout";
-import { INVITATION_FONT_OPTIONS } from "@/src/lib/invitationEditor/fonts";
+import {
+  createShapeElement,
+  SHAPE_TOOLS,
+} from "@/src/lib/invitationEditor/shapes";
 import {
   applyTemplateToDocument,
   INVITATION_TEMPLATES,
@@ -34,10 +38,10 @@ import type {
   InvitationTemplateId,
   LayoutElement,
   PreviewViewport,
-  TextAlign,
+  ShapeType,
 } from "@/src/lib/invitationEditor/types";
-import { NumericInput } from "@/src/components/ui/NumericInput";
-import { btnSecondary, inputClass } from "@/src/lib/ui";
+import { inputClass } from "@/src/lib/ui";
+import "./invitation-studio.css";
 
 type CanvaInvitationEditorProps = {
   designTitle: string;
@@ -62,6 +66,7 @@ export function CanvaInvitationEditor({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [shapeOffset, setShapeOffset] = useState(0);
 
   const docFinal = useMemo(() => finalizeDocument(doc), [doc]);
 
@@ -117,6 +122,13 @@ export function CanvaInvitationEditor({
     [commit, docFinal],
   );
 
+  const deleteSelected = useCallback(() => {
+    if (!selectedId) return;
+    const next = deleteElementFromDoc(docFinal, selectedId);
+    commit(next);
+    setSelectedId(null);
+  }, [commit, docFinal, selectedId]);
+
   function applyTemplate(templateId: InvitationTemplateId) {
     commit(applyTemplateToDocument(docFinal, templateId));
   }
@@ -136,6 +148,7 @@ export function CanvaInvitationEditor({
       bold: false,
       italic: false,
       align: "center",
+      zIndex: docFinal.layoutJson.elements.length + 1,
     };
     patchLayout((els) => [...els, el]);
     setSelectedId(el.id);
@@ -162,6 +175,7 @@ export function CanvaInvitationEditor({
             width: 200,
             height: 120,
             url,
+            zIndex: 20,
           },
         ]);
       }
@@ -175,18 +189,10 @@ export function CanvaInvitationEditor({
     }
   }
 
-  function addShape(shape: "rect" | "circle") {
-    const el: LayoutElement = {
-      id: newLayoutId(),
-      type: "shape",
-      shape,
-      x: 120,
-      y: 320,
-      width: shape === "circle" ? 80 : 180,
-      height: shape === "circle" ? 80 : 48,
-      fill: docFinal.accentColor,
-      opacity: 0.35,
-    };
+  function addShape(shapeType: ShapeType) {
+    const offset = { x: shapeOffset % 48, y: shapeOffset % 48 };
+    const el = createShapeElement(shapeType, docFinal, offset);
+    setShapeOffset((n) => n + 16);
     patchLayout((els) => [...els, el]);
     setSelectedId(el.id);
   }
@@ -214,17 +220,24 @@ export function CanvaInvitationEditor({
       width: 48,
       height: 48,
       color: docFinal.accentColor,
+      zIndex: docFinal.layoutJson.elements.length + 1,
     };
     patchLayout((els) => [...els, el]);
     setSelectedId(el.id);
   }
 
-  const isTextLike =
-    selected &&
-    (selected.type === "text" ||
-      selected.type === "title" ||
-      selected.type === "description" ||
-      selected.type === "date");
+  const qrSourceOptions = [
+    {
+      value: "invite",
+      label: "Ortak Davet Linki",
+      disabled: !qrUrls.inviteUrl,
+    },
+    {
+      value: "publicPage",
+      label: "Herkese Açık Etkinlik Sayfası",
+      disabled: !qrUrls.publicPageUrl,
+    },
+  ].filter((o) => !o.disabled);
 
   const desktopScale = Math.min(1, 340 / LAYOUT_CANVAS_WIDTH);
 
@@ -331,13 +344,6 @@ export function CanvaInvitationEditor({
                   }}
                 />
               </label>
-              <button
-                type="button"
-                className={toolBtn}
-                onClick={() => addShape("rect")}
-              >
-                <Shapes size={18} /> Şekil ekle
-              </button>
               <button type="button" className={toolBtn} onClick={addQrElement}>
                 <QrCode size={18} /> QR kod ekle
               </button>
@@ -361,25 +367,43 @@ export function CanvaInvitationEditor({
                 ))}
               </div>
             </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+              <p className="mb-2 text-xs font-semibold text-zinc-400">Şekiller</p>
+              <div className="invitation-shape-grid">
+                {SHAPE_TOOLS.map((tool) => (
+                  <button
+                    key={tool.shapeType}
+                    type="button"
+                    className="invitation-shape-chip"
+                    title={tool.label}
+                    onClick={() => addShape(tool.shapeType)}
+                  >
+                    <span aria-hidden>{tool.symbol}</span>
+                    <span>{tool.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {uploadError ? (
               <p className="text-xs text-red-300">{uploadError}</p>
             ) : null}
 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="mb-2 text-xs font-semibold text-zinc-400">Font</p>
-              <select
-                className={inputClass}
+              <p className="mb-2 text-xs font-semibold text-zinc-400">
+                Varsayılan font
+              </p>
+              <InvitationStudioSelect
                 value={docFinal.fontFamily}
-                onChange={(e) =>
-                  patch({ fontFamily: e.target.value as InvitationFontId })
+                options={INVITATION_FONT_OPTIONS.map((f) => ({
+                  value: f.id,
+                  label: f.label,
+                }))}
+                onChange={(v) =>
+                  patch({ fontFamily: v as InvitationFontId })
                 }
-              >
-                {INVITATION_FONT_OPTIONS.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
@@ -394,109 +418,37 @@ export function CanvaInvitationEditor({
                 />
                 QR göster
               </label>
-              <select
-                className={inputClass}
-                value={docFinal.qr.source}
-                onChange={(e) =>
-                  patch({
-                    qr: {
-                      ...docFinal.qr,
-                      source: e.target.value as "invite" | "publicPage",
-                    },
-                  })
-                }
-              >
-                <option value="invite" disabled={!qrUrls.inviteUrl}>
-                  Ortak Davet Linki
-                </option>
-                <option value="publicPage" disabled={!qrUrls.publicPageUrl}>
-                  Herkese Açık Etkinlik Sayfası
-                </option>
-              </select>
+              {qrSourceOptions.length > 0 ? (
+                <InvitationStudioSelect
+                  value={docFinal.qr.source}
+                  options={qrSourceOptions.map((o) => ({
+                    value: o.value,
+                    label: o.label,
+                  }))}
+                  onChange={(v) =>
+                    patch({
+                      qr: {
+                        ...docFinal.qr,
+                        source: v as "invite" | "publicPage",
+                      },
+                    })
+                  }
+                />
+              ) : (
+                <p className="text-xs text-zinc-500">
+                  QR için davet veya herkese açık sayfa linki gerekir.
+                </p>
+              )}
             </div>
 
-            {isTextLike && selected ? (
-              <div className="space-y-3 rounded-xl border border-violet-400/25 bg-violet-500/10 p-3">
-                <p className="text-xs font-semibold text-violet-200">
-                  Metin stili
-                  {selected.type !== "text" ? " (seçili öğe)" : ""}
-                </p>
-                {selected.type === "text" ? (
-                  <textarea
-                    className={`${inputClass} min-h-[60px]`}
-                    value={selected.content ?? ""}
-                    onChange={(e) =>
-                      updateElement(selected.id, { content: e.target.value })
-                    }
-                  />
-                ) : null}
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className={`${btnSecondary} text-xs ${selected.bold ? "!bg-violet-500/30" : ""}`}
-                    onClick={() =>
-                      updateElement(selected.id, { bold: !selected.bold })
-                    }
-                  >
-                    Kalın
-                  </button>
-                  <button
-                    type="button"
-                    className={`${btnSecondary} text-xs ${selected.italic ? "!bg-violet-500/30" : ""}`}
-                    onClick={() =>
-                      updateElement(selected.id, { italic: !selected.italic })
-                    }
-                  >
-                    İtalik
-                  </button>
-                  {(["left", "center", "right"] as TextAlign[]).map((align) => (
-                    <button
-                      key={align}
-                      type="button"
-                      className={`${btnSecondary} text-xs ${selected.align === align ? "!bg-violet-500/30" : ""}`}
-                      onClick={() => updateElement(selected.id, { align })}
-                    >
-                      {align === "left" ? "Sol" : align === "center" ? "Orta" : "Sağ"}
-                    </button>
-                  ))}
-                </div>
-                <label className="block text-xs text-zinc-500">
-                  Boyut
-                  <NumericInput
-                    value={selected.fontSize ?? docFinal.fontSize}
-                    onChange={(fontSize) =>
-                      updateElement(selected.id, { fontSize })
-                    }
-                    min={10}
-                    max={72}
-                  />
-                </label>
-                <label className="block text-xs text-zinc-500">
-                  Renk
-                  <input
-                    type="color"
-                    className="mt-1 h-9 w-full cursor-pointer rounded-lg border border-white/10"
-                    value={selected.color ?? docFinal.textColor}
-                    onChange={(e) =>
-                      updateElement(selected.id, { color: e.target.value })
-                    }
-                  />
-                </label>
-                {selected.type === "text" ? (
-                  <button
-                    type="button"
-                    className={`${btnSecondary} w-full text-xs text-red-200`}
-                    onClick={() => {
-                      patchLayout((els) =>
-                        els.filter((e) => e.id !== selected.id),
-                      );
-                      setSelectedId(null);
-                    }}
-                  >
-                    Metni sil
-                  </button>
-                ) : null}
-              </div>
+            {selected ? (
+              <InvitationObjectInspector
+                selected={selected}
+                doc={docFinal}
+                onUpdate={updateElement}
+                onDelete={deleteSelected}
+                canDelete={canDeleteElement(selected)}
+              />
             ) : null}
 
             <label className="block text-sm">
@@ -575,7 +527,7 @@ export function CanvaInvitationEditor({
             </div>
             {!isMobile ? (
               <p className="mt-2 text-center text-[10px] text-zinc-500">
-                Öğeleri sürükleyin veya köşelerden boyutlandırın ·{" "}
+                Sürükle · boyutlandır · Delete ile sil ·{" "}
                 {LAYOUT_CANVAS_WIDTH}×{LAYOUT_CANVAS_HEIGHT}px
               </p>
             ) : null}

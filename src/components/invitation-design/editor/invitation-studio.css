@@ -1,0 +1,132 @@
+.invitation-studio-select {
+  position: relative;
+  width: 100%;
+}
+
+.invitation-studio-select-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(190, 140, 255, 0.35);
+  background: #151021;
+  color: #f6edff;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.invitation-studio-select-trigger:hover,
+.invitation-studio-select-trigger:focus-visible {
+  border-color: rgba(190, 140, 255, 0.55);
+  background: #1c1428;
+  outline: none;
+}
+
+.invitation-studio-select-menu {
+  position: absolute;
+  z-index: 50;
+  margin-top: 0.25rem;
+  max-height: 14rem;
+  width: 100%;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(190, 140, 255, 0.35);
+  background: #151021;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55);
+}
+
+.invitation-studio-select-option {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  color: #f6edff;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.invitation-studio-select-option:hover {
+  background: rgba(139, 92, 246, 0.25);
+}
+
+.invitation-studio-select-option[data-selected="true"] {
+  background: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+.invitation-canvas-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(190, 140, 255, 0.45);
+  background: rgba(21, 16, 33, 0.96);
+  padding: 0.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.invitation-canvas-toolbar button {
+  border-radius: 0.375rem;
+  border: none;
+  background: transparent;
+  color: #e9d5ff;
+  font-size: 10px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.invitation-canvas-toolbar button:hover {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+.invitation-canvas-toolbar button.danger:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #fecaca;
+}
+
+.invitation-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+}
+
+.invitation-shape-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(190, 140, 255, 0.22);
+  background: rgba(139, 92, 246, 0.08);
+  padding: 0.5rem 0.25rem;
+  font-size: 10px;
+  color: #e9d5ff;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.invitation-shape-chip:hover {
+  border-color: rgba(190, 140, 255, 0.5);
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.invitation-shape-chip span:first-child {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.invitation-rnd-selected {
+  box-shadow:
+    0 0 0 2px rgba(196, 181, 253, 0.95),
+    0 0 20px rgba(139, 92, 246, 0.45);
+  border-radius: 4px;
+}

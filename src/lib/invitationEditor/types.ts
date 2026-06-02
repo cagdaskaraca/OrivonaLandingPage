@@ -21,6 +21,18 @@ export type TextAlign = "left" | "center" | "right";
 
 export type QrLinkSource = "invite" | "publicPage";
 
+export type ShapeType =
+  | "circle"
+  | "square"
+  | "rectangle"
+  | "line"
+  | "heart"
+  | "star"
+  | "oval"
+  | "divider"
+  | "frame"
+  | "badge";
+
 export type InvitationFormFields = {
   brideName: string;
   groomName: string;
@@ -31,7 +43,6 @@ export type InvitationFormFields = {
   notes: string;
 };
 
-/** Canvas üzerinde konumlanan öğe (piksel). */
 export type LayoutElementType =
   | "title"
   | "description"
@@ -49,8 +60,9 @@ export type LayoutElement = {
   y: number;
   width: number;
   height: number;
+  zIndex?: number;
+  rotation?: number;
   hidden?: boolean;
-  /** Özel metin veya yedek */
   content?: string;
   fontSize?: number;
   color?: string;
@@ -59,8 +71,12 @@ export type LayoutElement = {
   italic?: boolean;
   align?: TextAlign;
   url?: string;
+  /** @deprecated shapeType kullanın */
   shape?: "rect" | "circle";
+  shapeType?: ShapeType;
   fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
   opacity?: number;
   icon?: "heart" | "rings" | "star" | "flower";
 };
@@ -71,7 +87,6 @@ export type InvitationLayoutJson = {
   elements: LayoutElement[];
 };
 
-/** @deprecated Yüzde tabanlı eski öğeler — parse sırasında layoutJson'a taşınır */
 export type EditorTextElement = {
   id: string;
   type: "text";
@@ -148,8 +163,8 @@ export type InvitationEditorDocument = {
   imageUrl?: string | null;
   fields: InvitationFormFields;
   layoutJson: InvitationLayoutJson;
-  /** @deprecated layoutJson kullanın */
-  elements: EditorElement[];
+  /** Kayıtta layoutJson.elements ile senkron */
+  elements: LayoutElement[];
   qr: {
     enabled: boolean;
     source: QrLinkSource;

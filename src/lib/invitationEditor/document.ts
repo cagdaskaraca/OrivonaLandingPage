@@ -1,6 +1,7 @@
 import { parseInvitationEditorJson } from "@/src/lib/invitationDesign";
 import type { InvitationEditorJson } from "@/src/lib/api/types";
 import { applyTemplateToDocument } from "@/src/lib/invitationEditor/templates";
+import { assignZIndices } from "@/src/lib/invitationEditor/canvasOps";
 import {
   defaultLayoutJson,
   migratePercentElementsToLayout,
@@ -110,7 +111,10 @@ export function syncLegacyTextFields(
 export function finalizeDocument(
   doc: InvitationEditorDocument,
 ): InvitationEditorDocument {
-  return syncLayoutVisibility(syncLegacyTextFields(doc));
+  const synced = syncLayoutVisibility(syncLegacyTextFields(doc));
+  const elements = assignZIndices(synced.layoutJson.elements);
+  const layoutJson = { ...synced.layoutJson, elements };
+  return { ...synced, layoutJson, elements };
 }
 
 export function parseInvitationDocument(raw: unknown): InvitationEditorDocument {
@@ -147,9 +151,18 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
           : null;
 
     const legacyElements = normalizeElements(o.elements);
-    let layoutJson = normalizeLayoutJson(o.layoutJson, { qr, imageUrl });
+    const layoutRaw =
+      o.layoutJson ??
+      (o.elements != null
+        ? {
+            elements: o.elements,
+            canvasWidth: o.canvasWidth,
+            canvasHeight: o.canvasHeight,
+          }
+        : null);
+    let layoutJson = normalizeLayoutJson(layoutRaw, { qr, imageUrl });
     if (
-      !o.layoutJson &&
+      !layoutRaw &&
       legacyElements.length > 0
     ) {
       layoutJson = migratePercentElementsToLayout(legacyElements, {
@@ -183,7 +196,7 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
         notes: strField(fieldsRaw, "notes", "Notes"),
       },
       layoutJson,
-      elements: legacyElements,
+      elements: layoutJson.elements,
       qr,
     };
     return finalizeDocument(doc);

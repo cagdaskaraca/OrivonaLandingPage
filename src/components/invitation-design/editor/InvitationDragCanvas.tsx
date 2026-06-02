@@ -1,8 +1,19 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Rnd } from "react-rnd";
+import { InvitationElementToolbar } from "@/src/components/invitation-design/editor/InvitationElementToolbar";
 import { InvitationLayoutElementContent } from "@/src/components/invitation-design/editor/InvitationLayoutElementContent";
+import "./invitation-studio.css";
+import {
+  bringForward,
+  canDeleteElement,
+  canDuplicateElement,
+  deleteElementFromDoc,
+  duplicateElement,
+  sendBackward,
+  sortByZIndex,
+} from "@/src/lib/invitationEditor/canvasOps";
 import { finalizeDocument, resolveQrUrl } from "@/src/lib/invitationEditor/document";
 import {
   LAYOUT_CANVAS_HEIGHT,
@@ -25,8 +36,6 @@ type InvitationDragCanvasProps = {
   scale?: number;
 };
 
-const CORE_NO_DELETE = new Set(["title", "description", "date"]);
-
 export function InvitationDragCanvas({
   document: docInput,
   qrUrls = {},
@@ -43,19 +52,74 @@ export function InvitationDragCanvas({
   const { canvasWidth, canvasHeight } = doc.layoutJson;
   const scale = scaleProp ?? 1;
 
-  const visibleElements = doc.layoutJson.elements.filter((el) => !el.hidden);
+  const visibleElements = useMemo(
+    () =>
+      sortByZIndex(doc.layoutJson.elements.filter((el) => !el.hidden)),
+    [doc.layoutJson.elements],
+  );
 
-  function updateElement(id: string, patch: Partial<LayoutElement>) {
-    const elements = doc.layoutJson.elements.map((el) =>
-      el.id === id ? { ...el, ...patch } : el,
-    );
-    onChange(
-      finalizeDocument({
+  const commit = useCallback(
+    (next: InvitationEditorDocument) => {
+      onChange(finalizeDocument(next));
+    },
+    [onChange],
+  );
+
+  const updateElement = useCallback(
+    (id: string, patch: Partial<LayoutElement>) => {
+      const elements = doc.layoutJson.elements.map((el) =>
+        el.id === id ? { ...el, ...patch } : el,
+      );
+      commit({
         ...doc,
         layoutJson: { ...doc.layoutJson, elements },
-      }),
-    );
-  }
+      });
+    },
+    [commit, doc],
+  );
+
+  const handleDelete = useCallback(
+    (id: string) => {
+      const next = deleteElementFromDoc(doc, id);
+      commit(next);
+      if (selectedElementId === id) onSelectElement?.(null);
+    },
+    [commit, doc, onSelectElement, selectedElementId],
+  );
+
+  const handleCopy = useCallback(
+    (id: string) => {
+      const { doc: next, newId } = duplicateElement(doc, id);
+      commit(next);
+      if (newId) onSelectElement?.(newId);
+    },
+    [commit, doc, onSelectElement],
+  );
+
+  useEffect(() => {
+    if (readOnly || selectedElementId == null || selectedElementId === "") return;
+    const activeId = selectedElementId;
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Delete" && e.key !== "Backspace") return;
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      const el = doc.layoutJson.elements.find((x) => x.id === activeId);
+      if (!el || !canDeleteElement(el)) return;
+      e.preventDefault();
+      handleDelete(activeId);
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [readOnly, selectedElementId, doc, handleDelete]);
 
   return (
     <div ref={containerRef} className="flex justify-center">
@@ -79,7 +143,8 @@ export function InvitationDragCanvas({
         >
           <div className={`absolute inset-0 ${template.overlayClass}`} />
 
-          {doc.imageUrl && !visibleElements.some((e) => e.type === "image" && !e.hidden) ? (
+          {doc.imageUrl &&
+          !visibleElements.some((e) => e.type === "image" && !e.hidden) ? (
             <div className="pointer-events-none absolute inset-0 opacity-20">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -102,22 +167,22 @@ export function InvitationDragCanvas({
 
           {visibleElements.map((el) => {
             const selected = selectedElementId === el.id;
-            const label =
-              el.type === "title"
-                ? "Başlık"
-                : el.type === "description"
-                  ? "Açıklama"
-                  : el.type === "date"
-                    ? "Tarih"
-                    : el.type === "image"
-                      ? "Görsel"
-                      : el.type === "qr"
-                        ? "QR"
-                        : undefined;
+            const z = el.zIndex ?? 10;
+            const rotation = el.rotation ?? 0;
+            const isLine =
+              el.type === "shape" &&
+              (el.shapeType === "line" || el.shapeType === "divider");
+            const minH = isLine ? 4 : 24;
 
             const inner = (
               <div
-                className={`h-full w-full p-1 ${selected && !readOnly ? "ring-2 ring-violet-400/90 ring-offset-1 ring-offset-transparent rounded" : ""}`}
+                className={`invitation-rnd-drag h-full w-full p-0.5 ${
+                  selected && !readOnly ? "invitation-rnd-selected" : ""
+                }`}
+                style={{
+                  transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                  transformOrigin: "center center",
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectElement?.(el.id);
@@ -137,7 +202,7 @@ export function InvitationDragCanvas({
                     top: el.y,
                     width: el.width,
                     height: el.height,
-                    zIndex: selected ? 20 : 10,
+                    zIndex: z,
                   }}
                 >
                   {inner}
@@ -162,8 +227,8 @@ export function InvitationDragCanvas({
                     height: parseInt(ref.style.height, 10),
                   });
                 }}
-                minWidth={32}
-                minHeight={24}
+                minWidth={isLine ? 40 : 32}
+                minHeight={minH}
                 enableResizing={{
                   top: true,
                   right: true,
@@ -176,12 +241,26 @@ export function InvitationDragCanvas({
                 }}
                 dragHandleClassName="invitation-rnd-drag"
                 className="invitation-rnd-drag"
-                style={{ zIndex: selected ? 30 : 10 }}
+                style={{ zIndex: selected ? z + 1000 : z }}
               >
-                {label && selected ? (
-                  <span className="absolute -top-5 left-0 rounded bg-violet-600/90 px-1.5 py-0.5 text-[9px] font-medium text-white">
-                    {label}
-                  </span>
+                {selected ? (
+                  <div
+                    className="absolute left-0 z-50 -translate-y-full pb-1"
+                    style={{ top: 0 }}
+                  >
+                    <InvitationElementToolbar
+                      canDelete={canDeleteElement(el)}
+                      canCopy={canDuplicateElement(el)}
+                      onDelete={() => handleDelete(el.id)}
+                      onCopy={() => handleCopy(el.id)}
+                      onBringForward={() =>
+                        commit(bringForward(doc, el.id))
+                      }
+                      onSendBackward={() =>
+                        commit(sendBackward(doc, el.id))
+                      }
+                    />
+                  </div>
                 ) : null}
                 {inner}
               </Rnd>
@@ -192,5 +271,3 @@ export function InvitationDragCanvas({
     </div>
   );
 }
-
-export { CORE_NO_DELETE };

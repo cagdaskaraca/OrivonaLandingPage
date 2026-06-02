@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { InvitationShapeRender } from "@/src/components/invitation-design/editor/InvitationShapeRender";
 import { Heart, Flower2, Sparkles, Star } from "lucide-react";
 import { fontCssFamily } from "@/src/lib/invitationEditor/fonts";
 import { getLayoutElementText } from "@/src/lib/invitationEditor/layout";
@@ -119,16 +120,7 @@ export function InvitationLayoutElementContent({
   }
 
   if (el.type === "shape") {
-    return (
-      <div
-        className="h-full w-full"
-        style={{
-          backgroundColor: el.fill ?? doc.accentColor,
-          opacity: el.opacity ?? 0.35,
-          borderRadius: el.shape === "circle" ? "50%" : 8,
-        }}
-      />
-    );
+    return <InvitationShapeRender el={el} doc={doc} />;
   }
 
   if (el.type === "icon" && el.icon) {

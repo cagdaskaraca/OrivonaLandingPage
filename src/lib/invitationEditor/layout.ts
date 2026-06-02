@@ -1,3 +1,5 @@
+import { assignZIndices } from "@/src/lib/invitationEditor/canvasOps";
+import { resolveShapeType } from "@/src/lib/invitationEditor/shapes";
 import type {
   EditorElement,
   InvitationEditorDocument,
@@ -5,6 +7,7 @@ import type {
   InvitationLayoutJson,
   LayoutElement,
   LayoutElementType,
+  ShapeType,
 } from "@/src/lib/invitationEditor/types";
 
 const FONT_IDS: InvitationFontId[] = [
@@ -50,6 +53,7 @@ export function defaultLayoutElements(
       fontSize: 28,
       align: "center",
       bold: true,
+      zIndex: 10,
     },
     {
       id: CORE_LAYOUT_IDS.date,
@@ -60,6 +64,7 @@ export function defaultLayoutElements(
       height: 44,
       fontSize: 16,
       align: "center",
+      zIndex: 11,
     },
     {
       id: CORE_LAYOUT_IDS.description,
@@ -70,6 +75,7 @@ export function defaultLayoutElements(
       height: 130,
       fontSize: 14,
       align: "center",
+      zIndex: 12,
     },
     {
       id: CORE_LAYOUT_IDS.image,
@@ -80,6 +86,7 @@ export function defaultLayoutElements(
       height: 120,
       hidden: !doc.imageUrl,
       url: doc.imageUrl ?? undefined,
+      zIndex: 20,
     },
     {
       id: CORE_LAYOUT_IDS.qr,
@@ -89,8 +96,32 @@ export function defaultLayoutElements(
       width: 100,
       height: 100,
       hidden: !doc.qr.enabled,
+      zIndex: 30,
     },
   ];
+}
+
+const SHAPE_TYPES: ShapeType[] = [
+  "circle",
+  "square",
+  "rectangle",
+  "line",
+  "heart",
+  "star",
+  "oval",
+  "divider",
+  "frame",
+  "badge",
+];
+
+function pickShapeType(item: Record<string, unknown>): ShapeType | undefined {
+  const raw = item.shapeType ?? item.ShapeType;
+  if (typeof raw === "string" && SHAPE_TYPES.includes(raw as ShapeType)) {
+    return raw as ShapeType;
+  }
+  if (item.shape === "circle") return "circle";
+  if (item.shape === "rect") return "rectangle";
+  return undefined;
 }
 
 export function defaultLayoutJson(
@@ -143,8 +174,17 @@ export function normalizeLayoutJson(
               ? "center"
               : undefined,
         url: typeof item.url === "string" ? item.url : undefined,
+        zIndex: typeof item.zIndex === "number" ? item.zIndex : undefined,
+        rotation:
+          typeof item.rotation === "number" && !Number.isNaN(item.rotation)
+            ? item.rotation
+            : undefined,
+        shapeType: pickShapeType(item),
         shape: item.shape === "circle" ? "circle" : "rect",
         fill: typeof item.fill === "string" ? item.fill : undefined,
+        stroke: typeof item.stroke === "string" ? item.stroke : undefined,
+        strokeWidth:
+          typeof item.strokeWidth === "number" ? item.strokeWidth : undefined,
         opacity: typeof item.opacity === "number" ? item.opacity : undefined,
         icon:
           item.icon === "heart" ||
@@ -156,10 +196,17 @@ export function normalizeLayoutJson(
       } satisfies LayoutElement;
     });
 
+  const withCore = ensureCoreLayoutElements(elements, doc);
+  const withShapeType = withCore.map((el) =>
+    el.type === "shape" && !el.shapeType
+      ? { ...el, shapeType: resolveShapeType(el) }
+      : el,
+  );
+
   return {
     canvasWidth: num(o.canvasWidth, LAYOUT_CANVAS_WIDTH),
     canvasHeight: num(o.canvasHeight, LAYOUT_CANVAS_HEIGHT),
-    elements: ensureCoreLayoutElements(elements, doc),
+    elements: assignZIndices(withShapeType),
   };
 }
 
