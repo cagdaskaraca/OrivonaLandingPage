@@ -7,6 +7,11 @@ import type { InvitationDesign } from "@/src/lib/api/types";
 import { invitationDesignTitle } from "@/src/lib/invitationDesign";
 import { selectClass } from "@/src/lib/ui";
 
+/** Taslak seçilmedi; attach / invitationDesignId gönderilmez. */
+export function isInvitationDesignSelected(value: string): boolean {
+  return value.trim() !== "";
+}
+
 type InvitationDesignPickerProps = {
   eventPlanId: string | number | null | undefined;
   value: string;
@@ -14,6 +19,8 @@ type InvitationDesignPickerProps = {
   disabled?: boolean;
   label?: string;
 };
+
+const invitationSelectClass = `${selectClass} appearance-none bg-[#0c0814] pr-10 shadow-[inset_0_0_0_1px_rgba(167,139,250,0.08)] focus:border-violet-400/50 focus:ring-2 focus:ring-violet-500/20`;
 
 export function InvitationDesignPicker({
   eventPlanId,
@@ -56,28 +63,50 @@ export function InvitationDesignPicker({
 
   return (
     <label className="block text-sm">
-      <span className="mb-1.5 block text-xs text-zinc-400">{label}</span>
-      <select
-        className={selectClass}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled || loading}
-      >
-        <option value="">Taslak seçmeyin</option>
-        {designs.map((d) =>
-          d.id != null ? (
-            <option key={String(d.id)} value={String(d.id)}>
-              {invitationDesignTitle(d)}
-            </option>
-          ) : null,
-        )}
-      </select>
+      <span className="mb-1.5 block text-xs font-medium text-violet-200/90">
+        {label}
+      </span>
+      <div className="relative">
+        <select
+          className={invitationSelectClass}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled || loading}
+        >
+          <option value="">Taslak olmadan devam et</option>
+          {designs.map((d) =>
+            d.id != null ? (
+              <option key={String(d.id)} value={String(d.id)}>
+                {invitationDesignTitle(d)}
+              </option>
+            ) : null,
+          )}
+        </select>
+        <span
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-violet-300/70"
+          aria-hidden
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </div>
       {loading ? (
-        <p className="mt-1 text-xs text-zinc-500">Taslaklar yükleniyor…</p>
+        <p className="mt-1.5 text-xs text-zinc-500">Taslaklar yükleniyor…</p>
       ) : null}
       {!loading && designs.length === 0 ? (
-        <p className="mt-1 text-xs text-zinc-500">
-          Bu plan için taslak yok. Davetiye Tasarımı bölümünden oluşturun.
+        <p className="mt-1.5 text-xs text-zinc-500">
+          Bu plan için kayıtlı taslak yok. Müşteri panelinden Davetiye Tasarımı
+          bölümünde oluşturabilirsiniz.
         </p>
       ) : null}
     </label>

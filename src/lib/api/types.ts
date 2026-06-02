@@ -167,6 +167,8 @@ export type InvitationDesign = {
   fileName?: string;
   mimeType?: string;
   previewUrl?: string;
+  /** API bazen previewImageUrl olarak döner */
+  previewImageUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 };

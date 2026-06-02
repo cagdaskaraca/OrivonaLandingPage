@@ -264,7 +264,7 @@ function normalizeOffer(raw: unknown): OfferRequest {
     recordStr(o, "validUntil", "ValidUntil") ??
     (nested ? recordStr(nested, "validUntil", "ValidUntil") : undefined);
 
-  const invitation = extractInvitationFields(o);
+  const invitation = extractInvitationFields(extractPayload(o) ?? o);
   const playlistFields = extractPlaylistFields(o);
 
   return {
@@ -328,7 +328,8 @@ export async function fetchMyOfferRequests(): Promise<OfferRequest[]> {
     async () => {
       const body = await apiGetRaw<ApiEnvelope>("/offer-requests/my");
       assertSuccess(body);
-      return toList(body.data).map(normalizeOffer);
+      const payload = extractPayload(body.data) ?? body.data;
+      return toList(payload).map(normalizeOffer);
     },
     [],
     "Customer offer requests endpoint not available yet",
@@ -341,7 +342,8 @@ export async function fetchVendorOfferRequests(): Promise<OfferRequest[]> {
     devLogLabel: "Vendor offers response",
     allowNotFound: true,
   });
-  return toList(body.data).map(normalizeOffer);
+  const payload = extractPayload(body.data) ?? body.data;
+  return toList(payload).map(normalizeOffer);
 }
 
 export async function sendVendorOffer(

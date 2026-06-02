@@ -36,28 +36,50 @@ export function parseInvitationEditorJson(
   }
   if (typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  const num = (k: string, fallback: number) => {
-    const v = o[k];
+  const pick = (camel: string, pascal: string) => o[camel] ?? o[pascal];
+  const num = (camel: string, pascal: string, fallback: number) => {
+    const v = pick(camel, pascal);
     return typeof v === "number" && !Number.isNaN(v) ? v : fallback;
   };
-  const str = (k: string, fallback = "") => {
-    const v = o[k];
+  const str = (camel: string, pascal: string, fallback = "") => {
+    const v = pick(camel, pascal);
     return typeof v === "string" ? v : fallback;
   };
+  const imageRaw = pick("imageUrl", "ImageUrl");
   return {
-    backgroundColor: str("backgroundColor", "#1a0f2e"),
-    title: str("title", "Davetlisiniz"),
-    description: str("description", ""),
-    dateText: str("dateText", ""),
-    textColor: str("textColor", "#f5f0ff"),
-    fontSize: num("fontSize", 22),
+    backgroundColor: str("backgroundColor", "BackgroundColor", "#1a0f2e"),
+    title: str("title", "Title", "Davetlisiniz"),
+    description: str("description", "Description", ""),
+    dateText: str("dateText", "DateText", ""),
+    textColor: str("textColor", "TextColor", "#f5f0ff"),
+    fontSize: num("fontSize", "FontSize", 22),
     imageUrl:
-      typeof o.imageUrl === "string"
-        ? o.imageUrl
-        : o.imageUrl === null
+      typeof imageRaw === "string"
+        ? imageRaw
+        : imageRaw === null
           ? null
           : undefined,
   };
+}
+
+/** Teklif kartında davetiye bloğu gösterilsin mi (kısmi API yanıtları dahil). */
+export function hasInvitationDesignData(
+  design?: InvitationDesign | null,
+): boolean {
+  if (!design || typeof design !== "object") return false;
+  if (design.id != null) return true;
+  if (design.title?.trim()) return true;
+  if (design.fileUrl?.trim()) return true;
+  if (design.previewUrl?.trim()) return true;
+  if (design.designJson != null && design.designJson !== "") return true;
+  return false;
+}
+
+export function hasInvitationPreviewContent(
+  design: InvitationDesign,
+): boolean {
+  if (invitationDesignPreviewUrl(design)) return true;
+  return parseInvitationEditorJson(design.designJson) != null;
 }
 
 export function invitationDesignTitle(design: InvitationDesign): string {
@@ -70,12 +92,23 @@ export function invitationDesignTitle(design: InvitationDesign): string {
 export function invitationDesignPreviewUrl(
   design: InvitationDesign,
 ): string | undefined {
-  return (
+  const preview =
     design.previewUrl?.trim() ||
-    design.fileUrl?.trim() ||
-    parseInvitationEditorJson(design.designJson)?.imageUrl ||
-    undefined
-  );
+    design.previewImageUrl?.trim() ||
+    "";
+  if (preview) return preview;
+  const file = design.fileUrl?.trim();
+  if (file && !(design.mimeType ?? "").toLowerCase().includes("pdf")) {
+    return file;
+  }
+  const jsonImg = parseInvitationEditorJson(design.designJson)?.imageUrl;
+  return jsonImg?.trim() || undefined;
+}
+
+export function invitationDesignFileUrl(
+  design: InvitationDesign,
+): string | undefined {
+  return design.fileUrl?.trim() || undefined;
 }
 
 export function invitationDesignStatusLabel(status?: string): string {

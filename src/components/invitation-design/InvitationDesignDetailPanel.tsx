@@ -3,7 +3,10 @@
 import type { InvitationDesign, InvitationRevision } from "@/src/lib/api/types";
 import { InvitationDesignPreview } from "@/src/components/invitation-design/InvitationDesignPreview";
 import {
-  invitationDesignPreviewUrl,
+  hasInvitationDesignData,
+  hasInvitationPreviewContent,
+  invitationDesignFileUrl,
+  invitationDesignStatusLabel,
   invitationDesignTitle,
 } from "@/src/lib/invitationDesign";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
@@ -23,11 +26,14 @@ export function InvitationDesignDetailPanel({
   onUploadRevision,
   uploadingRevision,
 }: InvitationDesignDetailPanelProps) {
-  if (!design?.id && !design?.fileUrl && !design?.designJson) {
+  if (!hasInvitationDesignData(design)) {
     return null;
   }
 
-  const fileUrl = invitationDesignPreviewUrl(design);
+  const resolved = design!;
+  const fileUrl = invitationDesignFileUrl(resolved);
+  const canPreview = hasInvitationPreviewContent(resolved);
+  const statusLabel = invitationDesignStatusLabel(resolved.status);
 
   return (
     <div className={`${glassCard} mt-4 border-violet-400/20`}>
@@ -35,11 +41,23 @@ export function InvitationDesignDetailPanel({
         Davetiye tasarımı
       </p>
       <p className="mt-1 text-sm font-medium text-white">
-        {invitationDesignTitle(design)}
+        {invitationDesignTitle(resolved)}
       </p>
+      {statusLabel ? (
+        <p className="mt-1 text-xs text-zinc-500">
+          Durum:{" "}
+          <span className="text-violet-200/90">{statusLabel}</span>
+        </p>
+      ) : null}
+
       <div className="mt-4">
-        <InvitationDesignPreview design={design} />
+        <InvitationDesignPreview
+          design={resolved}
+          compact
+          showLoadError={!canPreview}
+        />
       </div>
+
       <div className="mt-4 flex flex-wrap gap-2">
         {fileUrl ? (
           <a
@@ -48,16 +66,7 @@ export function InvitationDesignDetailPanel({
             rel="noopener noreferrer"
             className={`${btnSecondary} text-xs`}
           >
-            Önizle
-          </a>
-        ) : null}
-        {fileUrl ? (
-          <a
-            href={fileUrl}
-            download={design.fileName ?? true}
-            className={`${btnSecondary} text-xs`}
-          >
-            Dosyayı indir
+            Dosyayı görüntüle / indir
           </a>
         ) : null}
         {variant === "vendor" && onUploadRevision ? (
@@ -75,7 +84,9 @@ export function InvitationDesignDetailPanel({
       {revisions.length > 0 ? (
         <div className="mt-6 border-t border-white/10 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            {variant === "customer" ? "İşletme revizyonları" : "Yüklediğiniz revizyonlar"}
+            {variant === "customer"
+              ? "İşletme revizyonları"
+              : "Yüklediğiniz revizyonlar"}
           </p>
           <ul className="mt-3 space-y-2">
             {revisions.map((rev) =>

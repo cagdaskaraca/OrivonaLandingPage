@@ -60,6 +60,9 @@ export function normalizeInvitationDesign(raw: unknown): InvitationDesign {
   const designJson: InvitationDesign["designJson"] =
     parsedJson ??
     (typeof jsonRaw === "string" ? jsonRaw : undefined);
+  const previewUrl =
+    recordStr(o, "previewUrl", "PreviewUrl") ??
+    recordStr(o, "previewImageUrl", "PreviewImageUrl");
   return {
     id: recordId(o, "id", "Id"),
     eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
@@ -70,7 +73,8 @@ export function normalizeInvitationDesign(raw: unknown): InvitationDesign {
     fileUrl: recordStr(o, "fileUrl", "FileUrl"),
     fileName: recordStr(o, "fileName", "FileName"),
     mimeType: recordStr(o, "mimeType", "MimeType"),
-    previewUrl: recordStr(o, "previewUrl", "PreviewUrl"),
+    previewUrl,
+    previewImageUrl: previewUrl,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
     updatedAt: recordStr(o, "updatedAt", "UpdatedAt"),
   };
@@ -79,9 +83,36 @@ export function normalizeInvitationDesign(raw: unknown): InvitationDesign {
 function normalizeInvitationFromNested(
   parent: Record<string, unknown>,
 ): InvitationDesign | undefined {
-  const nested = parent.invitationDesign ?? parent.InvitationDesign;
+  const nested =
+    parent.invitationDesign ??
+    parent.InvitationDesign ??
+    parent.selectedInvitationDesign ??
+    parent.SelectedInvitationDesign ??
+    parent.attachedInvitationDesign ??
+    parent.AttachedInvitationDesign;
   if (!nested) return undefined;
   return normalizeInvitationDesign(nested);
+}
+
+function mergeInvitationFromEventRequest(
+  parent: Record<string, unknown>,
+  top: {
+    invitationDesign?: InvitationDesign;
+    invitationRevisions?: InvitationRevision[];
+  },
+): {
+  invitationDesign?: InvitationDesign;
+  invitationRevisions?: InvitationRevision[];
+} {
+  const er = parent.eventRequest ?? parent.EventRequest;
+  if (!er || typeof er !== "object") return top;
+  const erObj = er as Record<string, unknown>;
+  return {
+    invitationDesign:
+      top.invitationDesign ?? normalizeInvitationFromNested(erObj),
+    invitationRevisions:
+      top.invitationRevisions ?? normalizeRevisionsFromNested(erObj),
+  };
 }
 
 function normalizeRevisionsFromNested(
@@ -102,10 +133,24 @@ export function extractInvitationFields(raw: unknown): {
 } {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  return {
-    invitationDesign: normalizeInvitationFromNested(o),
+
+  let invitationDesign = normalizeInvitationFromNested(o);
+  if (!invitationDesign) {
+    const idOnly =
+      recordId(o, "invitationDesignId", "InvitationDesignId") ??
+      recordId(o, "selectedInvitationDesignId", "SelectedInvitationDesignId");
+    if (idOnly != null) {
+      invitationDesign = normalizeInvitationDesign({
+        id: idOnly,
+        title: recordStr(o, "invitationDesignTitle", "InvitationDesignTitle"),
+      });
+    }
+  }
+
+  return mergeInvitationFromEventRequest(o, {
+    invitationDesign,
     invitationRevisions: normalizeRevisionsFromNested(o),
-  };
+  });
 }
 
 export async function fetchInvitationDesigns(

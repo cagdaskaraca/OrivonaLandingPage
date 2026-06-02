@@ -3,7 +3,10 @@ import { InvitationDesignDetailPanel } from "@/src/components/invitation-design/
 import { PlaylistDetailPanel } from "@/src/components/playlist/PlaylistDetailPanel";
 import { OfferStatusBadge } from "@/src/components/offers/OfferStatusBadge";
 import type { OfferRequest } from "@/src/lib/api/types";
-import { isInvitationCategory } from "@/src/lib/invitationDesign";
+import {
+  hasInvitationDesignData,
+  isInvitationCategory,
+} from "@/src/lib/invitationDesign";
 import { isMusicCategory } from "@/src/lib/playlist";
 import {
   formatOfferDate,
@@ -63,7 +66,7 @@ export function OfferRequestCard({
         <p className="mt-3 leading-relaxed text-zinc-300">{offer.message}</p>
       ) : null}
 
-      {showInvitation && offer.invitationDesign ? (
+      {showInvitation && hasInvitationDesignData(offer.invitationDesign) ? (
         <InvitationDesignDetailPanel
           design={offer.invitationDesign}
           revisions={offer.invitationRevisions}

@@ -9,7 +9,10 @@ import { fetchMyEventPlans } from "@/src/lib/api/eventPlans";
 import { ApiError, formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventPlan, MarketplaceItem } from "@/src/lib/api/types";
 import { VENDOR_CATEGORY_NAMES } from "@/src/lib/api/types";
-import { InvitationDesignPicker } from "@/src/components/invitation-design/InvitationDesignPicker";
+import {
+  InvitationDesignPicker,
+  isInvitationDesignSelected,
+} from "@/src/components/invitation-design/InvitationDesignPicker";
 import { isInvitationCategory } from "@/src/lib/invitationDesign";
 import { isMusicCategory } from "@/src/lib/playlist";
 import { CouponCodeField } from "@/src/components/commerce/CouponCodeField";
@@ -134,6 +137,7 @@ export function OfferRequestModal({
     setGuestCount(plan.guestCount ?? 100);
     setBudgetMin(plan.budgetMin ?? 0);
     setBudgetMax(plan.budgetMax ?? 0);
+    setInvitationDesignId("");
   }, [selectedPlanId, plans, hasLinkedPlan]);
 
   const serviceId = item?.vendorServiceId ?? item?.id;
@@ -169,7 +173,7 @@ export function OfferRequestModal({
         note: noteText || undefined,
       });
       const requestId = created.eventRequestId ?? created.id;
-      if (requestId != null && invitationDesignId.trim()) {
+      if (requestId != null && isInvitationDesignSelected(invitationDesignId)) {
         try {
           await attachInvitationDesignToEventRequest(
             requestId,
