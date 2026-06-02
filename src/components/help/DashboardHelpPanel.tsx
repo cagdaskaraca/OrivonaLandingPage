@@ -56,9 +56,9 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
             : "Hizmet ilanı, müsaitlik ve teklif akışı için önerilen adımlar (hizmet sağlayıcı işletme)."}
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {role === "customer" ? (
-          <>
+      {role === "customer" ? (
+        <div className="orivona-scroll-x -mx-2 px-2">
+          <div className="flex min-w-max gap-4">
             {[
               {
                 id: "customer-roadmap-1",
@@ -101,7 +101,10 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
                 sectionId: "event-os-public-invite",
               },
             ].map((card) => (
-              <div key={card.id} className={`${glassCard} flex flex-col`}>
+              <div
+                key={card.id}
+                className={`${glassCard} flex w-[16rem] flex-none flex-col !p-5`}
+              >
                 <h3 className="text-sm font-semibold text-white">{card.title}</h3>
                 <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
                   {card.description}
@@ -121,11 +124,15 @@ export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
                 </button>
               </div>
             ))}
-          </>
-        ) : (
-          VENDOR_HELP_CARDS.map((card) => <HelpCard key={card.id} card={card} />)
-        )}
-      </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {VENDOR_HELP_CARDS.map((card) => (
+            <HelpCard key={card.id} card={card} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

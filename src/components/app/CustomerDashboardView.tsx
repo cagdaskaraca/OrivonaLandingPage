@@ -332,7 +332,7 @@ function DashboardContentInner() {
       title: "Hesap",
       items: [
         { id: "dashboard-account", label: "Hesabım" },
-        { id: "nav-account", label: "Profil Düzenle", href: "/account" },
+        { id: "dashboard-activity", label: "Son Aktiviteler" },
         {
           id: "nav-logout",
           label: "Çıkış",
@@ -359,6 +359,14 @@ function DashboardContentInner() {
       <DashboardHelpPanel role="customer" />
 
       <DashboardSection id="dashboard-account" title="Hesabım">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Profil
+          </p>
+          <Link href="/account" className={btnSecondary}>
+            Profili düzenle
+          </Link>
+        </div>
         {user ? (
           <dl className="mt-4 space-y-2 text-sm text-zinc-400">
             <div>
@@ -396,10 +404,6 @@ function DashboardContentInner() {
           <h3 className="mb-3 text-sm font-semibold text-violet-200/90">Özet</h3>
           <CustomerSummarySection />
         </div>
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
-        <ActivityFeedSection role="customer" />
       </DashboardSection>
 
       <DashboardSection id="event-os-plans" title="Etkinlik Planlarım">
@@ -642,6 +646,10 @@ function DashboardContentInner() {
 
       <DashboardSection id="dashboard-notifications" title="Bildirimler">
         <NotificationsPanel />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
+        <ActivityFeedSection role="customer" />
       </DashboardSection>
     </DashboardLayout>
   );
