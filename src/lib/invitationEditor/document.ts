@@ -1,6 +1,12 @@
 import { parseInvitationEditorJson } from "@/src/lib/invitationDesign";
 import type { InvitationEditorJson } from "@/src/lib/api/types";
 import { applyTemplateToDocument } from "@/src/lib/invitationEditor/templates";
+import {
+  defaultLayoutJson,
+  migratePercentElementsToLayout,
+  normalizeLayoutJson,
+  syncLayoutVisibility,
+} from "@/src/lib/invitationEditor/layout";
 import type {
   EditorElement,
   InvitationEditorDocument,
@@ -23,7 +29,7 @@ export function defaultFormFields(): InvitationFormFields {
 }
 
 export function defaultInvitationDocument(): InvitationEditorDocument {
-  const base = applyTemplateToDocument(
+  const partial = applyTemplateToDocument(
     {
       version: 2,
       templateId: "purplePremium",
@@ -37,12 +43,13 @@ export function defaultInvitationDocument(): InvitationEditorDocument {
       fontSize: 22,
       imageUrl: null,
       fields: defaultFormFields(),
+      layoutJson: defaultLayoutJson({ qr: { enabled: false, source: "invite" }, imageUrl: null }),
       elements: [],
       qr: { enabled: false, source: "invite" },
     },
     "purplePremium",
   );
-  return syncLegacyTextFields(base);
+  return syncLegacyTextFields(syncLayoutVisibility(partial));
 }
 
 function strField(o: Record<string, unknown>, ...keys: string[]): string {
@@ -100,6 +107,12 @@ export function syncLegacyTextFields(
   return { ...doc, title, dateText, description };
 }
 
+export function finalizeDocument(
+  doc: InvitationEditorDocument,
+): InvitationEditorDocument {
+  return syncLayoutVisibility(syncLegacyTextFields(doc));
+}
+
 export function parseInvitationDocument(raw: unknown): InvitationEditorDocument {
   if (!raw) return defaultInvitationDocument();
   let parsed: unknown = raw;
@@ -120,6 +133,31 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
         : {};
     const qrRaw =
       o.qr && typeof o.qr === "object" ? (o.qr as Record<string, unknown>) : {};
+    const qr = {
+      enabled: qrRaw.enabled === true,
+      source:
+        qrRaw.source === "publicPage" ? "publicPage" : ("invite" as QrLinkSource),
+      customUrl: strField(qrRaw, "customUrl", "CustomUrl") || undefined,
+    };
+    const imageUrl =
+      typeof o.imageUrl === "string"
+        ? o.imageUrl
+        : o.imageUrl === null
+          ? null
+          : null;
+
+    const legacyElements = normalizeElements(o.elements);
+    let layoutJson = normalizeLayoutJson(o.layoutJson, { qr, imageUrl });
+    if (
+      !o.layoutJson &&
+      legacyElements.length > 0
+    ) {
+      layoutJson = migratePercentElementsToLayout(legacyElements, {
+        qr,
+        imageUrl,
+      });
+    }
+
     const doc: InvitationEditorDocument = {
       version: 2,
       templateId: pickTemplateId(o.templateId),
@@ -134,12 +172,7 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
         typeof o.fontSize === "number" && !Number.isNaN(o.fontSize)
           ? o.fontSize
           : 22,
-      imageUrl:
-        typeof o.imageUrl === "string"
-          ? o.imageUrl
-          : o.imageUrl === null
-            ? null
-            : null,
+      imageUrl,
       fields: {
         brideName: strField(fieldsRaw, "brideName", "BrideName"),
         groomName: strField(fieldsRaw, "groomName", "GroomName"),
@@ -149,15 +182,11 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
         address: strField(fieldsRaw, "address", "Address"),
         notes: strField(fieldsRaw, "notes", "Notes"),
       },
-      elements: normalizeElements(o.elements),
-      qr: {
-        enabled: qrRaw.enabled === true,
-        source:
-          qrRaw.source === "publicPage" ? "publicPage" : ("invite" as QrLinkSource),
-        customUrl: strField(qrRaw, "customUrl", "CustomUrl") || undefined,
-      },
+      layoutJson,
+      elements: legacyElements,
+      qr,
     };
-    return syncLegacyTextFields(doc);
+    return finalizeDocument(doc);
   }
 
   const legacy = parseInvitationEditorJson(o);
@@ -169,7 +198,7 @@ export function legacyToDocument(
   legacy: InvitationEditorJson,
 ): InvitationEditorDocument {
   const doc = defaultInvitationDocument();
-  return syncLegacyTextFields({
+  return finalizeDocument({
     ...doc,
     backgroundColor: legacy.backgroundColor,
     textColor: legacy.textColor,

@@ -1,4 +1,4 @@
-/** Davetiye editörü v2 — designJson içinde saklanır; API değişmez. */
+/** Davetiye editörü v2+ — designJson içinde saklanır; API değişmez. */
 
 export type InvitationTemplateId =
   | "classic"
@@ -31,6 +31,47 @@ export type InvitationFormFields = {
   notes: string;
 };
 
+/** Canvas üzerinde konumlanan öğe (piksel). */
+export type LayoutElementType =
+  | "title"
+  | "description"
+  | "date"
+  | "image"
+  | "qr"
+  | "text"
+  | "shape"
+  | "icon";
+
+export type LayoutElement = {
+  id: string;
+  type: LayoutElementType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  hidden?: boolean;
+  /** Özel metin veya yedek */
+  content?: string;
+  fontSize?: number;
+  color?: string;
+  fontFamily?: InvitationFontId;
+  bold?: boolean;
+  italic?: boolean;
+  align?: TextAlign;
+  url?: string;
+  shape?: "rect" | "circle";
+  fill?: string;
+  opacity?: number;
+  icon?: "heart" | "rings" | "star" | "flower";
+};
+
+export type InvitationLayoutJson = {
+  canvasWidth: number;
+  canvasHeight: number;
+  elements: LayoutElement[];
+};
+
+/** @deprecated Yüzde tabanlı eski öğeler — parse sırasında layoutJson'a taşınır */
 export type EditorTextElement = {
   id: string;
   type: "text";
@@ -100,13 +141,14 @@ export type InvitationEditorDocument = {
   backgroundColor: string;
   accentColor: string;
   textColor: string;
-  /** Eski önizleme uyumu */
   title: string;
   description: string;
   dateText: string;
   fontSize: number;
   imageUrl?: string | null;
   fields: InvitationFormFields;
+  layoutJson: InvitationLayoutJson;
+  /** @deprecated layoutJson kullanın */
   elements: EditorElement[];
   qr: {
     enabled: boolean;
