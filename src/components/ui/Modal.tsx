@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { btnSecondary, glassCard } from "@/src/lib/ui";
+import { btnSecondary } from "@/src/lib/ui";
 
 let bodyLockCount = 0;
 let lockedScrollY = 0;
@@ -21,11 +21,11 @@ function lockBodyScroll() {
   prevBodyTop = document.body.style.top;
   prevBodyWidth = document.body.style.width;
 
-  // Strong scroll lock (prevents wheel/touch from scrolling the page behind).
   document.body.style.overflow = "hidden";
   document.body.style.position = "fixed";
   document.body.style.top = `-${lockedScrollY}px`;
   document.body.style.width = "100%";
+  document.documentElement.setAttribute("data-orivona-modal-open", "");
 }
 
 function unlockBodyScroll() {
@@ -36,6 +36,7 @@ function unlockBodyScroll() {
   document.body.style.position = prevBodyPosition;
   document.body.style.top = prevBodyTop;
   document.body.style.width = prevBodyWidth;
+  document.documentElement.removeAttribute("data-orivona-modal-open");
 
   window.scrollTo(0, lockedScrollY);
 }
@@ -46,11 +47,21 @@ type ModalProps = {
   onClose?: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** Wider panel for editors (e.g. davetiye). Default fits teklif formları. */
+  size?: "default" | "wide";
 };
 
-export function Modal({ open, title, onClose, children, footer }: ModalProps) {
+export function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+  size = "default",
+}: ModalProps) {
   const [mounted, setMounted] = useState(false);
   const titleId = useId();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -62,10 +73,9 @@ export function Modal({ open, title, onClose, children, footer }: ModalProps) {
 
     lockBodyScroll();
 
-    // Prevent scroll chaining on touch devices.
     const preventTouchMove = (e: TouchEvent) => {
-      // Allow scrolling inside the modal content; blocking body scroll is handled
-      // via fixed body styles, but this avoids edge cases on mobile browsers.
+      const scrollEl = scrollRef.current;
+      if (scrollEl?.contains(e.target as Node)) return;
       e.preventDefault();
     };
     document.addEventListener("touchmove", preventTouchMove, { passive: false });
@@ -89,50 +99,66 @@ export function Modal({ open, title, onClose, children, footer }: ModalProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mounted, onClose, open]);
 
+  const panelWidthClass =
+    size === "wide"
+      ? "w-[min(1400px,96vw)]"
+      : "w-[min(960px,96vw)]";
+
   const ui = useMemo(() => {
     if (!open) return null;
 
     return (
-      <div className="fixed inset-0" role="dialog" aria-modal aria-labelledby={titleId}>
+      <div
+        className="fixed inset-0 z-[9000] flex items-center justify-center p-6"
+        role="dialog"
+        aria-modal
+        aria-labelledby={titleId}
+        style={{
+          background: "rgba(0, 0, 0, 0.78)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+        onMouseDown={(e) => {
+          if (!onClose) return;
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
         <div
-          className="fixed inset-0 z-[9998] bg-[rgba(0,0,0,0.75)] backdrop-blur-[10px]"
-          onMouseDown={(e) => {
-            if (!onClose) return;
-            if (e.target === e.currentTarget) onClose();
-          }}
-        />
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4">
-          <div
-            className={`${glassCard} flex h-[100vh] w-[100vw] flex-col overflow-hidden rounded-none md:h-auto md:max-h-[90vh] md:w-[95vw] md:max-w-[1400px] md:rounded-2xl`}
-          >
-            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-              <h2 id={titleId} className="text-lg font-semibold text-white">
-                {title}
-              </h2>
-              <button
-                type="button"
-                className={btnSecondary}
-                onClick={onClose}
-                disabled={!onClose}
-              >
-                Kapat
-              </button>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
-              {children}
-            </div>
-
-            {footer ? (
-              <div className="shrink-0 border-t border-white/10 px-5 py-4">
-                {footer}
-              </div>
-            ) : null}
+          className={`relative z-[9010] flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[rgba(190,140,255,0.25)] bg-[rgba(20,14,32,0.98)] shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] max-md:h-[100vh] max-md:max-h-[100vh] max-md:w-full max-md:rounded-none ${panelWidthClass}`}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+            <h2 id={titleId} className="text-lg font-semibold text-white">
+              {title}
+            </h2>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={onClose}
+              disabled={!onClose}
+            >
+              Kapat
+            </button>
           </div>
+
+          <div
+            ref={scrollRef}
+            data-orivona-modal-scroll
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 max-md:max-h-[calc(100vh-5.5rem)]"
+            style={{ maxHeight: "calc(90vh - 6rem)" }}
+          >
+            {children}
+          </div>
+
+          {footer ? (
+            <div className="shrink-0 border-t border-white/10 px-5 py-4">
+              {footer}
+            </div>
+          ) : null}
         </div>
       </div>
     );
-  }, [children, footer, onClose, open, title, titleId]);
+  }, [children, footer, onClose, open, panelWidthClass, title, titleId]);
 
   if (!open) return null;
   if (!mounted) return null;

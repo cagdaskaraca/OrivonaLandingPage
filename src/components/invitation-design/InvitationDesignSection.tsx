@@ -9,7 +9,7 @@ import {
 import { InvitationDesignPreview } from "@/src/components/invitation-design/InvitationDesignPreview";
 import { SimpleInvitationEditor } from "@/src/components/invitation-design/SimpleInvitationEditor";
 import { AttachInvitationToRequestModal } from "@/src/components/invitation-design/AttachInvitationToRequestModal";
-import { Modal } from "@/src/components/ui/Modal";
+import { InvitationDesignEditorModal } from "@/src/components/invitation-design/InvitationDesignEditorModal";
 import {
   createInvitationDesign,
   deleteInvitationDesign,
@@ -203,33 +203,60 @@ export function InvitationDesignSection() {
         )}
       </EventOsNeedPlan>
 
-      <Modal
+      <InvitationDesignEditorModal
         open={modalOpen}
         title={
           editing
-            ? "Tasarımı düzenle"
+            ? "Davetiye tasarımını düzenle"
             : createMode === "upload"
               ? "Dosya yükle"
-              : "Basit editörle tasarla"
+              : "Davetiye tasarla"
         }
         onClose={saving ? undefined : closeModal}
+        footer={
+          activePlanId != null ? (
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                className={`${btnSecondary} w-full sm:w-auto`}
+                onClick={closeModal}
+                disabled={saving}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                className={`${btnPrimary} w-full sm:w-auto`}
+                disabled={saving}
+                onClick={() => void handleSave(activePlanId)}
+              >
+                {saving ? "Kaydediliyor…" : "Kaydet"}
+              </button>
+            </div>
+          ) : null
+        }
       >
         {activePlanId != null ? (
-            <div className="space-y-4">
-              <label className="block text-sm">
-                <span className="mb-1.5 block text-xs text-zinc-400">Başlık</span>
-                <input
-                  className={inputClass}
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                />
-              </label>
-              {createMode === "editor" ? (
-                <SimpleInvitationEditor
-                  value={editorJson}
-                  onChange={setEditorJson}
-                />
-              ) : (
+          <div className="space-y-4">
+            {createMode === "editor" ? (
+              <SimpleInvitationEditor
+                designTitle={title}
+                onDesignTitleChange={setTitle}
+                value={editorJson}
+                onChange={setEditorJson}
+              />
+            ) : (
+              <>
+                <label className="block text-sm">
+                  <span className="mb-1.5 block text-xs text-zinc-400">
+                    Tasarım adı
+                  </span>
+                  <input
+                    className={inputClass}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </label>
                 <label className="block text-sm">
                   <span className="mb-1.5 block text-xs text-zinc-400">
                     Görsel veya PDF
@@ -246,25 +273,18 @@ export function InvitationDesignSection() {
                     </p>
                   ) : null}
                 </label>
-              )}
-              {error ? (
-                <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
-                  {error}
-                </p>
-              ) : null}
-              <button
-                type="button"
-                className={`${btnPrimary} w-full`}
-                disabled={saving}
-                onClick={() => void handleSave(activePlanId)}
-              >
-                {saving ? "Kaydediliyor…" : "Kaydet"}
-              </button>
-            </div>
+              </>
+            )}
+            {error ? (
+              <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                {error}
+              </p>
+            ) : null}
+          </div>
         ) : (
           <p className="text-sm text-zinc-500">Önce bir etkinlik planı seçin.</p>
         )}
-      </Modal>
+      </InvitationDesignEditorModal>
 
       <AttachInvitationToRequestModal
         design={attachDesign}

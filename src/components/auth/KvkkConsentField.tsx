@@ -78,7 +78,7 @@ function KvkkModal({
   return (
     <>
       <div
-        className="fixed inset-0 z-[9998]"
+        className="fixed inset-0 z-[9000]"
         style={{
           backgroundColor: "rgba(0, 0, 0, 0.65)",
           backdropFilter: "blur(4px)",
@@ -87,7 +87,7 @@ function KvkkModal({
         aria-hidden
         onClick={onClose}
       />
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none sm:p-6">
+      <div className="fixed inset-0 z-[9010] flex items-center justify-center p-4 pointer-events-none sm:p-6">
         <div
           role="dialog"
           aria-modal

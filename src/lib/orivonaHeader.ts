@@ -3,10 +3,10 @@
 export const ORIVONA_HEADER_H_PX = 88;
 
 export const orivonaHeaderShellFixed =
-  "pointer-events-auto fixed top-0 left-0 right-0 isolate z-[200] w-full border-b border-white/10 bg-[#06040c]/90 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
+  "pointer-events-auto fixed top-0 left-0 right-0 isolate z-[100] w-full border-b border-white/10 bg-[#06040c]/90 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
 
 export const orivonaHeaderShellRelative =
-  "pointer-events-auto relative isolate z-[200] w-full border-b border-white/10 bg-[#06040c]/90 backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
+  "pointer-events-auto relative isolate z-[100] w-full border-b border-white/10 bg-[#06040c]/90 backdrop-blur-xl supports-[backdrop-filter]:bg-[#06040c]/80";
 
 export const orivonaHeaderInner =
   "pointer-events-auto relative z-[1] mx-auto flex h-[var(--orivona-header-h)] min-h-[var(--orivona-header-h)] max-h-[var(--orivona-header-h)] w-full max-w-6xl items-center gap-3 px-4 sm:gap-4 sm:px-6";

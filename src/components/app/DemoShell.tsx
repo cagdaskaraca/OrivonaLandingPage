@@ -35,7 +35,7 @@ export function DemoShell({
         showSearch={stickyNav}
       />
       <main
-        className={`relative z-10 ${
+        className={`relative ${
           mainClassName ?? "mx-auto max-w-6xl px-4 sm:px-6"
         } ${
           stickyNav

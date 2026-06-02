@@ -11,6 +11,8 @@ type InvitationDesignPreviewProps = {
   editorJson?: InvitationEditorJson | null;
   className?: string;
   compact?: boolean;
+  /** Opak, editör içi canlı önizleme */
+  variant?: "default" | "editor";
 };
 
 export function InvitationDesignPreview({
@@ -18,6 +20,7 @@ export function InvitationDesignPreview({
   editorJson: editorJsonProp,
   className = "",
   compact = false,
+  variant = "default",
 }: InvitationDesignPreviewProps) {
   const fileUrl = invitationDesignPreviewUrl(design);
   const editorJson =
@@ -59,15 +62,22 @@ export function InvitationDesignPreview({
     );
   }
 
-  const minH = compact ? "min-h-[160px]" : "min-h-[240px]";
+  const minH =
+    compact ? "min-h-[160px]" : variant === "editor" ? "min-h-0" : "min-h-[240px]";
+  const editorShell =
+    variant === "editor"
+      ? "border-violet-400/30 bg-[#0a0612] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]"
+      : "border-violet-400/25 bg-black";
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-violet-400/25 bg-black px-6 py-8 text-center ${minH} ${className}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border px-6 py-8 text-center ${editorShell} ${minH} ${className}`}
       style={{ backgroundColor: editorJson.backgroundColor }}
     >
       {editorJson.imageUrl ? (
-        <div className="absolute inset-0 opacity-30">
+        <div
+          className={`absolute inset-0 ${variant === "editor" ? "opacity-35" : "opacity-30"}`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={editorJson.imageUrl}

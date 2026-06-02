@@ -145,7 +145,7 @@ export function OBotWidget({ role }: OBotWidgetProps) {
 
   return (
     <div
-      className="orivona-obot-root pointer-events-none fixed z-[90] flex flex-col items-end gap-3"
+      className="orivona-obot-root pointer-events-none fixed z-[500] flex flex-col items-end gap-3"
       style={{
         right: "max(0.75rem, env(safe-area-inset-right))",
         bottom: "max(0.75rem, env(safe-area-inset-bottom))",

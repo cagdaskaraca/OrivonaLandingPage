@@ -385,6 +385,14 @@ html {
   }
 }
 
+/* Modal açıkken floating OBot arka plana karışmasın */
+html[data-orivona-modal-open] .orivona-obot-root,
+html[data-invitation-editor-open] .orivona-obot-root {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 @media (min-width: 1024px) {
   .orivona-pipeline-board.orivona-scroll-x {
     overflow-x: visible;

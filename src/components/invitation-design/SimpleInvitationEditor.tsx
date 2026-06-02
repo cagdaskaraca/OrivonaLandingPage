@@ -10,11 +10,15 @@ import { btnSecondary, inputClass } from "@/src/lib/ui";
 import type { InvitationDesign } from "@/src/lib/api/types";
 
 type SimpleInvitationEditorProps = {
+  designTitle: string;
+  onDesignTitleChange: (value: string) => void;
   value: InvitationEditorJson;
   onChange: (next: InvitationEditorJson) => void;
 };
 
 export function SimpleInvitationEditor({
+  designTitle,
+  onDesignTitleChange,
   value,
   onChange,
 }: SimpleInvitationEditorProps) {
@@ -44,8 +48,28 @@ export function SimpleInvitationEditor({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(500px,1fr)_minmax(500px,1fr)]">
-      <div className="order-1 space-y-4">
+    <div className="invitation-editor-grid grid grid-cols-1 gap-6 md:grid-cols-[minmax(320px,1fr)_minmax(360px,1fr)] md:gap-6">
+      <div className="order-1 min-w-0 space-y-4">
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-xs text-zinc-400">Tasarım adı</span>
+          <input
+            className={inputClass}
+            value={designTitle}
+            onChange={(e) => onDesignTitleChange(e.target.value)}
+            placeholder="Davetiyem"
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-xs text-zinc-400">Arka plan rengi</span>
+          <input
+            type="color"
+            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-[#120a1e]"
+            value={value.backgroundColor}
+            onChange={(e) =>
+              onChange({ ...value, backgroundColor: e.target.value })
+            }
+          />
+        </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Başlık</span>
           <input
@@ -57,7 +81,7 @@ export function SimpleInvitationEditor({
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Açıklama</span>
           <textarea
-            className={`${inputClass} min-h-[92px] resize-y`}
+            className={`${inputClass} min-h-[88px] resize-y`}
             value={value.description}
             onChange={(e) =>
               onChange({ ...value, description: e.target.value })
@@ -65,7 +89,7 @@ export function SimpleInvitationEditor({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Tarih</span>
+          <span className="mb-1.5 block text-xs text-zinc-400">Tarih metni</span>
           <input
             className={inputClass}
             value={value.dateText}
@@ -78,7 +102,7 @@ export function SimpleInvitationEditor({
             <span className="mb-1.5 block text-xs text-zinc-400">Yazı rengi</span>
             <input
               type="color"
-              className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+              className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-[#120a1e]"
               value={value.textColor}
               onChange={(e) => onChange({ ...value, textColor: e.target.value })}
             />
@@ -93,17 +117,6 @@ export function SimpleInvitationEditor({
             />
           </label>
         </div>
-        <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Arkaplan rengi</span>
-          <input
-            type="color"
-            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
-            value={value.backgroundColor}
-            onChange={(e) =>
-              onChange({ ...value, backgroundColor: e.target.value })
-            }
-          />
-        </label>
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Görsel yükleme</span>
           <input
@@ -130,15 +143,19 @@ export function SimpleInvitationEditor({
           ) : null}
         </label>
       </div>
-      <div className="order-2">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-violet-300/90">
-          Canlı Önizleme
+
+      <div className="order-2 min-w-0 md:sticky md:top-0 md:self-start">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-violet-200">
+          Canlı önizleme
         </p>
-        <InvitationDesignPreview
-          design={previewDesign}
-          editorJson={value}
-          className="mx-auto aspect-[4/5] w-full max-w-[560px]"
-        />
+        <div className="rounded-2xl border border-violet-400/20 bg-[#0a0612] p-3">
+          <InvitationDesignPreview
+            design={previewDesign}
+            editorJson={value}
+            variant="editor"
+            className="mx-auto aspect-[4/5] w-full max-w-full"
+          />
+        </div>
       </div>
     </div>
   );

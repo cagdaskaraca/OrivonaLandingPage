@@ -101,13 +101,13 @@ export function MarketplaceServiceCard({
     >
       {sponsored ? (
         <div
-          className="pointer-events-none absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-fuchsia-500/[0.06] via-transparent to-violet-500/[0.08]"
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-fuchsia-500/[0.06] via-transparent to-violet-500/[0.08]"
           aria-hidden
         />
       ) : null}
       {featured ? (
         <div
-          className="pointer-events-none absolute inset-0 z-[1] rounded-2xl bg-gradient-to-br from-amber-400/[0.07] via-transparent to-violet-500/[0.08]"
+          className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-amber-400/[0.07] via-transparent to-violet-500/[0.08]"
           aria-hidden
         />
       ) : null}
@@ -130,7 +130,7 @@ export function MarketplaceServiceCard({
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#06040c]/75 via-[#06040c]/10 to-[#06040c]/25"
           aria-hidden
         />
-        <div className="pointer-events-none absolute left-3 top-3 z-10 flex flex-wrap gap-1.5">
+        <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1.5">
           {sponsored ? (
             <span className={sponsoredBadgeClass}>Sponsorlu</span>
           ) : null}
@@ -148,7 +148,7 @@ export function MarketplaceServiceCard({
           <button
             type="button"
             aria-label={isFavorite ? "Favoriden çıkar" : "Favoriye ekle"}
-            className="absolute right-3 top-3 z-20 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
+            className="absolute right-3 top-3 z-[1] rounded-full border border-white/20 bg-black/50 px-2.5 py-1 text-sm backdrop-blur-md transition hover:bg-black/70 disabled:opacity-50"
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -160,7 +160,7 @@ export function MarketplaceServiceCard({
           </button>
         ) : null}
       </div>
-      <div className="relative z-[2] flex min-h-0 flex-1 flex-col p-5">
+      <div className="relative flex min-h-0 flex-1 flex-col p-5">
         <div className="flex min-h-0 flex-1 flex-col gap-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
