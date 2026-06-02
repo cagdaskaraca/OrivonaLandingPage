@@ -19,7 +19,7 @@ import { EventOsRemindersSection } from "@/src/components/event-os/EventOsRemind
 import { EventOsRsvpSection } from "@/src/components/event-os/EventOsRsvpSection";
 import { EventOsSeatingSection } from "@/src/components/event-os/EventOsSeatingSection";
 import { EventPlansSection } from "@/src/components/event-os/EventPlansSection";
-import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
+import type { DashboardNavGroup, DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createCustomerEventRequest,
@@ -43,7 +43,7 @@ import type {
 import { useAuth } from "@/src/contexts/AuthContext";
 import { DashboardHelpPanel } from "@/src/components/help/DashboardHelpPanel";
 import { useDashboardHashScroll } from "@/src/hooks/useDashboardHashScroll";
-import { notifyDashboardLayoutReady } from "@/src/lib/scrollToDashboardSection";
+import { notifyDashboardLayoutReady, scrollToHashWhenReady } from "@/src/lib/scrollToDashboardSection";
 import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSection";
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
@@ -57,6 +57,8 @@ import {
   orivonaDashboardAnchor,
   selectClass,
 } from "@/src/lib/ui";
+
+const ENABLE_EVENT_BOARD = false;
 
 const EVENT_REQUEST_STATUS_OPTIONS = [
   { value: "", label: "Değiştirme" },
@@ -134,6 +136,20 @@ function DashboardContentInner() {
     if (!loadingList && !loadingPlans) {
       notifyDashboardLayoutReady();
     }
+  }, [loadingList, loadingPlans]);
+
+  useEffect(() => {
+    if (ENABLE_EVENT_BOARD) return;
+    if (loadingList || loadingPlans) return;
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#event-os-board") return;
+
+    // Prevent access to Event Board section via direct hash navigation.
+    scrollToHashWhenReady("#dashboard-help", {
+      highlight: true,
+      forceSameHash: true,
+      updateHash: true,
+    });
   }, [loadingList, loadingPlans]);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -269,57 +285,74 @@ function DashboardContentInner() {
     }
   }
 
-  const navItems: DashboardNavItem[] = [
-    { id: "dashboard-help", label: "Başlarken" },
-    { id: "dashboard-account", label: "Hesabım" },
-    { id: "dashboard-activity", label: "Son Aktiviteler" },
-    { id: "event-os-plans", label: "Etkinlik Planlarım" },
-    { id: "event-os-board", label: "Etkinlik Panosu" },
-    { id: "event-os-checklist", label: "Checklist" },
-    { id: "event-os-guests", label: "Davetliler" },
-    { id: "event-os-rsvp", label: "Katılım Durumu" },
-    { id: "event-os-seating", label: "Masa Planı" },
-    { id: "event-os-public-invite", label: "Ortak Davet Linki" },
-    { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
-    { id: "event-os-reminders", label: "Hatırlatmalar" },
-    { id: "dashboard-events", label: "Etkinlik Talepleri" },
-    { id: "dashboard-favorites", label: "Favoriler" },
-    { id: "dashboard-offers", label: "Tekliflerim" },
-    { id: "dashboard-reservations", label: "Rezervasyonlarım" },
-    { id: "dashboard-messages", label: "Mesajlar" },
-    { id: "dashboard-notifications", label: "Bildirimler" },
+  const navGroups: DashboardNavGroup[] = [
+    {
+      title: "Başlarken",
+      items: [{ id: "dashboard-help", label: "Başlarken" }],
+    },
+    {
+      title: "Etkinlik Yönetimi",
+      items: [
+        { id: "event-os-plans", label: "Etkinlik Planlarım" },
+        ...(ENABLE_EVENT_BOARD
+          ? [{ id: "event-os-board", label: "Etkinlik Panosu" } as const]
+          : []),
+        { id: "event-os-checklist", label: "Checklist" },
+        { id: "event-os-reminders", label: "Hatırlatmalar" },
+      ],
+    },
+    {
+      title: "Davetli Yönetimi",
+      items: [
+        { id: "event-os-guests", label: "Davetliler" },
+        { id: "event-os-rsvp", label: "Katılım Durumu" },
+        { id: "event-os-seating", label: "Masa Planı" },
+        { id: "event-os-public-invite", label: "Ortak Davet Linki" },
+        { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
+      ],
+    },
+    {
+      title: "Tedarikçi / Teklifler",
+      items: [
+        { id: "nav-marketplace", label: "Marketplace", href: "/marketplace" },
+        { id: "dashboard-events", label: "Etkinlik Talepleri" },
+        { id: "dashboard-offers", label: "Tekliflerim" },
+        { id: "dashboard-reservations", label: "Rezervasyonlarım" },
+        { id: "dashboard-favorites", label: "Favoriler" },
+      ],
+    },
+    {
+      title: "İletişim",
+      items: [
+        { id: "dashboard-messages", label: "Mesajlar" },
+        { id: "dashboard-notifications", label: "Bildirimler" },
+      ],
+    },
+    {
+      title: "Hesap",
+      items: [
+        { id: "dashboard-account", label: "Hesabım" },
+        { id: "nav-account", label: "Profil Düzenle", href: "/account" },
+        {
+          id: "nav-logout",
+          label: "Çıkış",
+          onClick: () => {
+            logout();
+            window.location.href = "/login";
+          },
+        },
+      ],
+    },
   ];
 
-  const toolbar = (
-    <>
-      <button
-        type="button"
-        className={btnSecondary}
-        onClick={() => {
-          logout();
-          window.location.href = "/login";
-        }}
-      >
-        Çıkış
-      </button>
-      <Link href="/account" className={btnSecondary}>
-        Profil düzenle
-      </Link>
-      <Link href="/marketplace" className={btnSecondary}>
-        Marketplace
-      </Link>
-      <Link href="/event-wizard" className={btnSecondary}>
-        Etkinlik Sihirbazı
-      </Link>
-    </>
-  );
+  const navItems: DashboardNavItem[] = navGroups.flatMap((g) => g.items);
 
   return (
     <DashboardLayout
       title="Müşteri Paneli"
       subtitle="Profiliniz, Smart Event OS ve etkinlik talepleriniz."
       navItems={navItems}
-      toolbar={toolbar}
+      navGroups={navGroups}
     >
       <MobileHomeSummary />
 
@@ -373,9 +406,11 @@ function DashboardContentInner() {
         <EventPlansSection />
       </DashboardSection>
 
-      <DashboardSection id="event-os-board" title="Etkinlik Panosu">
-        <EventBoardSection />
-      </DashboardSection>
+      {ENABLE_EVENT_BOARD ? (
+        <DashboardSection id="event-os-board" title="Etkinlik Panosu">
+          <EventBoardSection />
+        </DashboardSection>
+      ) : null}
 
       <DashboardSection id="event-os-checklist" title="Checklist">
         <EventOsChecklistSection />

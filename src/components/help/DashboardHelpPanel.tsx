@@ -1,11 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import {
-  CUSTOMER_HELP_CARDS,
-  VENDOR_HELP_CARDS,
-  type DashboardHelpCard,
-} from "@/src/lib/helpContent";
+import { scrollToHashWhenReady } from "@/src/lib/scrollToDashboardSection";
+import { VENDOR_HELP_CARDS, type DashboardHelpCard } from "@/src/lib/helpContent";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 import { OnboardingHint } from "@/src/components/help/OnboardingHint";
 
@@ -49,22 +46,85 @@ function HelpCard({ card }: { card: DashboardHelpCard }) {
 }
 
 export function DashboardHelpPanel({ role }: DashboardHelpPanelProps) {
-  const cards = role === "customer" ? CUSTOMER_HELP_CARDS : VENDOR_HELP_CARDS;
-
   return (
     <section id="dashboard-help" className="scroll-mt-24 mb-8">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-white">Başlarken</h2>
         <p className="mt-1 text-sm text-zinc-400">
           {role === "customer"
-            ? "Organizasyon planınız, teklif ve rezervasyon süreçleri için önerilen adımlar."
+            ? "Sırayla ilerleyebileceğiniz kısa bir yol haritası."
             : "Hizmet ilanı, müsaitlik ve teklif akışı için önerilen adımlar (hizmet sağlayıcı işletme)."}
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <HelpCard key={card.id} card={card} />
-        ))}
+        {role === "customer" ? (
+          <>
+            {[
+              {
+                id: "customer-roadmap-1",
+                title: "Etkinlik planını oluştur",
+                description:
+                  "Önce etkinlik planınızı oluşturun ve aktif planı seçin. Checklist ve pano bu plana göre çalışır.",
+                cta: "Planlara git",
+                sectionId: "event-os-plans",
+              },
+              {
+                id: "customer-roadmap-2",
+                title: "Tedarikçi tekliflerini yönet",
+                description:
+                  "Marketplace’ten tedarikçi bulun, teklif isteyin ve gelen teklifleri yönetip kabul edin.",
+                cta: "Tekliflere git",
+                sectionId: "dashboard-offers",
+              },
+              {
+                id: "customer-roadmap-3",
+                title: "Davetlilerini ekle",
+                description:
+                  "Davetli listesini oluşturun, RSVP durumlarını takip edin ve paylaşıma hazır hale getirin.",
+                cta: "Davetlilere git",
+                sectionId: "event-os-guests",
+              },
+              {
+                id: "customer-roadmap-4",
+                title: "Masa planını hazırla",
+                description:
+                  "Masa düzeninizi kurun ve davetlileri masalara yerleştirerek hızlı bir plan çıkarın.",
+                cta: "Masa planına git",
+                sectionId: "event-os-seating",
+              },
+              {
+                id: "customer-roadmap-5",
+                title: "Ortak davet linkini paylaş",
+                description:
+                  "Ortak davet linki ile davetliler kendilerini doğrular ve RSVP süreci otomatikleşir.",
+                cta: "Davet linkine git",
+                sectionId: "event-os-public-invite",
+              },
+            ].map((card) => (
+              <div key={card.id} className={`${glassCard} flex flex-col`}>
+                <h3 className="text-sm font-semibold text-white">{card.title}</h3>
+                <p className="mt-2 flex-1 text-xs leading-relaxed text-zinc-400 sm:text-sm">
+                  {card.description}
+                </p>
+                <button
+                  type="button"
+                  className={`${btnSecondary} mt-4 text-xs`}
+                  onClick={() =>
+                    scrollToHashWhenReady(`#${card.sectionId}`, {
+                      highlight: true,
+                      forceSameHash: true,
+                      updateHash: true,
+                    })
+                  }
+                >
+                  {card.cta}
+                </button>
+              </div>
+            ))}
+          </>
+        ) : (
+          VENDOR_HELP_CARDS.map((card) => <HelpCard key={card.id} card={card} />)
+        )}
       </div>
     </section>
   );

@@ -7,6 +7,13 @@ import { orivonaScrollY } from "@/src/lib/ui";
 export type DashboardNavItem = {
   id: string;
   label: string;
+  href?: string;
+  onClick?: () => void;
+};
+
+export type DashboardNavGroup = {
+  title: string;
+  items: DashboardNavItem[];
 };
 
 /** IntersectionObserver only accepts px/% — no calc(), rem, or CSS variables. */
@@ -14,6 +21,7 @@ const DASHBOARD_SECTION_ROOT_MARGIN = "-120px 0px -60% 0px";
 
 type DashboardSidebarProps = {
   items: DashboardNavItem[];
+  groups?: DashboardNavGroup[];
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
@@ -22,6 +30,7 @@ type DashboardSidebarProps = {
 
 export function DashboardSidebar({
   items,
+  groups,
   collapsed,
   onToggleCollapsed,
   mobileOpen,
@@ -29,14 +38,24 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const [activeId, setActiveId] = useState(items[0]?.id ?? "");
 
-  const scrollToSection = useCallback(
-    (id: string) => {
-      scrollToHashWhenReady(`#${id}`, {
+  const handleItemClick = useCallback(
+    (item: DashboardNavItem) => {
+      if (item.onClick) {
+        item.onClick();
+        onMobileOpenChange(false);
+        return;
+      }
+      if (item.href) {
+        window.location.href = item.href;
+        onMobileOpenChange(false);
+        return;
+      }
+      scrollToHashWhenReady(`#${item.id}`, {
         highlight: false,
         forceSameHash: true,
         updateHash: true,
       });
-      setActiveId(id);
+      setActiveId(item.id);
       onMobileOpenChange(false);
     },
     [onMobileOpenChange],
@@ -77,33 +96,55 @@ export function DashboardSidebar({
     return () => observer?.disconnect();
   }, [items]);
 
-  const navButtons = (
-    <nav className="flex flex-col gap-1 p-2">
-      {items.map((item) => {
-        const active = activeId === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            title={collapsed ? item.label : undefined}
-            onClick={() => scrollToSection(item.id)}
-            className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-              active
-                ? "bg-violet-500/25 text-white ring-1 ring-inset ring-violet-400/35"
-                : "text-zinc-400 hover:bg-white/[0.05] hover:text-violet-100"
-            }`}
-          >
-            {collapsed ? (
-              <span className="block text-center text-xs">
-                {item.label.charAt(0)}
-              </span>
-            ) : (
-              item.label
-            )}
-          </button>
-        );
-      })}
+  const renderGroups = (groupsToRender: DashboardNavGroup[]) => (
+    <nav className="flex flex-col gap-2 p-2">
+      {groupsToRender.map((group) => (
+        <div key={group.title} className="space-y-1">
+          {!collapsed ? (
+            <p className="px-3 pt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              {group.title}
+            </p>
+          ) : null}
+          <div className="flex flex-col gap-1">
+            {group.items.map((item) => {
+              const active = activeId === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  title={collapsed ? item.label : undefined}
+                  onClick={() => handleItemClick(item)}
+                  className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+                    active
+                      ? "bg-violet-500/25 text-white ring-1 ring-inset ring-violet-400/35"
+                      : "text-zinc-400 hover:bg-white/[0.05] hover:text-violet-100"
+                  }`}
+                >
+                  {collapsed ? (
+                    <span className="block text-center text-xs">
+                      {item.label.charAt(0)}
+                    </span>
+                  ) : (
+                    item.label
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
+  );
+
+  const navButtons = renderGroups(
+    groups?.length
+      ? groups
+      : [
+          {
+            title: "Menü",
+            items,
+          },
+        ],
   );
 
   return (

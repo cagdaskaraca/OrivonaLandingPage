@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { DemoShell } from "@/src/components/app/DemoShell";
 import {
   DashboardSidebar,
+  type DashboardNavGroup,
   type DashboardNavItem,
 } from "@/src/components/dashboard/DashboardSidebar";
 import { DashboardMobileNav } from "@/src/components/premium/DashboardMobileNav";
@@ -12,6 +13,7 @@ type DashboardLayoutProps = {
   title: string;
   subtitle?: string;
   navItems: DashboardNavItem[];
+  navGroups?: DashboardNavGroup[];
   toolbar?: ReactNode;
   children: ReactNode;
 };
@@ -20,6 +22,7 @@ export function DashboardLayout({
   title,
   subtitle,
   navItems,
+  navGroups,
   toolbar,
   children,
 }: DashboardLayoutProps) {
@@ -32,6 +35,7 @@ export function DashboardLayout({
       <div className="flex flex-col gap-0 lg:flex-row lg:items-start lg:gap-8">
         <DashboardSidebar
           items={navItems}
+          groups={navGroups}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           mobileOpen={mobileOpen}
