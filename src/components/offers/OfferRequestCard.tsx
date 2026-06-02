@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { InvitationDesignDetailPanel } from "@/src/components/invitation-design/InvitationDesignDetailPanel";
+import { PlaylistDetailPanel } from "@/src/components/playlist/PlaylistDetailPanel";
 import { OfferStatusBadge } from "@/src/components/offers/OfferStatusBadge";
 import type { OfferRequest } from "@/src/lib/api/types";
+import { isInvitationCategory } from "@/src/lib/invitationDesign";
+import { isMusicCategory } from "@/src/lib/playlist";
 import {
   formatOfferDate,
   offerResponseDescription,
@@ -10,15 +14,27 @@ import {
 type OfferRequestCardProps = {
   offer: OfferRequest;
   variant: "customer" | "vendor";
+  onUploadRevision?: () => void;
+  uploadingRevision?: boolean;
 };
 
-export function OfferRequestCard({ offer, variant }: OfferRequestCardProps) {
+export function OfferRequestCard({
+  offer,
+  variant,
+  onUploadRevision,
+  uploadingRevision,
+}: OfferRequestCardProps) {
   const price = offerResponsePrice(offer);
   const responseText = offerResponseDescription(offer);
   const serviceHref =
     offer.vendorServiceId != null
       ? `/services/${encodeURIComponent(String(offer.vendorServiceId))}`
       : null;
+  const showInvitation =
+    isInvitationCategory(offer.category) ||
+    isInvitationCategory(offer.serviceTitle);
+  const showPlaylist =
+    isMusicCategory(offer.category) || isMusicCategory(offer.serviceTitle);
 
   return (
     <li className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-sm">
@@ -45,6 +61,20 @@ export function OfferRequestCard({ offer, variant }: OfferRequestCardProps) {
 
       {offer.message ? (
         <p className="mt-3 leading-relaxed text-zinc-300">{offer.message}</p>
+      ) : null}
+
+      {showInvitation && offer.invitationDesign ? (
+        <InvitationDesignDetailPanel
+          design={offer.invitationDesign}
+          revisions={offer.invitationRevisions}
+          variant={variant}
+          onUploadRevision={variant === "vendor" ? onUploadRevision : undefined}
+          uploadingRevision={uploadingRevision}
+        />
+      ) : null}
+
+      {showPlaylist ? (
+        <PlaylistDetailPanel items={offer.playlist} variant={variant} />
       ) : null}
 
       <dl className="mt-3 grid gap-2 text-xs text-zinc-400 sm:grid-cols-2">

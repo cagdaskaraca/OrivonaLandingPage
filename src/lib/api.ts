@@ -86,6 +86,24 @@ export {
   submitServiceReview,
 } from "@/src/lib/api/index";
 export {
+  fetchEventPlanPlaylist,
+  createPlaylistItem,
+  updatePlaylistItem,
+  deletePlaylistItem,
+  attachPlaylistToEventRequest,
+  normalizePlaylistItem,
+} from "@/src/lib/api/eventPlaylist";
+export {
+  fetchInvitationDesigns,
+  createInvitationDesign,
+  updateInvitationDesign,
+  deleteInvitationDesign,
+  uploadInvitationDesignFile,
+  attachInvitationDesignToEventRequest,
+  uploadVendorInvitationRevision,
+  normalizeInvitationDesign,
+} from "@/src/lib/api/invitationDesigns";
+export {
   fetchMyEventPlans,
   fetchEventPlanById,
   createEventPlan,

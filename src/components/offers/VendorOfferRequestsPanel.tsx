@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { OfferRequestCard } from "@/src/components/offers/OfferRequestCard";
 import { VendorSendOfferModal } from "@/src/components/offers/VendorSendOfferModal";
+import { VendorInvitationRevisionModal } from "@/src/components/invitation-design/VendorInvitationRevisionModal";
+import { isInvitationCategory } from "@/src/lib/invitationDesign";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -36,6 +38,9 @@ export function VendorOfferRequestsPanel() {
     null,
   );
   const [rejectingId, setRejectingId] = useState<string | number | null>(null);
+  const [revisionRequestId, setRevisionRequestId] = useState<
+    string | number | null
+  >(null);
 
   async function handleRejectRequest(request: OfferRequest) {
     if (request.id == null) return;
@@ -108,9 +113,22 @@ export function VendorOfferRequestsPanel() {
             const canAct = canVendorActOnRequest(o.status) && o.id != null;
             const busy = rejectingId === o.id;
 
+            const requestId = o.eventRequestId ?? o.id;
+            const showInvitation =
+              isInvitationCategory(o.category) ||
+              isInvitationCategory(o.serviceTitle);
+
             return (
               <li key={String(o.id)}>
-                <OfferRequestCard offer={o} variant="vendor" />
+                <OfferRequestCard
+                  offer={o}
+                  variant="vendor"
+                  onUploadRevision={
+                    showInvitation && requestId != null
+                      ? () => setRevisionRequestId(requestId)
+                      : undefined
+                  }
+                />
                 {canAct ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
@@ -143,6 +161,16 @@ export function VendorOfferRequestsPanel() {
         onClose={() => setSendModalRequest(null)}
         onSuccess={() => {
           toast.success("Fiyatlı teklif müşteriye gönderildi.");
+          void load();
+        }}
+      />
+
+      <VendorInvitationRevisionModal
+        requestId={revisionRequestId}
+        open={revisionRequestId != null}
+        onClose={() => setRevisionRequestId(null)}
+        onSuccess={() => {
+          toast.success("Revizyon yüklendi.");
           void load();
         }}
       />

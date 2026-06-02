@@ -146,9 +146,78 @@ export type FavoriteItem = {
   categoryName?: string;
 };
 
+export type InvitationEditorJson = {
+  backgroundColor: string;
+  title: string;
+  description: string;
+  dateText: string;
+  textColor: string;
+  fontSize: number;
+  imageUrl?: string | null;
+};
+
+export type InvitationDesign = {
+  id?: string | number;
+  eventPlanId?: string | number;
+  title?: string;
+  status?: string;
+  sourceType?: "Editor" | "Upload" | string;
+  designJson?: InvitationEditorJson | string;
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+  previewUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type InvitationRevision = {
+  id?: string | number;
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+  note?: string;
+  createdAt?: string;
+  uploadedBy?: string;
+};
+
+export type CreateInvitationDesignPayload = {
+  title: string;
+  sourceType: "Editor" | "Upload";
+  status?: string;
+  designJson?: string;
+  fileUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+};
+
+export type UpdateInvitationDesignPayload = Partial<CreateInvitationDesignPayload>;
+
+export type PlaylistItem = {
+  id?: string | number;
+  eventPlanId?: string | number;
+  trackTitle?: string;
+  songTitle?: string;
+  title?: string;
+  artist?: string;
+  link?: string;
+  moment?: string;
+  note?: string;
+  createdAt?: string;
+};
+
+export type PlaylistItemFormPayload = {
+  trackTitle: string;
+  artist: string;
+  link: string;
+  moment: string;
+  note?: string;
+};
+
 export type OfferRequest = {
   id?: string | number;
   offerId?: string | number;
+  eventRequestId?: string | number;
   vendorServiceId?: string | number;
   serviceTitle?: string;
   vendorName?: string;
@@ -157,6 +226,8 @@ export type OfferRequest = {
   guestCount?: number;
   eventDate?: string;
   status?: string;
+  category?: string;
+  eventPlanId?: string | number;
   vendorOfferPrice?: number;
   vendorOfferDescription?: string;
   offeredPrice?: number;
@@ -165,6 +236,9 @@ export type OfferRequest = {
   description?: string;
   validUntil?: string;
   createdAt?: string;
+  invitationDesign?: InvitationDesign;
+  invitationRevisions?: InvitationRevision[];
+  playlist?: PlaylistItem[];
 };
 
 export type CreateOfferRequestPayload = {
@@ -172,6 +246,15 @@ export type CreateOfferRequestPayload = {
   message: string;
   eventDate: string;
   guestCount: number;
+  /** Linked event plan; omit or null for standalone request. */
+  eventPlanId?: string | number | null;
+  category?: string;
+  city?: string;
+  district?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  /** Backend field name for request note. */
+  note?: string;
 };
 
 export type SendVendorOfferPayload = {
@@ -455,6 +538,10 @@ export type EventRequest = {
   notes?: string;
   description?: string;
   createdAt?: string;
+  eventPlanId?: string | number;
+  invitationDesign?: InvitationDesign;
+  invitationRevisions?: InvitationRevision[];
+  playlist?: PlaylistItem[];
 };
 
 /** GET/PUT /event-requests/{id} envelope */

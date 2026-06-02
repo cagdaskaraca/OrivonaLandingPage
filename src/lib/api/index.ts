@@ -14,6 +14,8 @@ import {
   buildQuery,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import { extractInvitationFields } from "@/src/lib/api/invitationDesigns";
+import { extractPlaylistFields } from "@/src/lib/api/eventPlaylist";
 import {
   VendorSectionLoadError,
   vendorGetWithRetry,
@@ -380,7 +382,11 @@ export function extractEventRequest(
   assertEnvelopeSuccess(envelope);
   const payload = envelope.data;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
-    return normalizeEventRequest(payload);
+    return {
+      ...normalizeEventRequest(payload),
+      ...extractInvitationFields(payload),
+      ...extractPlaylistFields(payload),
+    };
   }
   throw new Error("Geçersiz etkinlik talebi yanıtı.");
 }

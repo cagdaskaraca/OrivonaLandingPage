@@ -6,6 +6,8 @@ import {
   apiPutRaw,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import { extractInvitationFields } from "@/src/lib/api/invitationDesigns";
+import { extractPlaylistFields } from "@/src/lib/api/eventPlaylist";
 import { vendorGetWithRetry } from "@/src/lib/api/vendorDashboardFetch";
 import { flattenAvailabilityPayload } from "@/src/lib/availability";
 import { CUSTOMER_DEFAULT_ZERO_SUMMARY } from "@/src/lib/customerDashboard";
@@ -262,9 +264,14 @@ function normalizeOffer(raw: unknown): OfferRequest {
     recordStr(o, "validUntil", "ValidUntil") ??
     (nested ? recordStr(nested, "validUntil", "ValidUntil") : undefined);
 
+  const invitation = extractInvitationFields(o);
+  const playlistFields = extractPlaylistFields(o);
+
   return {
     id: requestId,
     offerId: vendorOfferId,
+    eventRequestId:
+      recordId(o, "eventRequestId", "EventRequestId") ?? requestId,
     vendorServiceId: recordId(o, "vendorServiceId", "VendorServiceId"),
     serviceTitle: recordStr(o, "serviceTitle", "ServiceTitle"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
@@ -273,6 +280,8 @@ function normalizeOffer(raw: unknown): OfferRequest {
     guestCount: recordNum(o, "guestCount", "GuestCount"),
     eventDate: recordStr(o, "eventDate", "EventDate"),
     status: recordStr(o, "status", "Status"),
+    category: recordStr(o, "category", "Category"),
+    eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
     vendorOfferPrice,
     vendorOfferDescription,
     offeredPrice: vendorOfferPrice,
@@ -281,7 +290,17 @@ function normalizeOffer(raw: unknown): OfferRequest {
     description: vendorOfferDescription,
     validUntil,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
+    ...invitation,
+    ...playlistFields,
   };
+}
+
+function toEventDateIso(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes("T")) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return `${trimmed}T00:00:00`;
+  return trimmed;
 }
 
 export async function createOfferRequest(
@@ -290,8 +309,15 @@ export async function createOfferRequest(
   const body = await apiPostRaw<ApiEnvelope>("/offer-requests", {
     vendorServiceId: payload.vendorServiceId,
     message: payload.message,
-    eventDate: payload.eventDate || null,
+    eventDate: toEventDateIso(payload.eventDate),
     guestCount: payload.guestCount,
+    eventPlanId: payload.eventPlanId ?? null,
+    category: payload.category ?? null,
+    city: payload.city ?? null,
+    district: payload.district ?? null,
+    budgetMin: payload.budgetMin ?? null,
+    budgetMax: payload.budgetMax ?? null,
+    note: payload.note ?? payload.message ?? null,
   });
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);

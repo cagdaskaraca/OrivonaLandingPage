@@ -29,6 +29,9 @@ import {
   fetchEventRequestById,
   updateCustomerEventRequest,
 } from "@/src/lib/api";
+import { attachInvitationDesignToEventRequest } from "@/src/lib/api/invitationDesigns";
+import { InvitationDesignPicker } from "@/src/components/invitation-design/InvitationDesignPicker";
+import { isInvitationCategory } from "@/src/lib/invitationDesign";
 import {
   formatUiErrorMessage,
   isApiNotFound,
@@ -48,6 +51,8 @@ import { ActivityFeedSection } from "@/src/components/premium/ActivityFeedSectio
 import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
 import { PublicEventPageSection } from "@/src/components/premium/PublicEventPageSection";
+import { InvitationDesignSection } from "@/src/components/invitation-design/InvitationDesignSection";
+import { EventPlaylistSection } from "@/src/components/playlist/EventPlaylistSection";
 import { NumericInput } from "@/src/components/ui/NumericInput";
 import {
   btnPrimary,
@@ -118,7 +123,7 @@ function eventRequestToForm(request: EventRequest): EventRequestFormPayload {
 }
 
 function DashboardContentInner() {
-  const { loadingPlans, bumpDataRefresh } = useEventOs();
+  const { loadingPlans, bumpDataRefresh, selectedPlanId } = useEventOs();
   const searchParams = useSearchParams();
   const conversationId = searchParams.get("conversation");
   const { user, logout } = useAuth();
@@ -129,6 +134,7 @@ function DashboardContentInner() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
   const [loadingList, setLoadingList] = useState(true);
+  const [invitationDesignId, setInvitationDesignId] = useState("");
 
   useDashboardHashScroll({ isLoading: loadingList || loadingPlans });
 
@@ -260,9 +266,20 @@ function DashboardContentInner() {
         setSuccessMessage("Etkinlik talebi güncellendi.");
         cancelEdit();
       } else {
-        await createCustomerEventRequest(form);
+        const created = await createCustomerEventRequest(form);
+        if (invitationDesignId.trim() && created.id != null) {
+          try {
+            await attachInvitationDesignToEventRequest(
+              created.id,
+              invitationDesignId,
+            );
+          } catch (attachErr) {
+            logApiError("Attach invitation to event request", attachErr);
+          }
+        }
         setSuccessMessage("Etkinlik talebi başarıyla oluşturuldu.");
         setForm(defaultForm());
+        setInvitationDesignId("");
       }
       await load();
     } catch (err) {
@@ -299,6 +316,7 @@ function DashboardContentInner() {
           : []),
         { id: "event-os-checklist", label: "Checklist" },
         { id: "event-os-reminders", label: "Hatırlatmalar" },
+        { id: "event-os-playlist", label: "Müzik Tercihleri" },
       ],
     },
     {
@@ -309,6 +327,7 @@ function DashboardContentInner() {
         { id: "event-os-seating", label: "Masa Planı" },
         { id: "event-os-public-invite", label: "Ortak Davet Linki" },
         { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
+        { id: "event-os-invitation-design", label: "Davetiye Tasarımı" },
       ],
     },
     {
@@ -422,6 +441,10 @@ function DashboardContentInner() {
         <EventOsChecklistSection />
       </DashboardSection>
 
+      <DashboardSection id="event-os-playlist" title="Müzik Tercihleri">
+        <EventPlaylistSection />
+      </DashboardSection>
+
       <DashboardSection id="event-os-guests" title="Davetliler">
         <EventOsGuestsSection />
       </DashboardSection>
@@ -440,6 +463,10 @@ function DashboardContentInner() {
 
       <DashboardSection id="event-os-public-page" title="Herkese Açık Etkinlik Sayfası">
         <PublicEventPageSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-invitation-design" title="Davetiye Tasarımı">
+        <InvitationDesignSection />
       </DashboardSection>
 
       <DashboardSection id="event-os-reminders" title="Hatırlatmalar">
@@ -590,6 +617,15 @@ function DashboardContentInner() {
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
           />
         </label>
+        {editingId == null &&
+        isInvitationCategory(form.eventType) &&
+        selectedPlanId != null ? (
+          <InvitationDesignPicker
+            eventPlanId={selectedPlanId}
+            value={invitationDesignId}
+            onChange={setInvitationDesignId}
+          />
+        ) : null}
         {successMessage ? (
           <p className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
             {successMessage}
