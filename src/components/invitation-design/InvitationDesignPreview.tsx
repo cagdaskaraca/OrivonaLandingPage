@@ -63,11 +63,11 @@ export function InvitationDesignPreview({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-violet-400/30 px-6 py-8 text-center shadow-[0_0_40px_rgba(139,92,246,0.12)] ${minH} ${className}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-violet-400/25 bg-black px-6 py-8 text-center ${minH} ${className}`}
       style={{ backgroundColor: editorJson.backgroundColor }}
     >
       {editorJson.imageUrl ? (
-        <div className="absolute inset-0 opacity-25">
+        <div className="absolute inset-0 opacity-30">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={editorJson.imageUrl}

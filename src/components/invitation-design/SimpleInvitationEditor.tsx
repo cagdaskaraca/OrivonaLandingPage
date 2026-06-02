@@ -44,19 +44,8 @@ export function SimpleInvitationEditor({
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="space-y-4">
-        <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Arka plan rengi</span>
-          <input
-            type="color"
-            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
-            value={value.backgroundColor}
-            onChange={(e) =>
-              onChange({ ...value, backgroundColor: e.target.value })
-            }
-          />
-        </label>
+    <div className="grid gap-6 lg:grid-cols-[minmax(500px,1fr)_minmax(500px,1fr)]">
+      <div className="order-1 space-y-4">
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Başlık</span>
           <input
@@ -68,7 +57,7 @@ export function SimpleInvitationEditor({
         <label className="block text-sm">
           <span className="mb-1.5 block text-xs text-zinc-400">Açıklama</span>
           <textarea
-            className={`${inputClass} min-h-[72px] resize-y`}
+            className={`${inputClass} min-h-[92px] resize-y`}
             value={value.description}
             onChange={(e) =>
               onChange({ ...value, description: e.target.value })
@@ -76,7 +65,7 @@ export function SimpleInvitationEditor({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Tarih metni</span>
+          <span className="mb-1.5 block text-xs text-zinc-400">Tarih</span>
           <input
             className={inputClass}
             value={value.dateText}
@@ -105,7 +94,18 @@ export function SimpleInvitationEditor({
           </label>
         </div>
         <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Görsel</span>
+          <span className="mb-1.5 block text-xs text-zinc-400">Arkaplan rengi</span>
+          <input
+            type="color"
+            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+            value={value.backgroundColor}
+            onChange={(e) =>
+              onChange({ ...value, backgroundColor: e.target.value })
+            }
+          />
+        </label>
+        <label className="block text-sm">
+          <span className="mb-1.5 block text-xs text-zinc-400">Görsel yükleme</span>
           <input
             type="file"
             accept="image/*"
@@ -130,11 +130,15 @@ export function SimpleInvitationEditor({
           ) : null}
         </label>
       </div>
-      <div>
+      <div className="order-2">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-violet-300/90">
-          Önizleme
+          Canlı Önizleme
         </p>
-        <InvitationDesignPreview design={previewDesign} editorJson={value} />
+        <InvitationDesignPreview
+          design={previewDesign}
+          editorJson={value}
+          className="mx-auto aspect-[4/5] w-full max-w-[560px]"
+        />
       </div>
     </div>
   );
