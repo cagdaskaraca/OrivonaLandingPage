@@ -98,6 +98,14 @@ function normalizeSummary(raw: unknown): DashboardSummary {
   return out;
 }
 
+function extractPayload(data: unknown): unknown {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return data;
+  const o = data as Record<string, unknown>;
+  const inner = o.data ?? o.Data;
+  if (inner != null && inner !== data) return extractPayload(inner);
+  return data;
+}
+
 export async function fetchVendorDashboardSummary(): Promise<DashboardSummary> {
   const body = await vendorGetWithRetry("/vendor/dashboard/summary", {
     sectionKey: "summary",
@@ -109,9 +117,24 @@ export async function fetchVendorDashboardSummary(): Promise<DashboardSummary> {
 export async function fetchCustomerDashboardSummary(): Promise<DashboardSummary> {
   return withOptionalNotFound(
     async () => {
-      const body = await apiGetRaw<ApiEnvelope>("/customer/dashboard/summary");
+      const body = await apiGetRaw<ApiEnvelope>("/customer/dashboard-summary");
       assertSuccess(body);
-      return normalizeSummary(body.data);
+      const payload = extractPayload(body.data) ?? body.data;
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        return CUSTOMER_DEFAULT_ZERO_SUMMARY;
+      }
+      const o = payload as Record<string, unknown>;
+      return {
+        totalOfferRequests:
+          recordNum(o, "totalRequestCount", "TotalRequestCount") ?? 0,
+        pendingOfferRequests:
+          recordNum(o, "pendingOfferCount", "PendingOfferCount") ?? 0,
+        totalReservations:
+          recordNum(o, "totalReservationCount", "TotalReservationCount") ?? 0,
+        upcomingReservations:
+          recordNum(o, "upcomingReservationCount", "UpcomingReservationCount") ?? 0,
+        totalFavorites: recordNum(o, "favoriteCount", "FavoriteCount") ?? 0,
+      };
     },
     CUSTOMER_DEFAULT_ZERO_SUMMARY,
     "Customer summary endpoint not available yet",
