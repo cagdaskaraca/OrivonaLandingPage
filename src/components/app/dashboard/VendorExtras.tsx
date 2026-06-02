@@ -20,6 +20,7 @@ import type {
 import { useToast } from "@/src/contexts/ToastContext";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
 import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
@@ -85,8 +86,13 @@ export function VendorReservationsPanel() {
               <div>
                 <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
                 <p className="text-zinc-400">
-                  {r.customerName} · {r.eventDate} · {r.status}
+                  {r.customerName} · {r.eventDate}
                 </p>
+                {r.status ? (
+                  <div className="mt-1.5">
+                    <StatusBadge status={r.status} context="vendor" />
+                  </div>
+                ) : null}
               </div>
               {r.id != null ? (
                 <div className="flex gap-2">

@@ -6,6 +6,7 @@ import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { Reservation } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { btnSecondary } from "@/src/lib/ui";
 
@@ -58,9 +59,12 @@ export function CustomerReservationsSection() {
         >
           <div>
             <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
-            <p className="text-zinc-400">
-              {r.eventDate} · {r.status}
-            </p>
+            <p className="text-zinc-400">{r.eventDate}</p>
+            {r.status ? (
+              <div className="mt-1.5">
+                <StatusBadge status={r.status} context="customer" />
+              </div>
+            ) : null}
           </div>
           {r.id != null && r.status !== "Cancelled" ? (
             <button

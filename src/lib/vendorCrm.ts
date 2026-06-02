@@ -1,5 +1,6 @@
 import type { VendorLead, VendorLeadFunnelStage } from "@/src/lib/api/types";
 import { maskFullName } from "@/src/lib/messaging";
+import { getStatusLabel } from "@/src/lib/statusLabels";
 
 /** Fixed UI copy for vendor dashboard sections (never show unrelated API errors). */
 export const VENDOR_ANALYTICS_LOAD_ERROR =
@@ -22,8 +23,8 @@ export function leadStatusLabel(status?: string): string {
     (x) => x.value.toLowerCase() === s?.toLowerCase(),
   );
   if (found) return found.label;
-  if (s === "Offer Sent" || s === "OfferSent") return "Teklif verildi";
-  return s || "Yeni";
+  if (!s) return "Yeni";
+  return getStatusLabel(s, "vendor");
 }
 
 export function normalizeLeadStatusKey(status?: string): string {

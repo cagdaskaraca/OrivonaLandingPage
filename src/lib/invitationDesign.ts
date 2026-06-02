@@ -1,4 +1,8 @@
 import type { InvitationDesign, InvitationEditorJson } from "@/src/lib/api/types";
+import {
+  getStatusLabel,
+  type StatusDisplayContext,
+} from "@/src/lib/statusLabels";
 
 export const INVITATION_CATEGORY_KEYWORDS = [
   "davetiye",
@@ -111,13 +115,9 @@ export function invitationDesignFileUrl(
   return design.fileUrl?.trim() || undefined;
 }
 
-export function invitationDesignStatusLabel(status?: string): string {
-  const s = (status ?? "Draft").trim();
-  const map: Record<string, string> = {
-    Draft: "Taslak",
-    Ready: "Hazır",
-    Published: "Yayında",
-    Attached: "Talebe bağlı",
-  };
-  return map[s] ?? s;
+export function invitationDesignStatusLabel(
+  status?: string,
+  context: StatusDisplayContext = "customer",
+): string {
+  return getStatusLabel(status ?? "Draft", context);
 }

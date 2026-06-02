@@ -21,9 +21,9 @@ import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { InvitationDesign, InvitationEditorJson } from "@/src/lib/api/types";
 import {
   defaultInvitationEditorJson,
-  invitationDesignStatusLabel,
   invitationDesignTitle,
 } from "@/src/lib/invitationDesign";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { useToast } from "@/src/contexts/ToastContext";
 import { btnPrimary, btnSecondary, glassCard, inputClass } from "@/src/lib/ui";
 
@@ -363,9 +363,9 @@ function InvitationDesignPlanContent({
               <p className="mt-3 font-medium text-white">
                 {invitationDesignTitle(design)}
               </p>
-              <p className="mt-1 text-xs text-violet-300/90">
-                {invitationDesignStatusLabel(design.status)}
-              </p>
+              <div className="mt-2">
+                <StatusBadge status={design.status} context="customer" />
+              </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   type="button"

@@ -1,3 +1,5 @@
+import { getStatusLabel } from "@/src/lib/statusLabels";
+
 /** Turkish labels for API badge types (no raw enums in UI). */
 const BADGE_LABELS: Record<string, string> = {
   Verified: "Doğrulandı",
@@ -53,7 +55,8 @@ export function boardStatusLabel(status?: string): string {
     completed: "Tamamlandı",
     waitingvendorresponse: "İşletme bekleniyor",
   };
-  return map[status.toLowerCase().replace(/[_\s-]/g, "")] ?? status;
+  const normalized = status.toLowerCase().replace(/[_\s-]/g, "");
+  return map[normalized] ?? getStatusLabel(status);
 }
 
 export const PIPELINE_STAGE_OPTIONS = [
@@ -71,7 +74,7 @@ export function pipelineStageLabel(stage?: string): string {
     (o) => o.value.toLowerCase() === stage.toLowerCase(),
   );
   if (found) return found.label;
-  return stage;
+  return getStatusLabel(stage);
 }
 
 export const HEATMAP_LEVEL_LABELS: Record<string, string> = {

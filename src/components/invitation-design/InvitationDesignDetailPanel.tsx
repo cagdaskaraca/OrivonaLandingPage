@@ -2,13 +2,14 @@
 
 import type { InvitationDesign, InvitationRevision } from "@/src/lib/api/types";
 import { InvitationDesignPreview } from "@/src/components/invitation-design/InvitationDesignPreview";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import {
   hasInvitationDesignData,
   hasInvitationPreviewContent,
   invitationDesignFileUrl,
-  invitationDesignStatusLabel,
   invitationDesignTitle,
 } from "@/src/lib/invitationDesign";
+import type { StatusDisplayContext } from "@/src/lib/statusLabels";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 
 type InvitationDesignDetailPanelProps = {
@@ -33,7 +34,8 @@ export function InvitationDesignDetailPanel({
   const resolved = design!;
   const fileUrl = invitationDesignFileUrl(resolved);
   const canPreview = hasInvitationPreviewContent(resolved);
-  const statusLabel = invitationDesignStatusLabel(resolved.status);
+  const statusContext: StatusDisplayContext =
+    variant === "vendor" ? "vendor" : "customer";
 
   return (
     <div className={`${glassCard} mt-4 border-violet-400/20`}>
@@ -43,11 +45,10 @@ export function InvitationDesignDetailPanel({
       <p className="mt-1 text-sm font-medium text-white">
         {invitationDesignTitle(resolved)}
       </p>
-      {statusLabel ? (
-        <p className="mt-1 text-xs text-zinc-500">
-          Durum:{" "}
-          <span className="text-violet-200/90">{statusLabel}</span>
-        </p>
+      {resolved.status ? (
+        <div className="mt-2">
+          <StatusBadge status={resolved.status} context={statusContext} />
+        </div>
       ) : null}
 
       <div className="mt-4">

@@ -1,32 +1,9 @@
 import type { OfferRequest } from "@/src/lib/api/types";
-
-const STATUS_LABELS: Record<string, string> = {
-  PendingVendorResponse: "İşletme yanıtı bekleniyor",
-  RejectedByVendor: "İşletme reddetti",
-  OfferSent: "Teklif gönderildi",
-  AcceptedByCustomer: "Müşteri kabul etti",
-  CustomerAccepted: "Müşteri kabul etti",
-  RejectedByCustomer: "Müşteri reddetti",
-  Expired: "Süresi doldu",
-  Cancelled: "İptal edildi",
-  Pending: "İşletme yanıtı bekleniyor",
-  Accepted: "Müşteri kabul etti",
-  Rejected: "Reddedildi",
-};
-
-const STATUS_STYLES: Record<string, string> = {
-  PendingVendorResponse: "border-amber-400/30 bg-amber-500/15 text-amber-100",
-  RejectedByVendor: "border-red-400/30 bg-red-500/15 text-red-200",
-  OfferSent: "border-violet-400/30 bg-violet-500/15 text-violet-100",
-  AcceptedByCustomer: "border-emerald-400/30 bg-emerald-500/15 text-emerald-100",
-  CustomerAccepted: "border-emerald-400/30 bg-emerald-500/15 text-emerald-100",
-  RejectedByCustomer: "border-red-400/30 bg-red-500/15 text-red-200",
-  Expired: "border-zinc-500/30 bg-zinc-500/15 text-zinc-400",
-  Cancelled: "border-zinc-500/30 bg-zinc-500/15 text-zinc-400",
-  Pending: "border-amber-400/30 bg-amber-500/15 text-amber-100",
-  Accepted: "border-emerald-400/30 bg-emerald-500/15 text-emerald-100",
-  Rejected: "border-red-400/30 bg-red-500/15 text-red-200",
-};
+import {
+  getStatusBadgeClassName,
+  getStatusLabel,
+  normalizeStatusKey,
+} from "@/src/lib/statusLabels";
 
 const FINAL_STATUSES = new Set([
   "rejectedbyvendor",
@@ -34,35 +11,25 @@ const FINAL_STATUSES = new Set([
   "rejectedbycustomer",
   "expired",
   "cancelled",
+  "canceled",
   "accepted",
   "rejected",
+  "customeraccepted",
 ]);
 
 export function normalizeOfferStatusKey(status?: string | null): string {
-  if (!status?.trim()) return "pendingvendorresponse";
-  return status.trim().replace(/\s+/g, "").toLowerCase();
+  const n = normalizeStatusKey(status);
+  return n || "pendingvendorresponse";
 }
 
+/** @deprecated Prefer getStatusLabel from @/src/lib/statusLabels */
 export function formatOfferStatus(status?: string | null): string {
-  if (!status?.trim()) return STATUS_LABELS.PendingVendorResponse;
-  const key = status.trim();
-  if (STATUS_LABELS[key]) return STATUS_LABELS[key];
-  const pascal =
-    key.charAt(0).toUpperCase() + key.slice(1);
-  if (STATUS_LABELS[pascal]) return STATUS_LABELS[pascal];
-  const normalized = normalizeOfferStatusKey(status);
-  for (const [k, label] of Object.entries(STATUS_LABELS)) {
-    if (normalizeOfferStatusKey(k) === normalized) return label;
-  }
-  return key;
+  return getStatusLabel(status, "customer");
 }
 
+/** @deprecated Prefer getStatusBadgeClassName from @/src/lib/statusLabels */
 export function getOfferStatusStyle(status?: string | null): string {
-  const key = status?.trim() || "PendingVendorResponse";
-  if (STATUS_STYLES[key]) return STATUS_STYLES[key];
-  const pascal = key.charAt(0).toUpperCase() + key.slice(1);
-  if (STATUS_STYLES[pascal]) return STATUS_STYLES[pascal];
-  return STATUS_STYLES.PendingVendorResponse;
+  return getStatusBadgeClassName(status);
 }
 
 export function isFinalOfferStatus(status?: string | null): boolean {
@@ -70,12 +37,12 @@ export function isFinalOfferStatus(status?: string | null): boolean {
 }
 
 export function isPendingVendorResponse(status?: string | null): boolean {
-  const s = normalizeOfferStatusKey(status).toLowerCase();
+  const s = normalizeOfferStatusKey(status);
   return s === "pendingvendorresponse" || s === "pending";
 }
 
 export function isOfferSentToCustomer(status?: string | null): boolean {
-  return normalizeOfferStatusKey(status).toLowerCase() === "offersent";
+  return normalizeOfferStatusKey(status) === "offersent";
 }
 
 export function canVendorActOnRequest(status?: string | null): boolean {

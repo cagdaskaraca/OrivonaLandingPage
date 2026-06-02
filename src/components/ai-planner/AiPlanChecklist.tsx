@@ -1,4 +1,5 @@
 import type { AiChecklistItem } from "@/src/lib/api/types";
+import { getStatusLabel } from "@/src/lib/statusLabels";
 
 type AiPlanChecklistProps = {
   items: AiChecklistItem[];
@@ -42,8 +43,8 @@ export function AiPlanChecklist({ items }: AiPlanChecklistProps) {
                 </span>
               ) : null}
               {item.status?.trim() ? (
-                <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-                  {item.status}
+                <span className="text-[10px] font-medium text-zinc-400">
+                  {getStatusLabel(item.status)}
                 </span>
               ) : null}
             </div>

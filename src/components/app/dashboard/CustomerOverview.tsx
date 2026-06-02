@@ -20,6 +20,7 @@ import {
   CUSTOMER_DEFAULT_ZERO_SUMMARY,
   CUSTOMER_EMPTY_DATA_MESSAGE,
 } from "@/src/lib/customerDashboard";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type Tab = "summary" | "favorites" | "reservations";
@@ -174,9 +175,12 @@ export function CustomerOverview() {
             >
               <div>
                 <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
-                <p className="text-zinc-400">
-                  {r.eventDate} · {r.status}
-                </p>
+                <p className="text-zinc-400">{r.eventDate}</p>
+                {r.status ? (
+                  <div className="mt-1.5">
+                    <StatusBadge status={r.status} context="customer" />
+                  </div>
+                ) : null}
               </div>
               {r.id != null && r.status !== "Cancelled" ? (
                 <button

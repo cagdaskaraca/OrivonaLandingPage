@@ -29,18 +29,11 @@ export function formatAgreementDate(value?: string): string | null {
   });
 }
 
-const AGREEMENT_STATUS_LABELS: Record<string, string> = {
-  customeraccepted: "Müşteri kabul etti",
-  acceptedbycustomer: "Müşteri kabul etti",
-  accepted: "Müşteri kabul etti",
-};
+import { getStatusLabel } from "@/src/lib/statusLabels";
 
 export function formatAgreementStatus(status?: string): string {
-  if (!status?.trim()) return "Müşteri kabul etti";
-  const key = status.trim().replace(/\s+/g, "").toLowerCase();
-  if (AGREEMENT_STATUS_LABELS[key]) return AGREEMENT_STATUS_LABELS[key];
-  if (status === "CustomerAccepted") return "Müşteri kabul etti";
-  return status.trim();
+  if (!status?.trim()) return getStatusLabel("AcceptedByCustomer");
+  return getStatusLabel(status, "customer");
 }
 
 export function normalizeCategoryKey(value?: string | null): string {

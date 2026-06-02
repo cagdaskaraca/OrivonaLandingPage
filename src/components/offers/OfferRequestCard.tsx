@@ -59,7 +59,10 @@ export function OfferRequestCard({
               : (offer.customerName ?? "Müşteri")}
           </p>
         </div>
-        <OfferStatusBadge status={offer.status} />
+        <OfferStatusBadge
+          status={offer.status}
+          context={variant === "vendor" ? "vendor" : "customer"}
+        />
       </div>
 
       {offer.message ? (

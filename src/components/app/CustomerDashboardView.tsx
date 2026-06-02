@@ -52,6 +52,7 @@ import { EventBoardSection } from "@/src/components/premium/EventBoardSection";
 import { MobileHomeSummary } from "@/src/components/premium/MobileHomeSummary";
 import { PublicEventPageSection } from "@/src/components/premium/PublicEventPageSection";
 import { InvitationDesignSection } from "@/src/components/invitation-design/InvitationDesignSection";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { EventPlaylistSection } from "@/src/components/playlist/EventPlaylistSection";
 import { NumericInput } from "@/src/components/ui/NumericInput";
 import {
@@ -496,7 +497,9 @@ function DashboardContentInner() {
                     : ""}
                 </p>
                 {r.status ? (
-                  <p className="mt-1 text-xs text-violet-300">{r.status}</p>
+                  <div className="mt-2">
+                    <StatusBadge status={r.status} context="customer" />
+                  </div>
                 ) : null}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button

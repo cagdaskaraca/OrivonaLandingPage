@@ -1,14 +1,14 @@
-import {
-  formatOfferStatus,
-  getOfferStatusStyle,
-} from "@/src/lib/offerRequest";
+import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import type { StatusDisplayContext } from "@/src/lib/statusLabels";
 
-export function OfferStatusBadge({ status }: { status?: string | null }) {
-  return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getOfferStatusStyle(status)}`}
-    >
-      {formatOfferStatus(status)}
-    </span>
-  );
+type OfferStatusBadgeProps = {
+  status?: string | null;
+  context?: StatusDisplayContext;
+};
+
+export function OfferStatusBadge({
+  status,
+  context = "customer",
+}: OfferStatusBadgeProps) {
+  return <StatusBadge status={status} context={context} />;
 }
