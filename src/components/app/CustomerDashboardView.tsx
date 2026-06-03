@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { CustomerFavoritesSection } from "@/src/components/app/dashboard/CustomerFavoritesSection";
 import { CustomerReservationsSection } from "@/src/components/app/dashboard/CustomerReservationsSection";
@@ -19,7 +19,8 @@ import { EventOsRemindersSection } from "@/src/components/event-os/EventOsRemind
 import { EventOsRsvpSection } from "@/src/components/event-os/EventOsRsvpSection";
 import { EventOsSeatingSection } from "@/src/components/event-os/EventOsSeatingSection";
 import { EventPlansSection } from "@/src/components/event-os/EventPlansSection";
-import type { DashboardNavGroup, DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
+import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
+import { buildCustomerDashboardNavGroups } from "@/src/lib/customerDashboardNav";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createCustomerEventRequest,
@@ -308,67 +309,16 @@ function DashboardContentInner() {
     }
   }
 
-  const navGroups: DashboardNavGroup[] = [
-    {
-      title: "Başlarken",
-      items: [{ id: "dashboard-help", label: "Başlarken" }],
-    },
-    {
-      title: "Etkinlik Yönetimi",
-      items: [
-        { id: "event-os-plans", label: "Etkinlik Planlarım" },
-        { id: "event-os-checklist", label: "Checklist" },
-        { id: "event-os-invitation-design", label: "Davetiye Tasarımı" },
-        { id: "event-os-playlist", label: "Müzik Tercihleri" },
-        { id: "event-os-reminders", label: "Hatırlatmalar" },
-        ...(ENABLE_EVENT_BOARD
-          ? [{ id: "event-os-board", label: "Etkinlik Panosu" } as const]
-          : []),
-      ],
-    },
-    {
-      title: "Davetli Yönetimi",
-      items: [
-        { id: "event-os-guests", label: "Davetliler" },
-        { id: "event-os-rsvp", label: "Katılım Durumu" },
-        { id: "event-os-seating", label: "Masa Planı" },
-        { id: "event-os-public-invite", label: "Ortak Davet Linki" },
-        { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
-      ],
-    },
-    {
-      title: "Tedarikçi / Teklifler",
-      items: [
-        { id: "nav-marketplace", label: "Marketplace", href: "/marketplace" },
-        { id: "dashboard-events", label: "Etkinlik Talepleri" },
-        { id: "dashboard-offers", label: "Tekliflerim" },
-        { id: "dashboard-reservations", label: "Rezervasyonlarım" },
-        { id: "dashboard-favorites", label: "Favoriler" },
-      ],
-    },
-    {
-      title: "İletişim",
-      items: [
-        { id: "dashboard-messages", label: "Mesajlar" },
-        { id: "dashboard-notifications", label: "Bildirimler" },
-      ],
-    },
-    {
-      title: "Hesap",
-      items: [
-        { id: "dashboard-account", label: "Hesabım" },
-        { id: "dashboard-activity", label: "Son Aktiviteler" },
-        {
-          id: "nav-logout",
-          label: "Çıkış",
-          onClick: () => {
-            logout();
-            window.location.href = "/login";
-          },
+  const navGroups = useMemo(
+    () =>
+      buildCustomerDashboardNavGroups({
+        onLogout: () => {
+          logout();
+          window.location.href = "/login";
         },
-      ],
-    },
-  ];
+      }),
+    [logout],
+  );
 
   const navItems: DashboardNavItem[] = navGroups.flatMap((g) => g.items);
 
@@ -379,7 +329,8 @@ function DashboardContentInner() {
       navItems={navItems}
       navGroups={navGroups}
       fullWidth
-      sidebarExpandedWidthClassName="lg:w-[17rem]"
+      sidebarExpandedWidthClassName="lg:w-[280px]"
+      sidebarCollapsedWidthClassName="lg:w-[72px]"
     >
       <MobileHomeSummary />
 
@@ -393,21 +344,12 @@ function DashboardContentInner() {
         <EventOsGuestsSection />
       </DashboardSection>
 
-      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
-        <CustomerOfferRequestsPanel
-          onAfterAccept={() => {
-            setReservationsKey((k) => k + 1);
-            bumpDataRefresh();
-          }}
-        />
-      </section>
+      <DashboardSection id="event-os-seating" title="Masa Planı">
+        <EventOsSeatingSection />
+      </DashboardSection>
 
       <DashboardSection id="event-os-checklist" title="Checklist">
         <EventOsChecklistSection />
-      </DashboardSection>
-
-      <DashboardSection id="event-os-seating" title="Masa Planı">
-        <EventOsSeatingSection />
       </DashboardSection>
 
       <DashboardSection id="event-os-invitation-design" title="Davetiye Tasarımı">
@@ -422,92 +364,7 @@ function DashboardContentInner() {
         <PublicEventPageSection />
       </DashboardSection>
 
-      <DashboardSection id="dashboard-reservations" title="Rezervasyonlarım">
-        <CustomerReservationsSection key={reservationsKey} />
-      </DashboardSection>
-
-      <section id="dashboard-messages" className={`${orivonaDashboardAnchor} mb-8`}>
-        <MessagingPanel
-          viewerRole="Customer"
-          initialConversationId={conversationId}
-        />
-      </section>
-
-      <DashboardSection id="dashboard-notifications" title="Bildirimler">
-        <NotificationsPanel />
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-account" title="Hesabım">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-wide text-zinc-500">
-            Profil
-          </p>
-          <Link href="/account" className={btnSecondary}>
-            Profili düzenle
-          </Link>
-        </div>
-        {user ? (
-          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                Ad
-              </dt>
-              <dd className="text-white">
-                {accountProfile?.fullName ??
-                  user.fullName ??
-                  user.name ??
-                  "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                E-posta
-              </dt>
-              <dd className="text-white">
-                {accountProfile?.email ?? user.email ?? "—"}
-              </dd>
-            </div>
-            {customerPhone ? (
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                  Telefon
-                </dt>
-                <dd className="text-white">{customerPhone}</dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : (
-          <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
-        )}
-        <div className="mt-6 border-t border-white/10 pt-6">
-          <h3 className="mb-3 text-sm font-semibold text-violet-200/90">Özet</h3>
-          <CustomerSummarySection />
-        </div>
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
-        <ActivityFeedSection role="customer" />
-      </DashboardSection>
-
-      {ENABLE_EVENT_BOARD ? (
-        <DashboardSection id="event-os-board" title="Etkinlik Panosu">
-          <EventBoardSection />
-        </DashboardSection>
-      ) : null}
-
-      <DashboardSection id="event-os-rsvp" title="Katılım Durumu">
-        <EventOsRsvpSection />
-      </DashboardSection>
-
-      <DashboardSection id="event-os-reminders" title="Hatırlatmalar">
-        <EventOsRemindersSection />
-      </DashboardSection>
-
-      <DashboardSection id="event-os-playlist" title="Müzik Tercihleri">
-        <EventPlaylistSection />
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-events" title="Etkinlik talepleri">
+      <DashboardSection id="dashboard-events" title="Etkinlik Talepleri">
         {loadingList ? (
           <p className="mt-3 text-sm text-zinc-500">Talepler yükleniyor…</p>
         ) : null}
@@ -694,9 +551,103 @@ function DashboardContentInner() {
       </form>
       </DashboardSection>
 
+      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
+        <CustomerOfferRequestsPanel
+          onAfterAccept={() => {
+            setReservationsKey((k) => k + 1);
+            bumpDataRefresh();
+          }}
+        />
+      </section>
+
+      <DashboardSection id="dashboard-reservations" title="Rezervasyonlarım">
+        <CustomerReservationsSection key={reservationsKey} />
+      </DashboardSection>
+
       <DashboardSection id="dashboard-favorites" title="Favoriler">
         <CustomerFavoritesSection />
       </DashboardSection>
+
+      <DashboardSection id="event-os-playlist" title="Müzik Tercihleri">
+        <EventPlaylistSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-reminders" title="Hatırlatmalar">
+        <EventOsRemindersSection />
+      </DashboardSection>
+
+      <DashboardSection id="event-os-rsvp" title="Katılım Durumu">
+        <EventOsRsvpSection />
+      </DashboardSection>
+
+      <section id="dashboard-messages" className={`${orivonaDashboardAnchor} mb-8`}>
+        <MessagingPanel
+          viewerRole="Customer"
+          initialConversationId={conversationId}
+        />
+      </section>
+
+      <DashboardSection id="dashboard-notifications" title="Bildirimler">
+        <NotificationsPanel />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-account" title="Hesabım">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Profil
+          </p>
+          <Link href="/account" className={btnSecondary}>
+            Profili düzenle
+          </Link>
+        </div>
+        {user ? (
+          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                Ad
+              </dt>
+              <dd className="text-white">
+                {accountProfile?.fullName ??
+                  user.fullName ??
+                  user.name ??
+                  "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                E-posta
+              </dt>
+              <dd className="text-white">
+                {accountProfile?.email ?? user.email ?? "—"}
+              </dd>
+            </div>
+            {customerPhone ? (
+              <div>
+                <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                  Telefon
+                </dt>
+                <dd className="text-white">{customerPhone}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-500">Yükleniyor…</p>
+        )}
+        <div className="mt-6 border-t border-white/10 pt-6">
+          <h3 className="mb-3 text-sm font-semibold text-violet-200/90">Özet</h3>
+          <CustomerSummarySection />
+        </div>
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
+        <ActivityFeedSection role="customer" />
+      </DashboardSection>
+
+      {ENABLE_EVENT_BOARD ? (
+        <DashboardSection id="event-os-board" title="Etkinlik Panosu">
+          <EventBoardSection />
+        </DashboardSection>
+      ) : null}
     </DashboardLayout>
   );
 }

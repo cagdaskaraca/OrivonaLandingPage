@@ -16,6 +16,7 @@ type DashboardLayoutProps = {
   navGroups?: DashboardNavGroup[];
   fullWidth?: boolean;
   sidebarExpandedWidthClassName?: string;
+  sidebarCollapsedWidthClassName?: string;
   toolbar?: ReactNode;
   children: ReactNode;
 };
@@ -27,6 +28,7 @@ export function DashboardLayout({
   navGroups,
   fullWidth = false,
   sidebarExpandedWidthClassName,
+  sidebarCollapsedWidthClassName,
   toolbar,
   children,
 }: DashboardLayoutProps) {
@@ -48,6 +50,7 @@ export function DashboardLayout({
           items={navItems}
           groups={navGroups}
           expandedWidthClassName={sidebarExpandedWidthClassName}
+          collapsedWidthClassName={sidebarCollapsedWidthClassName}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((c) => !c)}
           mobileOpen={mobileOpen}
