@@ -17,7 +17,7 @@ import {
   sendEmailVerification,
   verifyEmail,
 } from "@/src/lib/authEmail";
-import { getSafeReturnUrl } from "@/src/lib/authRedirect";
+import { resolvePostAuthRedirectUrl } from "@/src/lib/authRedirect";
 import { ApiError, formatUiErrorMessage } from "@/src/lib/api/client";
 import {
   VENDOR_COMPANY_TYPES,
@@ -132,7 +132,9 @@ export function RegisterView() {
 
   async function finishAuthRedirect(role: "Customer" | "Vendor") {
     await refresh();
-    const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+    const returnUrl = resolvePostAuthRedirectUrl(
+      searchParams.get("returnUrl"),
+    );
     if (returnUrl && role === "Customer") {
       router.push(returnUrl);
     } else {

@@ -31,6 +31,8 @@ type ScrollOptions = {
   updateHash?: boolean;
   /** Scroll offset for fixed header (defaults to dashboard). */
   offsetPx?: number;
+  /** OBot / menü tıklaması: layout stabil beklemeden hemen kaydır. */
+  immediate?: boolean;
 };
 
 let pendingSectionId: string | null = null;
@@ -99,6 +101,7 @@ export function scrollToHashWhenReady(
   const forceSameHash = options?.forceSameHash ?? true;
   const updateHash = options?.updateHash ?? true;
   const offsetPx = options?.offsetPx ?? DASHBOARD_SCROLL_OFFSET_PX;
+  const immediate = options?.immediate ?? false;
   const baseUrl = `${window.location.pathname}${window.location.search}`;
 
   if (forceSameHash && window.location.hash.replace(/^#/, "") === sectionId) {
@@ -154,9 +157,12 @@ export function scrollToHashWhenReady(
   };
 
   const timers: ReturnType<typeof setTimeout>[] = [];
+  if (immediate) {
+    timers.push(setTimeout(() => attempt(true), 0));
+  }
   HASH_SCROLL_RETRY_MS.forEach((delay, index) => {
     const isLast = index === HASH_SCROLL_RETRY_MS.length - 1;
-    timers.push(setTimeout(() => attempt(isLast), delay));
+    timers.push(setTimeout(() => attempt(immediate || isLast), delay));
   });
 
   return () => {

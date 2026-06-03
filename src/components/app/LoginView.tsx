@@ -8,7 +8,7 @@ import { useAuth } from "@/src/contexts/AuthContext";
 import { getDashboardPathForRole, login } from "@/src/lib/auth";
 import { isEmailNotVerifiedError } from "@/src/lib/authEmail";
 import { formatLoginError } from "@/src/lib/api/errorMessages";
-import { getSafeReturnUrl } from "@/src/lib/authRedirect";
+import { resolvePostAuthRedirectUrl } from "@/src/lib/authRedirect";
 import { ForgotPasswordModal } from "@/src/components/auth/ForgotPasswordModal";
 import { EmailField } from "@/src/components/ui/EmailField";
 import { isValidEmail } from "@/src/lib/contactValidation";
@@ -43,7 +43,9 @@ export function LoginView() {
         return;
       }
       await refresh();
-      const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
+      const returnUrl = resolvePostAuthRedirectUrl(
+        searchParams.get("returnUrl"),
+      );
       if (returnUrl && role === "Customer") {
         router.push(returnUrl);
       } else {

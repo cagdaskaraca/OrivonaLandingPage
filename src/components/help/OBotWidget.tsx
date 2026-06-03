@@ -8,11 +8,11 @@ import { CustomerAuthPromptModal } from "@/src/components/auth/CustomerAuthPromp
 import { useAuth } from "@/src/contexts/AuthContext";
 import { postHelpAssistant, welcomeReply } from "@/src/lib/api/helpAssistant";
 import { getSafeReturnUrl } from "@/src/lib/authRedirect";
+import { handleOBotAction, resolveObotAction } from "@/src/lib/obot/actions";
 import {
-  executeObotAction,
-  requiresCustomerAuth,
-  resolveObotAction,
-} from "@/src/lib/obot/actions";
+  OBOT_SUGGESTED_QUESTION_KEYS,
+  resolveObotActionKey,
+} from "@/src/lib/obot/routes";
 import { getObotFallbackReply } from "@/src/lib/obot/fallback";
 import { OBOT_QUICK_QUESTIONS } from "@/src/lib/obot/suggestedQuestions";
 import type {
@@ -71,8 +71,20 @@ export function OBotWidget({ role }: OBotWidgetProps) {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<OBotChatMessage[]>([]);
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
+  const [authTargetUrl, setAuthTargetUrl] = useState<string | null>(null);
+  const authSnapshotRef = useRef({
+    isAuthenticated,
+    authRole,
+    assistantRole: role,
+  });
 
   const quickQuestions = OBOT_QUICK_QUESTIONS[role];
+
+  authSnapshotRef.current = {
+    isAuthenticated,
+    authRole,
+    assistantRole: role,
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -110,24 +122,38 @@ export function OBotWidget({ role }: OBotWidgetProps) {
     }
   }, []);
 
+  const runObotAction = useCallback(
+    (actionKeyOrAction: string | OBotAction) => {
+      const key =
+        typeof actionKeyOrAction === "string"
+          ? actionKeyOrAction
+          : resolveObotActionKey(actionKeyOrAction);
+      if (!key) return;
+
+      const auth = authSnapshotRef.current;
+      handleOBotAction(key, {
+        router,
+        auth: {
+          isAuthenticated: auth.isAuthenticated,
+          authRole: auth.authRole,
+          assistantRole: auth.assistantRole,
+        },
+        onRequireAuth: (targetUrl) => {
+          setAuthTargetUrl(targetUrl);
+          setAuthPromptOpen(true);
+        },
+      });
+    },
+    [router],
+  );
+
   const handleAction = useCallback(
     (action: OBotAction, e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
-
-      const resolved = resolveObotAction(action);
-
-      if (
-        requiresCustomerAuth(resolved) &&
-        (role === "anonymous" || !isAuthenticated || authRole !== "Customer")
-      ) {
-        setAuthPromptOpen(true);
-        return;
-      }
-
-      executeObotAction(router, resolved);
+      runObotAction(action);
     },
-    [router, role, isAuthenticated, authRole],
+    [runObotAction],
   );
 
   const sendMessage = useCallback(
@@ -169,12 +195,29 @@ export function OBotWidget({ role }: OBotWidgetProps) {
     [loading, role, quickQuestions, dismissPulse],
   );
 
+  const handleSuggestedQuestion = useCallback(
+    (question: string, e?: React.MouseEvent) => {
+      e?.preventDefault();
+      e?.stopPropagation();
+
+      const directKey = OBOT_SUGGESTED_QUESTION_KEYS[question];
+      if (directKey) {
+        runObotAction(directKey);
+        return;
+      }
+      void sendMessage(question);
+    },
+    [runObotAction, sendMessage],
+  );
+
   const returnUrl =
+    authTargetUrl ??
     getSafeReturnUrl(
       typeof window !== "undefined"
         ? `${window.location.pathname}${window.location.search}`
         : pathname,
-    ) ?? "/customer/dashboard";
+    ) ??
+    "/customer/dashboard";
 
   const widget = (
     <div
@@ -280,8 +323,9 @@ export function OBotWidget({ role }: OBotWidgetProps) {
                         <button
                           key={q}
                           type="button"
-                          className="rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[11px] text-violet-100 transition-colors hover:bg-violet-500/20"
-                          onClick={() => void sendMessage(q)}
+                          className="orivona-obot-action-btn rounded-full border border-violet-400/20 bg-violet-500/10 px-2.5 py-1 text-[11px] text-violet-100 transition-colors hover:bg-violet-500/20"
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => handleSuggestedQuestion(q, e)}
                         >
                           {q}
                         </button>
@@ -338,7 +382,10 @@ export function OBotWidget({ role }: OBotWidgetProps) {
         open={authPromptOpen}
         reason="login"
         returnUrl={returnUrl}
-        onClose={() => setAuthPromptOpen(false)}
+        onClose={() => {
+          setAuthPromptOpen(false);
+          setAuthTargetUrl(null);
+        }}
       />
       {mounted ? createPortal(widget, document.body) : null}
     </>

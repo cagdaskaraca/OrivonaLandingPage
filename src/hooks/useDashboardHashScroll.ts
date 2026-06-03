@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { consumeObotFocusTarget } from "@/src/lib/obot/obotRedirect";
 import {
   consumePendingHashScroll,
   scrollToHashWhenReady,
@@ -22,14 +23,31 @@ export function useDashboardHashScroll(options?: UseDashboardHashScrollOptions) 
   const isLoading = options?.isLoading ?? false;
   const wasLoadingRef = useRef(isLoading);
 
+  const scheduleFocusTarget = () => {
+    const focusId = consumeObotFocusTarget();
+    if (!focusId) return;
+    cancelRef.current?.();
+    cancelRef.current = scrollToHashWhenReady(`#${focusId}`, {
+      highlight: true,
+      forceSameHash: true,
+      updateHash: false,
+      immediate: true,
+    });
+  };
+
   const scheduleScroll = (hash: string, highlight: boolean) => {
-    if (!hash) return;
+    if (!hash) {
+      scheduleFocusTarget();
+      return;
+    }
     cancelRef.current?.();
     cancelRef.current = scrollToHashWhenReady(hash, {
       highlight,
       forceSameHash: true,
       updateHash: true,
+      immediate: true,
     });
+    window.setTimeout(scheduleFocusTarget, 500);
   };
 
   useEffect(() => {
