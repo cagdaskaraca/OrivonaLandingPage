@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { CustomerAuthPromptModal } from "@/src/components/auth/CustomerAuthPromptModal";
@@ -63,6 +64,7 @@ export function OBotWidget({ role }: OBotWidgetProps) {
   const panelId = useId();
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [pulse, setPulse] = useState(false);
   const [input, setInput] = useState("");
@@ -71,6 +73,10 @@ export function OBotWidget({ role }: OBotWidgetProps) {
   const [authPromptOpen, setAuthPromptOpen] = useState(false);
 
   const quickQuestions = OBOT_QUICK_QUESTIONS[role];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -104,10 +110,6 @@ export function OBotWidget({ role }: OBotWidgetProps) {
     }
   }, []);
 
-  const closePanel = useCallback(() => {
-    setOpen(false);
-  }, []);
-
   const handleAction = useCallback(
     (action: OBotAction, e?: React.MouseEvent) => {
       e?.preventDefault();
@@ -123,9 +125,9 @@ export function OBotWidget({ role }: OBotWidgetProps) {
         return;
       }
 
-      executeObotAction(router, resolved, { closePanel });
+      executeObotAction(router, resolved);
     },
-    [router, closePanel, role, isAuthenticated, authRole],
+    [router, role, isAuthenticated, authRole],
   );
 
   const sendMessage = useCallback(
@@ -174,29 +176,36 @@ export function OBotWidget({ role }: OBotWidgetProps) {
         : pathname,
     ) ?? "/customer/dashboard";
 
-  return (
-    <>
-    <CustomerAuthPromptModal
-      open={authPromptOpen}
-      reason="login"
-      returnUrl={returnUrl}
-      onClose={() => setAuthPromptOpen(false)}
-    />
+  const widget = (
     <div
-      className="orivona-obot-root pointer-events-none fixed z-[500] flex flex-col items-end gap-3"
+      className="orivona-obot-root fixed z-[8500] flex flex-col-reverse items-end gap-3"
       style={{
         right: "max(0.75rem, env(safe-area-inset-right))",
         bottom: "max(0.75rem, env(safe-area-inset-bottom))",
       }}
     >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        className={`orivona-obot-launcher relative z-[1] flex items-center gap-2 rounded-full border border-violet-400/35 bg-gradient-to-br from-violet-600/95 to-fuchsia-700/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_40px_-8px_rgba(109,40,217,0.65)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_16px_48px_-8px_rgba(109,40,217,0.75)] ${
+          pulse && !open ? "orivona-obot-launcher-pulse" : ""
+        }`}
+        onClick={() => {
+          dismissPulse();
+          setOpen((o) => !o);
+        }}
+      >
+        <OBotIcon className="h-5 w-5 shrink-0" />
+        <span>OBot</span>
+      </button>
+
+      {open ? (
       <div
         id={panelId}
         role="dialog"
         aria-label="OBot yardım asistanı"
-        aria-hidden={!open}
-        className={`orivona-obot-panel pointer-events-auto flex w-[min(100vw-1.5rem,22rem)] flex-col overflow-hidden rounded-2xl border border-violet-400/25 bg-[#0c0818]/95 shadow-[0_24px_64px_-12px_rgba(76,29,149,0.55)] backdrop-blur-xl sm:w-[24rem] ${
-          open ? "orivona-obot-panel-open" : "orivona-obot-panel-closed"
-        }`}
+        className="orivona-obot-panel orivona-obot-panel-open relative z-[2] flex w-[min(100vw-1.5rem,22rem)] flex-col overflow-hidden rounded-2xl border border-violet-400/25 bg-[#0c0818]/95 shadow-[0_24px_64px_-12px_rgba(76,29,149,0.55)] backdrop-blur-xl sm:w-[24rem]"
       >
         <header className="flex items-center justify-between gap-2 border-b border-white/10 bg-violet-500/[0.08] px-4 py-3">
           <div className="flex items-center gap-2">
@@ -238,14 +247,21 @@ export function OBotWidget({ role }: OBotWidgetProps) {
               >
                 <p className="whitespace-pre-wrap">{msg.text}</p>
                 {msg.role === "bot" && msg.actions?.length ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div
+                    className="orivona-obot-actions mt-3 flex flex-wrap gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
                     {msg.actions.map((action) => {
                       const resolved = resolveObotAction(action);
                       return (
                         <button
-                          key={resolved.id}
+                          key={`${msg.id}-${resolved.id}`}
                           type="button"
-                          className={`${btnSecondary} !px-3 !py-1.5 text-[11px]`}
+                          className={`orivona-obot-action-btn ${btnSecondary} !px-3 !py-1.5 text-[11px]`}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                          }}
                           onClick={(e) => handleAction(resolved, e)}
                         >
                           {resolved.label}
@@ -312,23 +328,19 @@ export function OBotWidget({ role }: OBotWidgetProps) {
           </div>
         </form>
       </div>
-
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        className={`orivona-obot-launcher pointer-events-auto flex items-center gap-2 rounded-full border border-violet-400/35 bg-gradient-to-br from-violet-600/95 to-fuchsia-700/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_40px_-8px_rgba(109,40,217,0.65)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_16px_48px_-8px_rgba(109,40,217,0.75)] ${
-          pulse && !open ? "orivona-obot-launcher-pulse" : ""
-        }`}
-        onClick={() => {
-          dismissPulse();
-          setOpen((o) => !o);
-        }}
-      >
-        <OBotIcon className="h-5 w-5 shrink-0" />
-        <span>OBot</span>
-      </button>
+      ) : null}
     </div>
+  );
+
+  return (
+    <>
+      <CustomerAuthPromptModal
+        open={authPromptOpen}
+        reason="login"
+        returnUrl={returnUrl}
+        onClose={() => setAuthPromptOpen(false)}
+      />
+      {mounted ? createPortal(widget, document.body) : null}
     </>
   );
 }

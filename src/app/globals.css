@@ -372,6 +372,20 @@ html {
   visibility: visible;
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.orivona-obot-actions {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.orivona-obot-action-btn {
+  position: relative;
+  z-index: 21;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .orivona-obot-messages {
