@@ -941,6 +941,14 @@ export type EventTaskFormPayload = {
   dueDate?: string;
 };
 
+/** POST /event-plans/{eventPlanId}/checklist/items — manuel madde */
+export type ChecklistItemFormPayload = {
+  title: string;
+  category?: string | null;
+  note?: string | null;
+  dueDate?: string | null;
+};
+
 /** Kabul edilmiş teklif — GET /event-plans/{id}/agreements */
 export type CustomerAgreement = {
   id?: string | number;

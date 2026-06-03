@@ -8,6 +8,7 @@ import { mapGuestRsvpToApi } from "@/src/lib/eventOs";
 import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
+  ChecklistItemFormPayload,
   EventGuest,
   EventGuestFormPayload,
   EventPlan,
@@ -87,11 +88,15 @@ export function normalizeEventPlan(raw: unknown): EventPlan {
 export function normalizeEventTask(raw: unknown): EventTask {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const isCompleted = o.isCompleted === true || o.IsCompleted === true;
+  const statusRaw = recordStr(o, "status", "Status");
   return {
     id: recordId(o),
     title: recordStr(o, "title", "Title"),
-    description: recordStr(o, "description", "Description"),
-    status: recordStr(o, "status", "Status") ?? "Todo",
+    description:
+      recordStr(o, "description", "Description") ??
+      recordStr(o, "note", "Note"),
+    status: isCompleted ? "Done" : statusRaw ?? "Todo",
     categoryName:
       recordStr(o, "categoryName", "CategoryName") ??
       recordStr(o, "category", "Category"),
@@ -240,6 +245,21 @@ function buildPlanBody(payload: EventPlanFormPayload): Record<string, unknown> {
   };
 }
 
+function buildChecklistItemBody(
+  payload: ChecklistItemFormPayload,
+): Record<string, unknown> {
+  const title = payload.title.trim();
+  const category = payload.category?.trim();
+  const note = payload.note?.trim();
+  const dueDate = payload.dueDate?.trim();
+  return {
+    title,
+    category: category ? category : null,
+    note: note ? note : null,
+    dueDate: dueDate ? dueDate : null,
+  };
+}
+
 function buildTaskBody(payload: EventTaskFormPayload): Record<string, unknown> {
   const body: Record<string, unknown> = {
     title: payload.title.trim(),
@@ -351,6 +371,31 @@ export async function fetchEventPlanTasks(
   const body = await apiGetRaw<ApiEnvelope>(`/event-plans/${planId}/tasks`);
   assertSuccess(body);
   return toList(extractPayload(body.data)).map(normalizeEventTask);
+}
+
+/** GET /event-plans/{id}/checklist — tasks ile aynı liste (alias). */
+export async function fetchChecklistItems(
+  planId: string | number,
+): Promise<EventTask[]> {
+  const body = await apiGetRaw<ApiEnvelope>(`/event-plans/${planId}/checklist`);
+  assertSuccess(body);
+  return toList(extractPayload(body.data)).map(normalizeEventTask);
+}
+
+/** POST /event-plans/{id}/checklist/items — manuel checklist maddesi. */
+export async function createChecklistItem(
+  planId: string | number,
+  payload: ChecklistItemFormPayload,
+): Promise<EventTask> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/event-plans/${planId}/checklist/items`,
+    buildChecklistItemBody(payload),
+  );
+  assertSuccess(body);
+  const data = extractPayload(body.data);
+  return normalizeEventTask(
+    data && typeof data === "object" ? data : body.data,
+  );
 }
 
 export async function createEventPlanTask(

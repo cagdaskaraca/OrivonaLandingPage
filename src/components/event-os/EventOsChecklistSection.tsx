@@ -12,12 +12,13 @@ import {
 import { useEventOs } from "@/src/components/event-os/EventOsContext";
 import {
   buildTaskUpdateFromExisting,
-  createEventPlanTask,
+  createChecklistItem,
   deleteEventPlanTask,
   fetchEventPlanTasks,
   generateEventPlanTasks,
   updateEventPlanTask,
 } from "@/src/lib/api/eventPlans";
+import { useToast } from "@/src/contexts/ToastContext";
 import {
   getEventPlanAgreements,
   getEventPlanBoard,
@@ -51,6 +52,7 @@ function checklistProgressPercent(
 }
 
 function ChecklistPanel({ planId }: { planId: string | number }) {
+  const toast = useToast();
   const { dataRefreshKey } = useEventOs();
   const [tasks, setTasks] = useState<EventTask[]>([]);
   const [agreements, setAgreements] = useState<CustomerAgreement[]>([]);
@@ -65,6 +67,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
   const [budgetError, setBudgetError] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const [adding, setAdding] = useState(false);
   const [savingId, setSavingId] = useState<string | number | null>(null);
 
   const refreshAll = useCallback(async () => {
@@ -135,17 +138,38 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    const title = newTitle.trim();
+    if (!title) {
+      toast.error("Madde başlığı boş olamaz.");
+      return;
+    }
+    setAdding(true);
+    setTasksError(null);
     try {
-      await createEventPlanTask(planId, {
-        title: newTitle.trim(),
-        status: "Todo",
+      const created = await createChecklistItem(planId, {
+        title,
+        category: null,
+        note: null,
+        dueDate: null,
       });
       setNewTitle("");
-      setTasks(await fetchEventPlanTasks(planId));
+      if (created.id != null) {
+        setTasks((prev) => {
+          const exists = prev.some((t) => String(t.id) === String(created.id));
+          return exists ? prev : [...prev, created];
+        });
+      } else {
+        const list = await fetchEventPlanTasks(planId);
+        setTasks(list);
+      }
+      toast.success("Checklist maddesi eklendi.");
     } catch (err) {
-      logApiError("Create task", err);
-      setTasksError(formatUiErrorMessage(err, "Görev eklenemedi."));
+      logApiError("Create checklist item", err);
+      const message = formatUiErrorMessage(err, "Madde eklenemedi.");
+      setTasksError(message);
+      toast.error(message);
+    } finally {
+      setAdding(false);
     }
   }
 
@@ -357,15 +381,28 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
           })}
         </ul>
       )}
-      <form onSubmit={handleAdd} className="flex flex-wrap gap-2 border-t border-white/10 pt-4">
+      <form
+        onSubmit={(e) => void handleAdd(e)}
+        className="flex flex-wrap gap-2 border-t border-white/10 pt-4"
+      >
+        <label className="sr-only" htmlFor="checklist-new-title">
+          Yeni checklist maddesi
+        </label>
         <input
+          id="checklist-new-title"
           className={`${inputClass} min-w-[200px] flex-1`}
-          placeholder="Yeni görev…"
+          placeholder="Yeni madde…"
           value={newTitle}
+          disabled={adding}
+          required
           onChange={(e) => setNewTitle(e.target.value)}
         />
-        <button type="submit" className={btnSecondary}>
-          Ekle
+        <button
+          type="submit"
+          className={btnPrimary}
+          disabled={adding || !newTitle.trim()}
+        >
+          {adding ? "Ekleniyor…" : "Ekle"}
         </button>
       </form>
     </div>

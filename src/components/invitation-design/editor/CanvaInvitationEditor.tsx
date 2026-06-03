@@ -14,12 +14,15 @@ import {
   canDeleteElement,
   deleteElementFromDoc,
 } from "@/src/lib/invitationEditor/canvasOps";
+import {
+  applyCanvasPreset,
+  CANVAS_PRESETS,
+  type CanvasViewportType,
+} from "@/src/lib/invitationEditor/canvasSize";
 import { finalizeDocument } from "@/src/lib/invitationEditor/document";
 import { INVITATION_FONT_OPTIONS } from "@/src/lib/invitationEditor/fonts";
 import {
   CORE_LAYOUT_IDS,
-  LAYOUT_CANVAS_HEIGHT,
-  LAYOUT_CANVAS_WIDTH,
   newLayoutId,
   updateLayoutElement,
 } from "@/src/lib/invitationEditor/layout";
@@ -62,13 +65,14 @@ export function CanvaInvitationEditor({
   qrUrls = {},
 }: CanvaInvitationEditorProps) {
   const isMobile = useIsMobileLayout();
-  const [viewport, setViewport] = useState<PreviewViewport>("a4");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [shapeOffset, setShapeOffset] = useState(0);
 
   const docFinal = useMemo(() => finalizeDocument(doc), [doc]);
+  const viewport: PreviewViewport = docFinal.canvas?.type ?? "a4";
+  const { canvasWidth, canvasHeight } = docFinal.layoutJson;
 
   const selected = useMemo(
     () => docFinal.layoutJson.elements.find((e) => e.id === selectedId),
@@ -239,7 +243,19 @@ export function CanvaInvitationEditor({
     },
   ].filter((o) => !o.disabled);
 
-  const desktopScale = Math.min(1, 340 / LAYOUT_CANVAS_WIDTH);
+  const setCanvasViewport = useCallback(
+    (type: CanvasViewportType) => {
+      const preset = CANVAS_PRESETS[type];
+      commit({
+        ...docFinal,
+        canvas: preset,
+        layoutJson: applyCanvasPreset(docFinal.layoutJson, type),
+      });
+    },
+    [commit, docFinal],
+  );
+
+  const desktopScale = Math.min(1, 340 / canvasWidth);
 
   return (
     <InvitationEditorFontProvider>
@@ -483,35 +499,32 @@ export function CanvaInvitationEditor({
                 {isMobile ? "Önizleme" : "Çalışma alanı"}
               </p>
               <div className="flex rounded-lg border border-white/10 p-0.5 text-xs">
-                <button
-                  type="button"
-                  className={`rounded-md px-3 py-1.5 font-medium ${
-                    viewport === "a4"
-                      ? "bg-violet-500/30 text-white"
-                      : "text-zinc-400"
-                  }`}
-                  onClick={() => setViewport("a4")}
-                >
-                  A4
-                </button>
-                <button
-                  type="button"
-                  className={`rounded-md px-3 py-1.5 font-medium ${
-                    viewport === "mobile"
-                      ? "bg-violet-500/30 text-white"
-                      : "text-zinc-400"
-                  }`}
-                  onClick={() => setViewport("mobile")}
-                >
-                  Mobil
-                </button>
+                {(
+                  [
+                    ["a4", "A4"],
+                    ["mobile", "Mobil"],
+                    ["square", "Kare"],
+                  ] as const
+                ).map(([type, label]) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className={`rounded-md px-3 py-1.5 font-medium ${
+                      viewport === type
+                        ? "bg-violet-500/30 text-white"
+                        : "text-zinc-400"
+                    }`}
+                    onClick={() => setCanvasViewport(type)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
             <div className="rounded-2xl border border-violet-400/25 bg-[#06040c] p-4 lg:sticky lg:top-2">
               {isMobile ? (
                 <InvitationCanvasPreview
                   document={docFinal}
-                  viewport={viewport}
                   qrUrls={qrUrls}
                 />
               ) : (
@@ -527,8 +540,8 @@ export function CanvaInvitationEditor({
             </div>
             {!isMobile ? (
               <p className="mt-2 text-center text-[10px] text-zinc-500">
-                Sürükle · boyutlandır · Delete ile sil ·{" "}
-                {LAYOUT_CANVAS_WIDTH}×{LAYOUT_CANVAS_HEIGHT}px
+                Sürükle · boyutlandır · Delete ile sil · {canvasWidth}×
+                {canvasHeight}px · {viewport.toUpperCase()}
               </p>
             ) : null}
           </div>

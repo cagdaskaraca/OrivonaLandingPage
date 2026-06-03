@@ -3,19 +3,13 @@
 import { useMemo } from "react";
 import { InvitationDragCanvas } from "@/src/components/invitation-design/editor/InvitationDragCanvas";
 import { finalizeDocument } from "@/src/lib/invitationEditor/document";
-import {
-  LAYOUT_CANVAS_HEIGHT,
-  LAYOUT_CANVAS_WIDTH,
-} from "@/src/lib/invitationEditor/layout";
 import type {
   InvitationEditorDocument,
   InvitationQrUrls,
-  PreviewViewport,
 } from "@/src/lib/invitationEditor/types";
 
 type InvitationCanvasPreviewProps = {
   document: InvitationEditorDocument;
-  viewport: PreviewViewport;
   qrUrls?: InvitationQrUrls;
   selectedElementId?: string | null;
   onSelectElement?: (id: string | null) => void;
@@ -25,7 +19,6 @@ type InvitationCanvasPreviewProps = {
 
 export function InvitationCanvasPreview({
   document: docInput,
-  viewport,
   qrUrls = {},
   selectedElementId,
   onSelectElement,
@@ -33,16 +26,13 @@ export function InvitationCanvasPreview({
   className = "",
 }: InvitationCanvasPreviewProps) {
   const doc = useMemo(() => finalizeDocument(docInput), [docInput]);
-
-  const maxWidth = viewport === "a4" ? 360 : 300;
-  const targetHeight =
-    viewport === "a4"
-      ? (maxWidth * LAYOUT_CANVAS_HEIGHT) / LAYOUT_CANVAS_WIDTH
-      : maxWidth * (16 / 9);
-  const scale =
-    viewport === "mobile"
-      ? maxWidth / LAYOUT_CANVAS_WIDTH
-      : Math.min(maxWidth / LAYOUT_CANVAS_WIDTH, targetHeight / LAYOUT_CANVAS_HEIGHT);
+  const { canvasWidth, canvasHeight } = doc.layoutJson;
+  const maxWidth = 340;
+  const scale = Math.min(
+    maxWidth / canvasWidth,
+    (maxWidth * 1.15) / canvasHeight,
+    1,
+  );
 
   return (
     <div className={`flex justify-center ${className}`}>

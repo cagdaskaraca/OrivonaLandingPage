@@ -6,7 +6,7 @@ import { Modal } from "@/src/components/ui/Modal";
 import { createConversation } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { MarketplaceItem } from "@/src/lib/api/types";
-import { btnPrimary, inputClass } from "@/src/lib/ui";
+import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 type StartConversationModalProps = {
   item: MarketplaceItem | null;
@@ -97,9 +97,19 @@ export function StartConversationModal({
         {error ? (
           <p className="whitespace-pre-line text-sm text-red-300">{error}</p>
         ) : null}
-        <button type="submit" className={btnPrimary} disabled={loading}>
-          {loading ? "Gönderiliyor…" : "Mesaj Gönder"}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="submit" className={btnPrimary} disabled={loading}>
+            {loading ? "Gönderiliyor…" : "Mesaj Gönder"}
+          </button>
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={loading}
+            onClick={onClose}
+          >
+            İptal
+          </button>
+        </div>
       </form>
     </Modal>
   );

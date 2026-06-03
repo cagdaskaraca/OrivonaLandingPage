@@ -7,7 +7,7 @@ import { fetchCustomerEventRequests } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventRequest, InvitationDesign } from "@/src/lib/api/types";
 import { invitationDesignTitle } from "@/src/lib/invitationDesign";
-import { btnPrimary, selectClass } from "@/src/lib/ui";
+import { btnPrimary, btnSecondary, selectClass } from "@/src/lib/ui";
 
 type AttachInvitationToRequestModalProps = {
   design: InvitationDesign | null;
@@ -110,13 +110,23 @@ export function AttachInvitationToRequestModal({
             {error}
           </p>
         ) : null}
-        <button
-          type="submit"
-          className={`${btnPrimary} w-full`}
-          disabled={submitting || requests.length === 0 || design?.id == null}
-        >
-          {submitting ? "Ekleniyor…" : "Talebe bağla"}
-        </button>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            className={btnSecondary}
+            disabled={submitting}
+            onClick={onClose}
+          >
+            İptal
+          </button>
+          <button
+            type="submit"
+            className={btnPrimary}
+            disabled={submitting || requests.length === 0 || design?.id == null}
+          >
+            {submitting ? "Ekleniyor…" : "Talebe bağla"}
+          </button>
+        </div>
       </form>
     </Modal>
   );

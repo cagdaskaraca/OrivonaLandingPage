@@ -5,26 +5,18 @@ import { createPortal } from "react-dom";
 import { btnSecondary } from "@/src/lib/ui";
 
 let bodyLockCount = 0;
-let lockedScrollY = 0;
 let prevBodyOverflow = "";
-let prevBodyPosition = "";
-let prevBodyTop = "";
-let prevBodyWidth = "";
+let prevHtmlOverflow = "";
 
+/** Scroll pozisyonunu koruyarak arka plan kaydırmayı kilitle (position:fixed kullanma). */
 function lockBodyScroll() {
   bodyLockCount += 1;
   if (bodyLockCount !== 1) return;
 
-  lockedScrollY = window.scrollY || 0;
   prevBodyOverflow = document.body.style.overflow;
-  prevBodyPosition = document.body.style.position;
-  prevBodyTop = document.body.style.top;
-  prevBodyWidth = document.body.style.width;
-
+  prevHtmlOverflow = document.documentElement.style.overflow;
   document.body.style.overflow = "hidden";
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${lockedScrollY}px`;
-  document.body.style.width = "100%";
+  document.documentElement.style.overflow = "hidden";
   document.documentElement.setAttribute("data-orivona-modal-open", "");
 }
 
@@ -33,12 +25,8 @@ function unlockBodyScroll() {
   if (bodyLockCount !== 0) return;
 
   document.body.style.overflow = prevBodyOverflow;
-  document.body.style.position = prevBodyPosition;
-  document.body.style.top = prevBodyTop;
-  document.body.style.width = prevBodyWidth;
+  document.documentElement.style.overflow = prevHtmlOverflow;
   document.documentElement.removeAttribute("data-orivona-modal-open");
-
-  window.scrollTo(0, lockedScrollY);
 }
 
 type ModalProps = {

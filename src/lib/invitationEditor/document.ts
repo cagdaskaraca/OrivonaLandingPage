@@ -3,6 +3,11 @@ import type { InvitationEditorJson } from "@/src/lib/api/types";
 import { applyTemplateToDocument } from "@/src/lib/invitationEditor/templates";
 import { assignZIndices } from "@/src/lib/invitationEditor/canvasOps";
 import {
+  CANVAS_PRESETS,
+  canvasFromLayout,
+  type CanvasViewportType,
+} from "@/src/lib/invitationEditor/canvasSize";
+import {
   defaultLayoutJson,
   migratePercentElementsToLayout,
   normalizeLayoutJson,
@@ -16,6 +21,40 @@ import type {
   InvitationTemplateId,
   QrLinkSource,
 } from "@/src/lib/invitationEditor/types";
+
+function parseCanvasMeta(
+  o: Record<string, unknown>,
+  layoutJson: { canvasWidth: number; canvasHeight: number },
+): InvitationEditorDocument["canvas"] {
+  const raw = o.canvas ?? o.Canvas;
+  if (raw && typeof raw === "object") {
+    const c = raw as Record<string, unknown>;
+    const typeRaw = c.type ?? c.Type;
+    const type =
+      typeRaw === "mobile" || typeRaw === "square" || typeRaw === "a4"
+        ? (typeRaw as CanvasViewportType)
+        : undefined;
+    const width =
+      typeof c.width === "number" && !Number.isNaN(c.width)
+        ? c.width
+        : typeof c.Width === "number"
+          ? c.Width
+          : undefined;
+    const height =
+      typeof c.height === "number" && !Number.isNaN(c.height)
+        ? c.height
+        : typeof c.Height === "number"
+          ? c.Height
+          : undefined;
+    if (type && width && height) {
+      return { type, width, height };
+    }
+    if (type && CANVAS_PRESETS[type]) {
+      return CANVAS_PRESETS[type];
+    }
+  }
+  return canvasFromLayout(layoutJson);
+}
 
 export function defaultFormFields(): InvitationFormFields {
   return {
@@ -50,7 +89,7 @@ export function defaultInvitationDocument(): InvitationEditorDocument {
     },
     "purplePremium",
   );
-  return syncLegacyTextFields(syncLayoutVisibility(partial));
+  return finalizeDocument(syncLegacyTextFields(syncLayoutVisibility(partial)));
 }
 
 function strField(o: Record<string, unknown>, ...keys: string[]): string {
@@ -114,7 +153,10 @@ export function finalizeDocument(
   const synced = syncLayoutVisibility(syncLegacyTextFields(doc));
   const elements = assignZIndices(synced.layoutJson.elements);
   const layoutJson = { ...synced.layoutJson, elements };
-  return { ...synced, layoutJson, elements };
+  const canvas =
+    doc.canvas ??
+    canvasFromLayout(layoutJson);
+  return { ...synced, layoutJson, elements, canvas };
 }
 
 export function parseInvitationDocument(raw: unknown): InvitationEditorDocument {
@@ -198,6 +240,7 @@ export function parseInvitationDocument(raw: unknown): InvitationEditorDocument 
       layoutJson,
       elements: layoutJson.elements,
       qr,
+      canvas: parseCanvasMeta(o, layoutJson),
     };
     return finalizeDocument(doc);
   }

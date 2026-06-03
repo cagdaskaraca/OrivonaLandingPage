@@ -1,4 +1,8 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import {
+  navigateToResolvedLink,
+  scrollToHashWhenReady,
+} from "@/src/lib/scrollToDashboardSection";
 import type { OBotAction } from "@/src/lib/obot/types";
 
 export const OBOT_ACTIONS: Record<string, OBotAction> = {
@@ -23,6 +27,24 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
     label: "Tekliflerim",
     href: "/customer/dashboard",
     sectionId: "dashboard-offers",
+  },
+  checklist: {
+    id: "checklist",
+    label: "Checklist",
+    href: "/customer/dashboard",
+    sectionId: "event-os-checklist",
+  },
+  seating: {
+    id: "seating",
+    label: "Masa planı",
+    href: "/customer/dashboard",
+    sectionId: "event-os-seating",
+  },
+  "invitation-design": {
+    id: "invitation-design",
+    label: "Davetiye tasarla",
+    href: "/customer/dashboard",
+    sectionId: "event-os-invitation-design",
   },
   messages: {
     id: "messages",
@@ -106,6 +128,13 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
   faq: { id: "faq", label: "SSS sayfası", href: "/faq" },
 };
 
+const CUSTOMER_DASHBOARD_PREFIX = "/customer/dashboard";
+
+export function isCustomerDashboardAction(action: OBotAction): boolean {
+  if (!action.href?.startsWith(CUSTOMER_DASHBOARD_PREFIX)) return false;
+  return Boolean(action.sectionId);
+}
+
 export function resolveObotAction(
   partial: Partial<OBotAction> & { label: string },
 ): OBotAction {
@@ -125,26 +154,32 @@ export function executeObotAction(
   action: OBotAction,
   options?: { closePanel?: () => void },
 ): void {
-  const target = action.href ?? "";
-  const hash = action.sectionId ? `#${action.sectionId}` : "";
+  const href = action.href ?? "";
+  const sectionId = action.sectionId?.replace(/^#/, "") ?? "";
+  const hash = sectionId ? `#${sectionId}` : "";
 
-  if (target) {
-    const url = `${target}${hash}`;
-    router.push(url);
-    if (action.sectionId) {
-      window.setTimeout(() => {
-        document.getElementById(action.sectionId!)?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 450);
-    }
-  } else if (action.sectionId) {
-    document.getElementById(action.sectionId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
+  if (href && sectionId) {
+    navigateToResolvedLink(router, {
+      pathname: href.split("#")[0] || href,
+      hash,
+      href: `${href}${hash}`,
     });
+    options?.closePanel?.();
+    return;
   }
 
-  options?.closePanel?.();
+  if (href) {
+    router.push(href);
+    options?.closePanel?.();
+    return;
+  }
+
+  if (sectionId) {
+    scrollToHashWhenReady(`#${sectionId}`, {
+      highlight: true,
+      forceSameHash: true,
+      updateHash: true,
+    });
+    options?.closePanel?.();
+  }
 }

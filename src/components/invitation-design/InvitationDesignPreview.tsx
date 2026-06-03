@@ -172,11 +172,7 @@ export function InvitationDesignPreview(props: InvitationDesignPreviewProps) {
   if (doc.version === 2) {
     return (
       <InvitationEditorFontProvider>
-        <InvitationCanvasPreview
-          document={doc}
-          viewport={compact ? "mobile" : "a4"}
-          className={className}
-        />
+        <InvitationCanvasPreview document={doc} className={className} />
       </InvitationEditorFontProvider>
     );
   }

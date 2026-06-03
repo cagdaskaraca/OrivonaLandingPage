@@ -5,24 +5,16 @@ import { createPortal } from "react-dom";
 import { btnSecondary } from "@/src/lib/ui";
 
 let lockCount = 0;
-let lockedScrollY = 0;
 let prevOverflow = "";
-let prevPosition = "";
-let prevTop = "";
-let prevWidth = "";
+let prevHtmlOverflow = "";
 
 function lockScroll() {
   lockCount += 1;
   if (lockCount !== 1) return;
-  lockedScrollY = window.scrollY || 0;
   prevOverflow = document.body.style.overflow;
-  prevPosition = document.body.style.position;
-  prevTop = document.body.style.top;
-  prevWidth = document.body.style.width;
+  prevHtmlOverflow = document.documentElement.style.overflow;
   document.body.style.overflow = "hidden";
-  document.body.style.position = "fixed";
-  document.body.style.top = `-${lockedScrollY}px`;
-  document.body.style.width = "100%";
+  document.documentElement.style.overflow = "hidden";
   document.documentElement.setAttribute("data-invitation-editor-open", "");
 }
 
@@ -30,11 +22,8 @@ function unlockScroll() {
   lockCount = Math.max(0, lockCount - 1);
   if (lockCount !== 0) return;
   document.body.style.overflow = prevOverflow;
-  document.body.style.position = prevPosition;
-  document.body.style.top = prevTop;
-  document.body.style.width = prevWidth;
+  document.documentElement.style.overflow = prevHtmlOverflow;
   document.documentElement.removeAttribute("data-invitation-editor-open");
-  window.scrollTo(0, lockedScrollY);
 }
 
 type InvitationDesignEditorModalProps = {

@@ -21,7 +21,7 @@ type EventOsContextValue = {
   plansError: string | null;
   dataRefreshKey: number;
   selectPlan: (id: string | number | null) => void;
-  refreshPlans: () => Promise<void>;
+  refreshPlans: (options?: { silent?: boolean }) => Promise<void>;
   bumpDataRefresh: () => void;
 };
 
@@ -40,8 +40,8 @@ export function EventOsProvider({ children }: { children: ReactNode }) {
     setDataRefreshKey((k) => k + 1);
   }, []);
 
-  const refreshPlans = useCallback(async () => {
-    setLoadingPlans(true);
+  const refreshPlans = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) setLoadingPlans(true);
     setPlansError(null);
     try {
       const list = await fetchMyEventPlans();

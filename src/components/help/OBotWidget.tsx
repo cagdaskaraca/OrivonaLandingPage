@@ -1,9 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { CustomerAuthPromptModal } from "@/src/components/auth/CustomerAuthPromptModal";
+import { useAuth } from "@/src/contexts/AuthContext";
 import { postHelpAssistant, welcomeReply } from "@/src/lib/api/helpAssistant";
-import { executeObotAction } from "@/src/lib/obot/actions";
+import { getSafeReturnUrl } from "@/src/lib/authRedirect";
+import {
+  executeObotAction,
+  isCustomerDashboardAction,
+} from "@/src/lib/obot/actions";
 import { getObotFallbackReply } from "@/src/lib/obot/fallback";
 import { OBOT_QUICK_QUESTIONS } from "@/src/lib/obot/suggestedQuestions";
 import type {
@@ -50,6 +57,8 @@ function OBotIcon({ className }: { className?: string }) {
 
 export function OBotWidget({ role }: OBotWidgetProps) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const { isAuthenticated, role: authRole } = useAuth();
   const panelId = useId();
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
@@ -58,6 +67,7 @@ export function OBotWidget({ role }: OBotWidgetProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<OBotChatMessage[]>([]);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
 
   const quickQuestions = OBOT_QUICK_QUESTIONS[role];
 
@@ -99,9 +109,21 @@ export function OBotWidget({ role }: OBotWidgetProps) {
 
   const handleAction = useCallback(
     (action: OBotAction) => {
+      const needsCustomer =
+        isCustomerDashboardAction(action) ||
+        (action.href === "/customer/dashboard" && Boolean(action.sectionId));
+
+      if (
+        needsCustomer &&
+        (role === "anonymous" || !isAuthenticated || authRole !== "Customer")
+      ) {
+        setAuthPromptOpen(true);
+        return;
+      }
+
       executeObotAction(router, action, { closePanel });
     },
-    [router, closePanel],
+    [router, closePanel, role, isAuthenticated, authRole],
   );
 
   const sendMessage = useCallback(
@@ -143,7 +165,21 @@ export function OBotWidget({ role }: OBotWidgetProps) {
     [loading, role, quickQuestions, dismissPulse],
   );
 
+  const returnUrl =
+    getSafeReturnUrl(
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname,
+    ) ?? "/customer/dashboard";
+
   return (
+    <>
+    <CustomerAuthPromptModal
+      open={authPromptOpen}
+      reason="login"
+      returnUrl={returnUrl}
+      onClose={() => setAuthPromptOpen(false)}
+    />
     <div
       className="orivona-obot-root pointer-events-none fixed z-[500] flex flex-col items-end gap-3"
       style={{
@@ -288,5 +324,6 @@ export function OBotWidget({ role }: OBotWidgetProps) {
         <span>OBot</span>
       </button>
     </div>
+    </>
   );
 }

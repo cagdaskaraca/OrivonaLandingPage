@@ -123,6 +123,36 @@ export const OBOT_FLOWS: OBotFlow[] = [
     },
   },
   {
+    id: "seating-plan",
+    keywords: ["masa", "masa plan", "oturma", "sandalye", "yerlesim", "yerleşim"],
+    roles: ["customer"],
+    reply: {
+      answer:
+        "Masa planı için Etkinlik Planlarım'dan aktif planı seçin, ardından Masa Planı bölümünden masaları ekleyip davetlileri sandalyelere yerleştirin.",
+      actions: [OBOT_ACTIONS.seating, OBOT_ACTIONS.guests],
+    },
+  },
+  {
+    id: "invitation-studio",
+    keywords: [
+      "davetiye tasar",
+      "davetiye stu",
+      "davetiye tasarla",
+      "studio",
+      "stu dyo",
+      "canva",
+    ],
+    roles: ["customer", "anonymous"],
+    reply: {
+      answer:
+        "Davetiye Tasarımı bölümünden şablon seçerek metin, görsel, QR ve şekillerle davetiye hazırlayabilirsiniz. Tasarımı kaydedip teklif talebinize ekleyebilirsiniz.",
+      actions: [
+        OBOT_ACTIONS["invitation-design"],
+        OBOT_ACTIONS["request-offer"],
+      ],
+    },
+  },
+  {
     id: "crm-pipeline",
     keywords: ["crm", "pipeline", "lead", "asama", "aşama"],
     roles: ["vendor"],

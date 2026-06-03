@@ -21,6 +21,7 @@ import {
 } from "@/src/lib/eventOs";
 import { EventPlanCountdown } from "@/src/components/premium/EventPlanCountdown";
 import { NumericInput } from "@/src/components/ui/NumericInput";
+import { useToast } from "@/src/contexts/ToastContext";
 import { btnPrimary, btnSecondary, inputClass } from "@/src/lib/ui";
 
 function planToForm(plan: EventPlan): EventPlanFormPayload {
@@ -38,6 +39,7 @@ function planToForm(plan: EventPlan): EventPlanFormPayload {
 }
 
 export function EventPlansSection() {
+  const toast = useToast();
   const { plans, loadingPlans, plansError, refreshPlans, selectPlan } =
     useEventOs();
   const [form, setForm] = useState<EventPlanFormPayload>(defaultEventPlanForm);
@@ -97,15 +99,17 @@ export function EventPlansSection() {
     try {
       if (editingId != null) {
         await updateEventPlan(editingId, form);
+        toast.success("Plan güncellendi.");
         setSuccess("Plan güncellendi.");
         cancelEdit();
       } else {
         const created = await createEventPlan(form);
+        toast.success("Etkinlik planı oluşturuldu.");
         setSuccess("Etkinlik planı oluşturuldu.");
         setForm(defaultEventPlanForm());
         if (created.id != null) selectPlan(created.id);
       }
-      await refreshPlans();
+      await refreshPlans({ silent: true });
     } catch (err) {
       logApiError("Event plan save", err);
       setError(formatUiErrorMessage(err, "Plan kaydedilemedi."));
@@ -126,9 +130,10 @@ export function EventPlansSection() {
     setDeletingId(plan.id);
     try {
       await deleteEventPlan(plan.id);
+      toast.success("Plan silindi.");
       setSuccess("Plan silindi.");
       if (editingId === plan.id) cancelEdit();
-      await refreshPlans();
+      await refreshPlans({ silent: true });
     } catch (err) {
       logApiError("Event plan delete", err);
       setError(formatUiErrorMessage(err, "Plan silinemedi."));

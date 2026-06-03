@@ -15,7 +15,11 @@ export type InvitationFontId =
   | "montserrat"
   | "poppins";
 
-export type PreviewViewport = "a4" | "mobile";
+import type { InvitationCanvasMeta } from "@/src/lib/invitationEditor/canvasSize";
+
+export type PreviewViewport = "a4" | "mobile" | "square";
+
+export type { CanvasViewportType, InvitationCanvasMeta } from "@/src/lib/invitationEditor/canvasSize";
 
 export type TextAlign = "left" | "center" | "right";
 
@@ -163,6 +167,8 @@ export type InvitationEditorDocument = {
   imageUrl?: string | null;
   fields: InvitationFormFields;
   layoutJson: InvitationLayoutJson;
+  /** Çalışma alanı boyutu — layoutJson ile senkron */
+  canvas?: InvitationCanvasMeta;
   /** Kayıtta layoutJson.elements ile senkron */
   elements: LayoutElement[];
   qr: {
