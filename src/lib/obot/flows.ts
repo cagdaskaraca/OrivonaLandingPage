@@ -26,7 +26,7 @@ export const OBOT_FLOWS: OBotFlow[] = [
       answer:
         "Etkinlik oluşturmak için müşteri panelinizdeki Etkinlik Planlarım alanına gidin. Buradan yeni organizasyon planı açabilir, etkinlik tarihini belirleyebilir, davetli listesi hazırlayabilir ve AI Planlayıcı ile otomatik organizasyon taslağı oluşturabilirsiniz.\n\nAdımlar: 1) Müşteri paneline girin. 2) Etkinlik Planlarım → yeni plan. 3) İsterseniz AI Planlayıcı veya Etkinlik Sihirbazı ile hızlandırın. 4) Marketplace'ten hizmet sağlayıcı işletmelerden teklif isteyin.",
       actions: [
-        { ...OBOT_ACTIONS["create-event"], label: "Etkinlik Planlarım" },
+        OBOT_ACTIONS["create-event"],
         OBOT_ACTIONS["ai-planner"],
         OBOT_ACTIONS.marketplace,
       ],
@@ -76,7 +76,11 @@ export const OBOT_FLOWS: OBotFlow[] = [
     reply: {
       answer:
         "Teklif istemek için marketplace'te bir organizasyon hizmeti seçin ve Teklif İste düğmesine basın. Etkinlik tarihi, kişi sayısı ve notlarınızı girin. Hizmet veren işletme size özel fiyat ve koşulla yanıt verir; Tekliflerim bölümünden karşılaştırıp kabul edebilirsiniz.",
-      actions: [OBOT_ACTIONS.marketplace, OBOT_ACTIONS["request-offer"]],
+      actions: [
+        OBOT_ACTIONS.marketplace,
+        OBOT_ACTIONS["event-requests"],
+        OBOT_ACTIONS["request-offer"],
+      ],
     },
   },
   {

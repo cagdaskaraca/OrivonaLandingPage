@@ -208,7 +208,11 @@ export function EventPlansSection() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4 border-t border-white/10 pt-6">
+      <form
+        id="event-os-plans-new"
+        onSubmit={handleSubmit}
+        className="space-y-4 border-t border-white/10 pt-6 scroll-mt-28"
+      >
         <h3 className="text-sm font-semibold text-violet-200/90">
           {editingId != null ? "Planı düzenle" : "Yeni etkinlik planı"}
         </h3>

@@ -8,13 +8,14 @@ import type { OBotAction } from "@/src/lib/obot/types";
 export const OBOT_ACTIONS: Record<string, OBotAction> = {
   "create-event": {
     id: "create-event",
-    label: "Etkinlik Planlarım",
+    label: "Etkinlik oluştur",
     href: "/customer/dashboard",
     sectionId: "event-os-plans",
+    scrollTargetId: "event-os-plans-new",
   },
   "ai-planner": {
     id: "ai-planner",
-    label: "AI Planlayıcıyı aç",
+    label: "AI Planlayıcı",
     href: "/ai-planner",
   },
   marketplace: {
@@ -27,6 +28,12 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
     label: "Tekliflerim",
     href: "/customer/dashboard",
     sectionId: "dashboard-offers",
+  },
+  "event-requests": {
+    id: "event-requests",
+    label: "Etkinlik Talepleri",
+    href: "/customer/dashboard",
+    sectionId: "dashboard-events",
   },
   checklist: {
     id: "checklist",
@@ -130,22 +137,81 @@ export const OBOT_ACTIONS: Record<string, OBotAction> = {
 
 const CUSTOMER_DASHBOARD_PREFIX = "/customer/dashboard";
 
+function normLabel(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function resolveActionIdByLabel(label: string): string | undefined {
+  const n = normLabel(label);
+  if (
+    n.includes("etkinlik") &&
+    (n.includes("olustur") || n.includes("plan") || n.includes("planlar"))
+  ) {
+    return "create-event";
+  }
+  if (n.includes("ai") && n.includes("plan")) return "ai-planner";
+  if (n.includes("marketplace") || n.includes("pazar")) return "marketplace";
+  if (n.includes("teklif") && n.includes("nasil")) return "marketplace";
+  if (n.includes("teklif")) return "request-offer";
+  if (n.includes("qr") || n.includes("davetiye")) {
+    if (n.includes("tasar")) return "invitation-design";
+    return "public-invite";
+  }
+  if (n.includes("misafir") || n.includes("davetli")) return "guests";
+  if (n.includes("masa")) return "seating";
+  if (n.includes("checklist")) return "checklist";
+  if (n.includes("mesaj")) return "messages";
+  if (n.includes("favori")) return "favorites";
+  if (n.includes("rezervasyon")) return "reservations";
+  if (n.includes("giris") || n.includes("login")) return "login";
+  if (n.includes("kayit")) return "register";
+  return undefined;
+}
+
 export function isCustomerDashboardAction(action: OBotAction): boolean {
   if (!action.href?.startsWith(CUSTOMER_DASHBOARD_PREFIX)) return false;
   return Boolean(action.sectionId);
 }
 
+export function requiresCustomerAuth(action: OBotAction): boolean {
+  if (action.id === "login" || action.id === "register") return false;
+  if (action.href === "/ai-planner" || action.href === "/marketplace") {
+    return false;
+  }
+  if (action.href === "/faq") return false;
+  return isCustomerDashboardAction(action);
+}
+
 export function resolveObotAction(
   partial: Partial<OBotAction> & { label: string },
 ): OBotAction {
-  if (partial.id && OBOT_ACTIONS[partial.id]) {
-    return { ...OBOT_ACTIONS[partial.id], ...partial, label: partial.label };
+  const byId =
+    partial.id && OBOT_ACTIONS[partial.id]
+      ? { ...OBOT_ACTIONS[partial.id], ...partial, label: partial.label }
+      : null;
+
+  if (byId) return byId;
+
+  const labelId = resolveActionIdByLabel(partial.label);
+  if (labelId && OBOT_ACTIONS[labelId]) {
+    return { ...OBOT_ACTIONS[labelId], ...partial, label: partial.label };
   }
+
   return {
     id: partial.id ?? partial.label.toLowerCase().replace(/\s+/g, "-"),
     label: partial.label,
     href: partial.href,
     sectionId: partial.sectionId,
+    scrollTargetId: partial.scrollTargetId,
   };
 }
 
@@ -154,16 +220,59 @@ export function executeObotAction(
   action: OBotAction,
   options?: { closePanel?: () => void },
 ): void {
-  const href = action.href ?? "";
-  const sectionId = action.sectionId?.replace(/^#/, "") ?? "";
+  const resolved =
+    action.id && OBOT_ACTIONS[action.id]
+      ? { ...OBOT_ACTIONS[action.id], ...action }
+      : resolveObotAction(action);
+
+  const href = resolved.href ?? "";
+  const sectionId = resolved.sectionId?.replace(/^#/, "") ?? "";
   const hash = sectionId ? `#${sectionId}` : "";
+  const scrollTargetId = resolved.scrollTargetId?.replace(/^#/, "");
+
+  const afterSectionScroll = () => {
+    options?.closePanel?.();
+    if (scrollTargetId) {
+      window.setTimeout(() => {
+        scrollToHashWhenReady(`#${scrollTargetId}`, {
+          highlight: true,
+          forceSameHash: true,
+          updateHash: false,
+        });
+      }, 500);
+    }
+  };
 
   if (href && sectionId) {
+    if (typeof window !== "undefined") {
+      const pathname = href.split("#")[0] || href;
+      const samePath =
+        window.location.pathname.replace(/\/$/, "") ===
+        pathname.replace(/\/$/, "");
+      if (samePath) {
+        scrollToHashWhenReady(`#${sectionId}`, {
+          highlight: true,
+          forceSameHash: true,
+          updateHash: true,
+        });
+        afterSectionScroll();
+        return;
+      }
+    }
     navigateToResolvedLink(router, {
       pathname: href.split("#")[0] || href,
       hash,
       href: `${href}${hash}`,
     });
+    if (scrollTargetId) {
+      window.setTimeout(() => {
+        scrollToHashWhenReady(`#${scrollTargetId}`, {
+          highlight: true,
+          forceSameHash: true,
+          updateHash: false,
+        });
+      }, 800);
+    }
     options?.closePanel?.();
     return;
   }
@@ -180,6 +289,6 @@ export function executeObotAction(
       forceSameHash: true,
       updateHash: true,
     });
-    options?.closePanel?.();
+    afterSectionScroll();
   }
 }

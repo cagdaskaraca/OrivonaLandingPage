@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { scrollToHashWhenReady } from "@/src/lib/scrollToDashboardSection";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  DASHBOARD_SCROLL_OFFSET_PX,
+  scrollToHashWhenReady,
+} from "@/src/lib/scrollToDashboardSection";
 import { orivonaScrollY } from "@/src/lib/ui";
 
 export type DashboardNavItem = {
@@ -16,8 +21,9 @@ export type DashboardNavGroup = {
   items: DashboardNavItem[];
 };
 
-/** IntersectionObserver only accepts px/% — no calc(), rem, or CSS variables. */
-const DASHBOARD_SECTION_ROOT_MARGIN = "-120px 0px -60% 0px";
+function isScrollSpyItem(item: DashboardNavItem): boolean {
+  return !item.href && !item.onClick;
+}
 
 type DashboardSidebarProps = {
   items: DashboardNavItem[];
@@ -38,7 +44,77 @@ export function DashboardSidebar({
   mobileOpen,
   onMobileOpenChange,
 }: DashboardSidebarProps) {
-  const [activeId, setActiveId] = useState(items[0]?.id ?? "");
+  const router = useRouter();
+  const sidebarScrollRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+  const scrollSpyItems = items.filter(isScrollSpyItem);
+  const initialActive = scrollSpyItems[0]?.id ?? items[0]?.id ?? "";
+  const [activeId, setActiveId] = useState(initialActive);
+
+  const updateActiveFromScroll = useCallback(() => {
+    if (scrollSpyItems.length === 0) return;
+
+    const offset = DASHBOARD_SCROLL_OFFSET_PX + 8;
+    const positioned = scrollSpyItems
+      .map((item) => {
+        const el = document.getElementById(item.id);
+        if (!el) return null;
+        return {
+          id: item.id,
+          top: el.getBoundingClientRect().top,
+          docTop: el.getBoundingClientRect().top + window.scrollY,
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => a.docTop - b.docTop);
+
+    if (positioned.length === 0) return;
+
+    const doc = document.documentElement;
+    const atBottom =
+      window.innerHeight + window.scrollY >= doc.scrollHeight - 48;
+
+    let current = positioned[0].id;
+    if (atBottom) {
+      current = positioned[positioned.length - 1].id;
+    } else {
+      for (const section of positioned) {
+        if (section.top <= offset) {
+          current = section.id;
+        }
+      }
+    }
+
+    setActiveId((prev) => (prev === current ? prev : current));
+  }, [scrollSpyItems]);
+
+  useEffect(() => {
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(updateActiveFromScroll);
+    };
+
+    updateActiveFromScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("orivona-dashboard-layout-ready", onScroll);
+
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("orivona-dashboard-layout-ready", onScroll);
+    };
+  }, [updateActiveFromScroll]);
+
+  useEffect(() => {
+    if (collapsed || !activeId) return;
+    const btn = itemRefs.current.get(activeId);
+    const container = sidebarScrollRef.current;
+    if (!btn || !container) return;
+    btn.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeId, collapsed]);
 
   const handleItemClick = useCallback(
     (item: DashboardNavItem) => {
@@ -48,55 +124,74 @@ export function DashboardSidebar({
         return;
       }
       if (item.href) {
-        window.location.href = item.href;
+        if (item.href.startsWith("/")) {
+          router.push(item.href);
+        } else {
+          window.location.href = item.href;
+        }
         onMobileOpenChange(false);
         return;
       }
+      setActiveId(item.id);
       scrollToHashWhenReady(`#${item.id}`, {
-        highlight: false,
+        highlight: true,
         forceSameHash: true,
         updateHash: true,
       });
-      setActiveId(item.id);
       onMobileOpenChange(false);
     },
-    [onMobileOpenChange],
+    [onMobileOpenChange, router],
   );
 
-  useEffect(() => {
-    const elements = items
-      .map((item) => document.getElementById(item.id))
-      .filter((el): el is HTMLElement => el != null);
+  const renderNavButton = (item: DashboardNavItem) => {
+    const active = activeId === item.id;
+    const className = `rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
+      active
+        ? "bg-violet-500/25 text-white ring-1 ring-inset ring-violet-400/35"
+        : "text-zinc-400 hover:bg-white/[0.05] hover:text-violet-100"
+    }`;
 
-    if (elements.length === 0) return;
-
-    let observer: IntersectionObserver | null = null;
-    try {
-      observer = new IntersectionObserver(
-        (entries) => {
-          const visible = entries
-            .filter((e) => e.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-          if (visible[0]?.target.id) {
-            setActiveId(visible[0].target.id);
-          }
-        },
-        {
-          rootMargin: DASHBOARD_SECTION_ROOT_MARGIN,
-          threshold: [0, 0.25, 0.5],
-        },
+    if (item.href) {
+      return (
+        <Link
+          key={item.id}
+          href={item.href}
+          className={className}
+          onClick={() => onMobileOpenChange(false)}
+        >
+          {collapsed ? (
+            <span className="block text-center text-xs">
+              {item.label.charAt(0)}
+            </span>
+          ) : (
+            item.label
+          )}
+        </Link>
       );
-      for (const el of elements) observer.observe(el);
-    } catch (err) {
-      console.warn(
-        "Dashboard sidebar section tracking disabled:",
-        err instanceof Error ? err.message : err,
-      );
-      return;
     }
 
-    return () => observer?.disconnect();
-  }, [items]);
+    return (
+      <button
+        key={item.id}
+        ref={(el) => {
+          if (el) itemRefs.current.set(item.id, el);
+          else itemRefs.current.delete(item.id);
+        }}
+        type="button"
+        title={collapsed ? item.label : undefined}
+        onClick={() => handleItemClick(item)}
+        className={className}
+      >
+        {collapsed ? (
+          <span className="block text-center text-xs">
+            {item.label.charAt(0)}
+          </span>
+        ) : (
+          item.label
+        )}
+      </button>
+    );
+  };
 
   const renderGroups = (groupsToRender: DashboardNavGroup[]) => (
     <nav className="flex flex-col gap-2 p-2">
@@ -108,30 +203,7 @@ export function DashboardSidebar({
             </p>
           ) : null}
           <div className="flex flex-col gap-1">
-            {group.items.map((item) => {
-              const active = activeId === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  title={collapsed ? item.label : undefined}
-                  onClick={() => handleItemClick(item)}
-                  className={`rounded-xl px-3 py-2.5 text-left text-sm font-medium transition ${
-                    active
-                      ? "bg-violet-500/25 text-white ring-1 ring-inset ring-violet-400/35"
-                      : "text-zinc-400 hover:bg-white/[0.05] hover:text-violet-100"
-                  }`}
-                >
-                  {collapsed ? (
-                    <span className="block text-center text-xs">
-                      {item.label.charAt(0)}
-                    </span>
-                  ) : (
-                    item.label
-                  )}
-                </button>
-              );
-            })}
+            {group.items.map((item) => renderNavButton(item))}
           </div>
         </div>
       ))}
@@ -194,7 +266,12 @@ export function DashboardSidebar({
               {collapsed ? "›" : "‹"}
             </button>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto">{navButtons}</div>
+          <div
+            ref={sidebarScrollRef}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
+            {navButtons}
+          </div>
         </div>
       </aside>
     </>

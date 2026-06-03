@@ -310,20 +310,52 @@ function DashboardContentInner() {
 
   const navGroups: DashboardNavGroup[] = [
     {
-      title: "Menü",
+      title: "Başlarken",
+      items: [{ id: "dashboard-help", label: "Başlarken" }],
+    },
+    {
+      title: "Etkinlik Yönetimi",
       items: [
-        { id: "dashboard-help", label: "Başlarken" },
         { id: "event-os-plans", label: "Etkinlik Planlarım" },
-        { id: "event-os-guests", label: "Davetliler" },
-        { id: "dashboard-offers", label: "Tekliflerim" },
         { id: "event-os-checklist", label: "Checklist" },
-        { id: "event-os-seating", label: "Masa Planı" },
         { id: "event-os-invitation-design", label: "Davetiye Tasarımı" },
+        { id: "event-os-playlist", label: "Müzik Tercihleri" },
+        { id: "event-os-reminders", label: "Hatırlatmalar" },
+        ...(ENABLE_EVENT_BOARD
+          ? [{ id: "event-os-board", label: "Etkinlik Panosu" } as const]
+          : []),
+      ],
+    },
+    {
+      title: "Davetli Yönetimi",
+      items: [
+        { id: "event-os-guests", label: "Davetliler" },
+        { id: "event-os-rsvp", label: "Katılım Durumu" },
+        { id: "event-os-seating", label: "Masa Planı" },
         { id: "event-os-public-invite", label: "Ortak Davet Linki" },
         { id: "event-os-public-page", label: "Herkese Açık Sayfa" },
+      ],
+    },
+    {
+      title: "Tedarikçi / Teklifler",
+      items: [
+        { id: "nav-marketplace", label: "Marketplace", href: "/marketplace" },
+        { id: "dashboard-events", label: "Etkinlik Talepleri" },
+        { id: "dashboard-offers", label: "Tekliflerim" },
         { id: "dashboard-reservations", label: "Rezervasyonlarım" },
+        { id: "dashboard-favorites", label: "Favoriler" },
+      ],
+    },
+    {
+      title: "İletişim",
+      items: [
         { id: "dashboard-messages", label: "Mesajlar" },
         { id: "dashboard-notifications", label: "Bildirimler" },
+      ],
+    },
+    {
+      title: "Hesap",
+      items: [
         { id: "dashboard-account", label: "Hesabım" },
         { id: "dashboard-activity", label: "Son Aktiviteler" },
         {
@@ -334,20 +366,6 @@ function DashboardContentInner() {
             window.location.href = "/login";
           },
         },
-      ],
-    },
-    {
-      title: "Diğer",
-      items: [
-        { id: "nav-marketplace", label: "Marketplace", href: "/marketplace" },
-        { id: "event-os-rsvp", label: "Katılım Durumu" },
-        { id: "event-os-reminders", label: "Hatırlatmalar" },
-        { id: "event-os-playlist", label: "Müzik Tercihleri" },
-        { id: "dashboard-events", label: "Etkinlik Talepleri" },
-        { id: "dashboard-favorites", label: "Favoriler" },
-        ...(ENABLE_EVENT_BOARD
-          ? [{ id: "event-os-board", label: "Etkinlik Panosu" } as const]
-          : []),
       ],
     },
   ];

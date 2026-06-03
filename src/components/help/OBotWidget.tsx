@@ -9,7 +9,8 @@ import { postHelpAssistant, welcomeReply } from "@/src/lib/api/helpAssistant";
 import { getSafeReturnUrl } from "@/src/lib/authRedirect";
 import {
   executeObotAction,
-  isCustomerDashboardAction,
+  requiresCustomerAuth,
+  resolveObotAction,
 } from "@/src/lib/obot/actions";
 import { getObotFallbackReply } from "@/src/lib/obot/fallback";
 import { OBOT_QUICK_QUESTIONS } from "@/src/lib/obot/suggestedQuestions";
@@ -108,20 +109,21 @@ export function OBotWidget({ role }: OBotWidgetProps) {
   }, []);
 
   const handleAction = useCallback(
-    (action: OBotAction) => {
-      const needsCustomer =
-        isCustomerDashboardAction(action) ||
-        (action.href === "/customer/dashboard" && Boolean(action.sectionId));
+    (action: OBotAction, e?: React.MouseEvent) => {
+      e?.preventDefault();
+      e?.stopPropagation();
+
+      const resolved = resolveObotAction(action);
 
       if (
-        needsCustomer &&
+        requiresCustomerAuth(resolved) &&
         (role === "anonymous" || !isAuthenticated || authRole !== "Customer")
       ) {
         setAuthPromptOpen(true);
         return;
       }
 
-      executeObotAction(router, action, { closePanel });
+      executeObotAction(router, resolved, { closePanel });
     },
     [router, closePanel, role, isAuthenticated, authRole],
   );
@@ -237,16 +239,19 @@ export function OBotWidget({ role }: OBotWidgetProps) {
                 <p className="whitespace-pre-wrap">{msg.text}</p>
                 {msg.role === "bot" && msg.actions?.length ? (
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {msg.actions.map((action) => (
-                      <button
-                        key={action.id}
-                        type="button"
-                        className={`${btnSecondary} !px-3 !py-1.5 text-[11px]`}
-                        onClick={() => handleAction(action)}
-                      >
-                        {action.label}
-                      </button>
-                    ))}
+                    {msg.actions.map((action) => {
+                      const resolved = resolveObotAction(action);
+                      return (
+                        <button
+                          key={resolved.id}
+                          type="button"
+                          className={`${btnSecondary} !px-3 !py-1.5 text-[11px]`}
+                          onClick={(e) => handleAction(resolved, e)}
+                        >
+                          {resolved.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : null}
                 {msg.role === "bot" && msg.suggestedQuestions?.length ? (

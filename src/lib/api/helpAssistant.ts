@@ -86,7 +86,7 @@ export function welcomeReply(role: HelpAssistantRole): OBotReply {
       ? [OBOT_ACTIONS.login, OBOT_ACTIONS.register, OBOT_ACTIONS.marketplace]
       : role === "customer"
         ? [
-            { ...OBOT_ACTIONS["create-event"], label: "Etkinlik Planlarım" },
+            OBOT_ACTIONS["create-event"],
             OBOT_ACTIONS["ai-planner"],
             OBOT_ACTIONS.marketplace,
           ]

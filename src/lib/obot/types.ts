@@ -7,6 +7,8 @@ export type OBotAction = {
   label: string;
   href?: string;
   sectionId?: string;
+  /** Bölüm içi alt hedef (ör. yeni plan formu) */
+  scrollTargetId?: string;
 };
 
 export type OBotReply = {

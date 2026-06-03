@@ -45,7 +45,7 @@ function roleDefaultReply(role: HelpAssistantRole): OBotReply {
         answer:
           "Müşteri olarak organizasyon planınızı Etkinlik Planlarım'da yönetirsiniz. Marketplace'ten hizmet arayın, teklif isteyin, rezervasyon ve davetli/QR süreçlerini panelden takip edin. Aşağıdaki hızlı sorulardan birini seçebilirsiniz.",
         actions: [
-          { ...OBOT_ACTIONS["create-event"], label: "Etkinlik Planlarım" },
+          OBOT_ACTIONS["create-event"],
           OBOT_ACTIONS["ai-planner"],
           OBOT_ACTIONS.marketplace,
         ],

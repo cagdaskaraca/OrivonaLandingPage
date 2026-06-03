@@ -53,7 +53,7 @@ export function DashboardLayout({
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
         />
-        <div className="min-w-0 flex-1 overflow-x-clip pb-20 lg:pb-0">
+        <div className="min-w-0 flex-1 overflow-x-clip pb-20 lg:pb-[240px]">
           {children}
         </div>
       </div>
