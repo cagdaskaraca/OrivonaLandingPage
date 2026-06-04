@@ -9,28 +9,63 @@ const BADGE_LABELS: Record<string, string> = {
   Popular: "Popüler",
   FastResponse: "Hızlı Dönüş",
   HighRating: "Yüksek Puan",
+  HIGHRATING: "Yüksek Puan",
   New: "Yeni",
   Featured: "Öne Çıkan",
   ÖneÇıkan: "Öne Çıkan",
   Sponsored: "Sponsorlu",
 };
 
+function badgeLookupKey(badge: string): string {
+  return badge.trim().replace(/[\s_-]+/g, "").toLowerCase();
+}
+
+const BADGE_LABELS_LOOKUP: Record<string, string> = Object.fromEntries(
+  Object.entries(BADGE_LABELS).map(([k, v]) => [badgeLookupKey(k), v]),
+);
+
 export function formatBadgeLabel(badge: string): string {
   const key = badge.trim();
   if (!key) return "";
   if (BADGE_LABELS[key]) return BADGE_LABELS[key];
-  const normalized = key.replace(/\s+/g, "");
-  for (const [k, v] of Object.entries(BADGE_LABELS)) {
-    if (k.toLowerCase() === normalized.toLowerCase()) return v;
-  }
+  const lookup = badgeLookupKey(key);
+  if (BADGE_LABELS_LOOKUP[lookup]) return BADGE_LABELS_LOOKUP[lookup];
   if (/verified|doğrulan/i.test(key)) return "Doğrulandı";
   if (/premium/i.test(key)) return "Premium Partner";
   if (/popular|popüler/i.test(key)) return "Popüler";
   if (/fast|hızlı/i.test(key)) return "Hızlı Dönüş";
-  if (/rating|puan/i.test(key)) return "Yüksek Puan";
+  if (/highrating|rating|puan/i.test(key)) return "Yüksek Puan";
   if (/new|yeni/i.test(key)) return "Yeni";
   if (/featured|öne/i.test(key)) return "Öne Çıkan";
+  if (/sponsor/i.test(key)) return "Sponsorlu";
   return key;
+}
+
+/** Opaque pill on top of service photos (marketplace + detail hero). */
+const IMAGE_OVERLAY_BADGE_TONES: Record<string, string> = {
+  "Yüksek Puan":
+    "border-fuchsia-400/60 bg-fuchsia-950/92 text-fuchsia-50",
+  "Doğrulandı":
+    "border-emerald-400/60 bg-emerald-950/92 text-emerald-50",
+  "Premium Partner":
+    "border-amber-400/60 bg-amber-950/92 text-amber-50",
+  Popüler: "border-violet-400/60 bg-violet-950/92 text-violet-50",
+  "Hızlı Dönüş": "border-sky-400/60 bg-sky-950/92 text-sky-50",
+  Yeni: "border-white/35 bg-zinc-900/92 text-zinc-100",
+  "Öne Çıkan":
+    "border-amber-400/60 bg-amber-950/92 text-amber-50",
+  Sponsorlu: "border-fuchsia-400/60 bg-fuchsia-950/92 text-fuchsia-50",
+};
+
+const imageOverlayBadgeBase =
+  "inline-flex max-w-[11rem] rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-tight normal-case tracking-normal shadow-[0_2px_14px_rgba(0,0,0,0.55)] backdrop-blur-sm";
+
+export function marketplaceImageBadgeClass(badge: string): string {
+  const label = formatBadgeLabel(badge);
+  const tone =
+    IMAGE_OVERLAY_BADGE_TONES[label] ??
+    "border-violet-400/55 bg-violet-950/90 text-violet-50";
+  return `${imageOverlayBadgeBase} ${tone}`;
 }
 
 export const BOARD_STATUS_OPTIONS = [

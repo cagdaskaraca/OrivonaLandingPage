@@ -31,10 +31,10 @@ export function featuredCardClasses(isFeatured: boolean): string {
 }
 
 export const featuredBadgeClass =
-  "inline-flex rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-500/25 via-amber-400/15 to-violet-500/25 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-100 shadow-[0_0_16px_rgba(251,191,36,0.35)]";
+  "inline-flex rounded-full border border-amber-300/75 bg-gradient-to-r from-amber-600/95 via-amber-500/90 to-violet-800/88 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-amber-50 shadow-[0_2px_16px_rgba(0,0,0,0.55),0_0_18px_rgba(251,191,36,0.35)] backdrop-blur-sm";
 
 export const premiumBadgeClass =
-  "inline-flex shrink-0 rounded-full border border-amber-200/40 bg-gradient-to-r from-amber-400/20 to-amber-600/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.25)]";
+  "inline-flex shrink-0 rounded-full border border-amber-300/65 bg-gradient-to-r from-amber-600/92 to-amber-800/88 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-amber-50 shadow-[0_2px_14px_rgba(0,0,0,0.5)] backdrop-blur-sm";
 
 export { sponsoredBadgeClass, isServiceSponsored } from "@/src/lib/commerceUi";
 

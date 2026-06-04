@@ -19,7 +19,7 @@ export const cardHover =
   "transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-violet-400/25 hover:shadow-[0_18px_48px_-16px_rgba(109,40,217,0.35)]";
 
 export const badgeClass =
-  "inline-flex rounded-full border border-violet-400/25 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100";
+  "inline-flex rounded-full border border-violet-400/40 bg-violet-500/25 px-2.5 py-0.5 text-[10px] font-semibold text-violet-100";
 
 /** Marketplace featured service card glow (gold + purple). */
 export const marketplaceFeaturedGlow =

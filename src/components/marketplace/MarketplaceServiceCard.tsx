@@ -20,7 +20,11 @@ import {
   sponsoredCardClasses,
 } from "@/src/lib/marketplacePremium";
 import { ServiceBadgeChips } from "@/src/components/premium/ServiceBadgeChips";
-import { badgeClass, btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
+import {
+  formatBadgeLabel,
+  marketplaceImageBadgeClass,
+} from "@/src/lib/premiumLabels";
+import { btnPrimary, btnSecondary, cardHover, glassCard } from "@/src/lib/ui";
 
 type MarketplaceServiceCardProps = {
   item: MarketplaceItem;
@@ -80,12 +84,14 @@ export function MarketplaceServiceCard({
   const featured = item.isFeatured === true;
   const sponsored = isServiceSponsored(item);
   const premium = isPremiumVendor(item);
-  const apiBadges = (item.badges ?? []).filter(
-    (b) =>
-      !b.toLowerCase().includes("premium") &&
-      b !== "Öne Çıkan" &&
-      !b.toLowerCase().includes("featured"),
-  );
+  const apiBadges = (item.badges ?? []).filter((b) => {
+    const raw = b.toLowerCase();
+    const label = formatBadgeLabel(b).toLowerCase();
+    if (raw.includes("premium") || label.includes("premium")) return false;
+    if (raw.includes("featured") || label.includes("öne çıkan")) return false;
+    if (raw.includes("sponsor") || label.includes("sponsorlu")) return false;
+    return true;
+  });
 
   const actionBtnBase =
     "flex min-h-[2.5rem] w-full min-w-0 flex-1 basis-0 items-center justify-center rounded-full px-3 py-2 text-center text-xs font-semibold sm:text-sm";
@@ -146,8 +152,8 @@ export function MarketplaceServiceCard({
           ) : null}
           {premium ? <span className={premiumBadgeClass}>Premium</span> : null}
           {apiBadges.slice(0, featured && premium ? 1 : 2).map((b) => (
-            <span key={b} className={badgeClass}>
-              {b}
+            <span key={b} className={marketplaceImageBadgeClass(b)}>
+              {formatBadgeLabel(b)}
             </span>
           ))}
         </div>
