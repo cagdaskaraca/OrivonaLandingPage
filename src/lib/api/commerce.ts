@@ -174,6 +174,24 @@ export async function fetchAdminPromotions(): Promise<Promotion[]> {
   );
 }
 
+function buildPromotionRequestBody(payload: {
+  promotionType: PromotionType;
+  startDate: string;
+  endDate: string;
+}): Record<string, unknown> {
+  const startsAt = toApiDateOrNull(payload.startDate);
+  const endsAt = toApiDateOrNull(payload.endDate);
+  return {
+    type: payload.promotionType,
+    startsAt,
+    endsAt,
+    // Legacy aliases — backend accepts these too
+    promotionType: payload.promotionType,
+    startDate: startsAt,
+    endDate: endsAt,
+  };
+}
+
 export async function promoteAdminService(
   serviceId: string | number,
   payload: {
@@ -183,7 +201,10 @@ export async function promoteAdminService(
     categoryId?: string | number;
   },
 ): Promise<void> {
-  await apiPost(`/admin/services/${serviceId}/promote`, payload);
+  await apiPost(
+    `/admin/services/${serviceId}/promote`,
+    buildPromotionRequestBody(payload),
+  );
 }
 
 export async function disableAdminPromotion(id: string | number): Promise<void> {

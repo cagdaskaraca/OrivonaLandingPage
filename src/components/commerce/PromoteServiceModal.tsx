@@ -31,14 +31,27 @@ export function PromoteServiceModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (serviceId == null) return;
+    if (serviceId == null) {
+      setError("Hizmet seçilemedi. Modalı kapatıp tekrar deneyin.");
+      return;
+    }
+    const start = startDate.trim();
+    const end = endDate.trim();
+    if (!start || !end) {
+      setError("Lütfen başlangıç ve bitiş tarihlerini seçin.");
+      return;
+    }
+    if (end < start) {
+      setError("Bitiş tarihi başlangıçtan sonra olmalıdır.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       await promoteAdminService(serviceId, {
         promotionType,
-        startDate,
-        endDate,
+        startDate: start,
+        endDate: end,
       });
       onSuccess();
       onClose();
