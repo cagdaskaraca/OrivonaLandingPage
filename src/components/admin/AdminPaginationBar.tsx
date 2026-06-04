@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+  ADMIN_DEFAULT_PAGE_SIZE,
   ADMIN_PAGE_SIZE_OPTIONS,
   type AdminPageSize,
 } from "@/src/components/admin/useAdminPagination";
@@ -17,7 +18,7 @@ type AdminPaginationBarProps = {
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
   searchPlaceholder?: string;
-  /** Show controls when count exceeds this (default 10). */
+  /** Show controls when count exceeds this (default 5). */
   minItemsForControls?: number;
 };
 
@@ -34,7 +35,7 @@ export function AdminPaginationBar({
   searchQuery,
   onSearchChange,
   searchPlaceholder,
-  minItemsForControls = 10,
+  minItemsForControls = ADMIN_DEFAULT_PAGE_SIZE,
 }: AdminPaginationBarProps) {
   const showControls = totalCount > minItemsForControls || Boolean(searchQuery?.trim());
   const showSearch = onSearchChange != null;

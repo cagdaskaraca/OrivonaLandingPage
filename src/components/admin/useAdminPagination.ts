@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-export const ADMIN_PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
+export const ADMIN_PAGE_SIZE_OPTIONS = [5, 10, 20] as const;
+export const ADMIN_DEFAULT_PAGE_SIZE = 5;
 export type AdminPageSize = (typeof ADMIN_PAGE_SIZE_OPTIONS)[number];
 
 type UseAdminPaginationOptions<T> = {
@@ -21,12 +22,13 @@ export function useAdminPagination<T>(
   items: T[],
   options: UseAdminPaginationOptions<T> = {},
 ) {
-  const { pageSize: initialPageSize = 10, filterFn = defaultFilter } = options;
+  const { pageSize: initialPageSize = ADMIN_DEFAULT_PAGE_SIZE, filterFn = defaultFilter } =
+    options;
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<AdminPageSize>(
     ADMIN_PAGE_SIZE_OPTIONS.includes(initialPageSize as AdminPageSize)
       ? (initialPageSize as AdminPageSize)
-      : 10,
+      : ADMIN_DEFAULT_PAGE_SIZE,
   );
   const [searchQuery, setSearchQuery] = useState("");
 

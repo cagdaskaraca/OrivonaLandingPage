@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { AdminPaginationBar } from "@/src/components/admin/AdminPaginationBar";
 import {
+  ADMIN_DEFAULT_PAGE_SIZE,
   useAdminPagination,
   type AdminPageSize,
 } from "@/src/components/admin/useAdminPagination";
@@ -26,7 +27,7 @@ export function AdminPaginatedList<T>({
   items,
   renderItem,
   getItemKey,
-  pageSize = 10,
+  pageSize = ADMIN_DEFAULT_PAGE_SIZE,
   emptyMessage = "Henüz kayıt yok.",
   searchPlaceholder,
   filterItem,
