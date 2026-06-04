@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { MarketplaceServiceCard } from "@/src/components/marketplace/MarketplaceServiceCard";
 import { OfferRequestModal } from "@/src/components/marketplace/OfferRequestModal";
@@ -12,16 +11,19 @@ import {
   fetchMarketplace,
 } from "@/src/lib/api";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
-import type { Category, MarketplaceItem } from "@/src/lib/api/types";
+import type { Category, MarketplaceFilters, MarketplaceItem } from "@/src/lib/api/types";
 import { ActiveCampaignBanner } from "@/src/components/commerce/ActiveCampaignBanner";
 import { MarketplaceEducationBanner } from "@/src/components/help/MarketplaceEducationBanner";
-import { buildMarketplaceHref } from "@/src/lib/marketplaceUrl";
 import { sortMarketplaceItems } from "@/src/lib/marketplacePremium";
 import { notifyLandingLayoutReady } from "@/src/lib/scrollToDashboardSection";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
+const DEFAULT_FILTERS: MarketplaceFilters = {
+  pageSize: "6",
+  sortBy: "popular",
+};
+
 export function HomeMarketplacePreview() {
-  const router = useRouter();
   const toast = useToast();
   const { requireCustomerAction, authPromptModal } = useCustomerActionGuard();
   const [items, setItems] = useState<MarketplaceItem[]>([]);
@@ -33,15 +35,15 @@ export function HomeMarketplacePreview() {
   const [keyword, setKeyword] = useState("");
   const [offerItem, setOfferItem] = useState<MarketplaceItem | null>(null);
 
-  const loadServices = useCallback(async () => {
+  const loadServices = useCallback(async (filters?: MarketplaceFilters) => {
     setLoading(true);
     setError(null);
     try {
       const { items: raw } = await fetchMarketplace({
-        pageSize: "6",
-        sortBy: "popular",
+        ...DEFAULT_FILTERS,
+        ...filters,
       });
-      setItems(sortMarketplaceItems(raw, "popular"));
+      setItems(sortMarketplaceItems(raw, filters?.sortBy ?? "popular"));
     } catch (err) {
       logApiError("Home marketplace preview", err);
       setItems([]);
@@ -61,15 +63,31 @@ export function HomeMarketplacePreview() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(
-      buildMarketplaceHref({ city, categoryId, keyword }),
-    );
+    const trimmedCity = city.trim();
+    const trimmedCategory = categoryId.trim();
+    const trimmedKeyword = keyword.trim();
+    void loadServices({
+      ...DEFAULT_FILTERS,
+      city: trimmedCity || undefined,
+      categoryId: trimmedCategory || undefined,
+      keyword: trimmedKeyword || undefined,
+    });
+  }
+
+  function handleClearFilters() {
+    setCity("");
+    setCategoryId("");
+    setKeyword("");
+    void loadServices();
   }
 
   function openOffer(item: MarketplaceItem) {
     if (!requireCustomerAction()) return;
     setOfferItem(item);
   }
+
+  const hasActiveFilters =
+    city.trim() !== "" || categoryId.trim() !== "" || keyword.trim() !== "";
 
   return (
     <section
@@ -102,7 +120,7 @@ export function HomeMarketplacePreview() {
 
         <form
           onSubmit={handleSearch}
-          className={`${glassCard} mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_auto]`}
+          className={`${glassCard} mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr_auto_auto]`}
         >
           <label className="block text-sm">
             <span className="mb-1 block text-xs text-zinc-500">Şehir</span>
@@ -137,15 +155,34 @@ export function HomeMarketplacePreview() {
               placeholder="Düğün, DJ, catering…"
             />
           </label>
-          <button type="submit" className={`${btnPrimary} sm:self-end`}>
-            Ara
+          <button type="submit" className={`${btnPrimary} sm:self-end`} disabled={loading}>
+            {loading ? "Aranıyor…" : "Ara"}
           </button>
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              className={`${btnSecondary} sm:self-end`}
+              disabled={loading}
+              onClick={handleClearFilters}
+            >
+              Temizle
+            </button>
+          ) : null}
         </form>
 
         {error ? (
-          <p className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            {error}
-          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <p className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {error}
+            </p>
+            <button
+              type="button"
+              className={btnSecondary}
+              onClick={() => void loadServices()}
+            >
+              Tekrar dene
+            </button>
+          </div>
         ) : null}
 
         {loading ? (
@@ -159,16 +196,16 @@ export function HomeMarketplacePreview() {
           </div>
         ) : items.length === 0 ? (
           <p className="mt-8 text-center text-sm text-zinc-500">
-            Henüz listelenecek hizmet yok.{" "}
+            Henüz öne çıkan hizmet bulunamadı.{" "}
             <Link href="/marketplace" className="text-violet-300 hover:text-violet-200">
               Marketplace&apos;e gidin
             </Link>
           </p>
         ) : (
           <div className="mt-8 grid auto-rows-fr gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((item, i) => (
+            {items.map((item) => (
               <MarketplaceServiceCard
-                key={String(item.vendorServiceId ?? item.id ?? i)}
+                key={String(item.vendorServiceId ?? item.id)}
                 item={item}
                 showFavoriteButton
                 showOfferButton

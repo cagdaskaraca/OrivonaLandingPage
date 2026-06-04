@@ -273,6 +273,7 @@ function DashboardContent() {
       navGroups={VENDOR_DASHBOARD_NAV}
       storageKey="vendor"
       onLogout={handleLogout}
+      fullWidth
       toolbar={toolbar}
     >
       <MobileHomeSummary />

@@ -19,8 +19,6 @@ function isScrollSpyItem(item: DashboardNavItem): boolean {
 
 type DashboardSidebarProps = {
   groups: DashboardNavGroup[];
-  expandedWidthClassName?: string;
-  collapsedWidthClassName?: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
@@ -79,8 +77,6 @@ function CollapsedTooltip({ label }: { label: string }) {
 
 export function DashboardSidebar({
   groups,
-  expandedWidthClassName = "lg:w-[280px]",
-  collapsedWidthClassName = "lg:w-[72px]",
   collapsed,
   onToggleCollapsed,
   mobileOpen,
@@ -271,11 +267,9 @@ export function DashboardSidebar({
     </nav>
   );
 
-  const widthClass = collapsed ? collapsedWidthClassName : expandedWidthClassName;
-
   const asideInner = (
     <div
-      className={`orivona-panel-sidebar-inner flex h-full flex-col rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/98 to-[#08050f]/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY}`}
+      className="orivona-panel-sidebar-inner rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/98 to-[#08050f]/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)]"
     >
       <div
         className={`flex shrink-0 items-center border-b border-violet-500/15 px-2 py-2.5 ${
@@ -302,7 +296,7 @@ export function DashboardSidebar({
       </div>
       <div
         ref={sidebarScrollRef}
-        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+        className={`orivona-panel-sidebar-scroll ${orivonaScrollY}`}
       >
         {navButtons}
       </div>
@@ -344,9 +338,7 @@ export function DashboardSidebar({
       ) : null}
 
       <aside
-        className={`orivona-panel-sidebar hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${widthClass} ${
-          collapsed ? "is-collapsed" : ""
-        } lg:top-24 lg:h-[calc(100vh-120px)]`}
+        className={`orivona-panel-sidebar ${collapsed ? "is-collapsed" : ""}`}
       >
         {asideInner}
       </aside>

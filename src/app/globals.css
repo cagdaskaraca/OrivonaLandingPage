@@ -155,7 +155,7 @@ html {
   --orivona-sidebar-collapsed: 72px;
 }
 
-/* Panel layout — fixed left sidebar + content */
+/* Panel layout — sticky left sidebar + scrolling main content */
 .orivona-panel-layout {
   display: flex;
   flex-direction: column;
@@ -173,11 +173,22 @@ html {
 }
 
 .orivona-panel-sidebar {
+  display: none;
   width: var(--orivona-sidebar-expanded);
   flex-shrink: 0;
-  top: calc(var(--orivona-header-h) + 0.75rem);
-  height: calc(100vh - var(--orivona-header-h) - 1.5rem);
-  max-height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+}
+
+@media (min-width: 1024px) {
+  .orivona-panel-sidebar {
+    display: block;
+    position: sticky;
+    align-self: flex-start;
+    top: calc(var(--orivona-header-h) + 0.75rem);
+    height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+    max-height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+    overflow: hidden;
+    z-index: 40;
+  }
 }
 
 .orivona-panel-sidebar.is-collapsed {
@@ -185,17 +196,31 @@ html {
 }
 
 .orivona-panel-sidebar-inner {
+  display: flex;
+  flex-direction: column;
   height: 100%;
-  min-height: 14rem;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.orivona-panel-sidebar-scroll {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .orivona-panel-content {
+  flex: 1 1 auto;
   width: 100%;
   min-width: 0;
+  overflow-x: clip;
 }
 
 .orivona-panel-main {
-  overflow-x: clip;
+  /* Do not set overflow here — it breaks position: sticky on the sidebar */
 }
 
 .orivona-scroll-x {

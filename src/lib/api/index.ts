@@ -83,11 +83,29 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
     vendor && typeof vendor === "object"
       ? (vendor as Record<string, unknown>)
       : undefined;
+  const service = o.service ?? o.Service;
+  const serviceObj =
+    service && typeof service === "object"
+      ? (service as Record<string, unknown>)
+      : undefined;
   const vendorName =
     str("vendorName", "VendorName") ??
-    (vendorObj && typeof vendorObj.name === "string"
-      ? vendorObj.name
-      : undefined);
+    str("businessName", "BusinessName") ??
+    (vendorObj && typeof vendorObj.businessName === "string"
+      ? vendorObj.businessName
+      : vendorObj && typeof vendorObj.BusinessName === "string"
+        ? vendorObj.BusinessName
+        : vendorObj && typeof vendorObj.name === "string"
+          ? vendorObj.name
+          : undefined);
+  const serviceTitleFromNested =
+    serviceObj && typeof serviceObj.title === "string"
+      ? serviceObj.title
+      : serviceObj && typeof serviceObj.Title === "string"
+        ? serviceObj.Title
+        : serviceObj && typeof serviceObj.name === "string"
+          ? serviceObj.name
+          : undefined;
   const vendorPremium =
     o.isVendorPremium === true ||
     o.IsVendorPremium === true ||
@@ -108,8 +126,12 @@ export function normalizeMarketplaceItem(item: unknown): MarketplaceItem {
     serviceTitle:
       str("serviceTitle", "ServiceTitle") ??
       str("title", "Title") ??
-      str("name", "Name"),
-    title: str("title", "Title") ?? str("name", "Name"),
+      str("name", "Name") ??
+      serviceTitleFromNested,
+    title:
+      str("title", "Title") ??
+      str("name", "Name") ??
+      serviceTitleFromNested,
     description:
       typeof o.description === "string"
         ? o.description
@@ -220,21 +242,64 @@ export async function fetchServiceById(
   throw new Error("Hizmet detayı bulunamadı.");
 }
 
-/** Reads services from `response.data.data` or `response.data.data.items`. */
+/** Item has minimum fields required to render a marketplace card. */
+export function isRenderableMarketplaceItem(item: MarketplaceItem): boolean {
+  const id = item.vendorServiceId ?? item.id;
+  if (id == null || id === "") return false;
+  const title = (item.serviceTitle ?? item.title ?? "").trim();
+  return title.length > 0;
+}
+
+/** Unwrap nested API envelopes until a services array is found. */
+function unwrapMarketplaceListPayload(raw: unknown): unknown[] {
+  let current: unknown = raw;
+  const visited = new Set<unknown>();
+
+  for (let depth = 0; depth < 8; depth++) {
+    if (current == null) return [];
+    if (Array.isArray(current)) return current;
+    if (typeof current !== "object") return [];
+    if (visited.has(current)) return [];
+    visited.add(current);
+
+    const direct = toList<unknown>(current);
+    if (direct.length > 0) return direct;
+
+    const o = current as Record<string, unknown>;
+    const inner = o.data ?? o.Data;
+    if (inner != null && inner !== current) {
+      current = inner;
+      continue;
+    }
+    break;
+  }
+  return [];
+}
+
+/** Reads services from `response.data`, `response.data.data`, or paginated `items`. */
 export function extractMarketplaceItems(
   response: MarketplaceHttpResponse,
 ): MarketplaceItem[] {
-  const payload = response.data.data;
-  if (Array.isArray(payload)) {
-    return payload.map(normalizeMarketplaceItem);
+  const body = response.data;
+  if (!body || typeof body !== "object") return [];
+
+  const envelope = body as Record<string, unknown>;
+  if (envelope.success === false) return [];
+
+  const roots: unknown[] = [
+    envelope.data,
+    envelope.Data,
+    envelope,
+  ];
+
+  for (const root of roots) {
+    const list = unwrapMarketplaceListPayload(root);
+    if (list.length === 0) continue;
+    return list
+      .map(normalizeMarketplaceItem)
+      .filter(isRenderableMarketplaceItem);
   }
-  if (payload && typeof payload === "object") {
-    const obj = payload as Record<string, unknown>;
-    if (Array.isArray(obj.items)) {
-      return obj.items.map(normalizeMarketplaceItem);
-    }
-    return toList<unknown>(payload).map(normalizeMarketplaceItem);
-  }
+
   return [];
 }
 

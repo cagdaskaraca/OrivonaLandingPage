@@ -344,8 +344,6 @@ function DashboardContentInner() {
         window.location.href = "/login";
       }}
       fullWidth
-      sidebarExpandedWidthClassName="lg:w-[280px]"
-      sidebarCollapsedWidthClassName="lg:w-[72px]"
       toolbar={toolbar}
     >
       <MobileHomeSummary />

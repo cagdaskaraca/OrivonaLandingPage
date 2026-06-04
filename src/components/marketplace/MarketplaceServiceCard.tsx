@@ -89,7 +89,14 @@ export function MarketplaceServiceCard({
 
   const actionBtnBase =
     "flex min-h-[2.5rem] w-full min-w-0 flex-1 basis-0 items-center justify-center rounded-full px-3 py-2 text-center text-xs font-semibold sm:text-sm";
-  const hasMeta = price != null || rating != null || capacity != null;
+  const descriptionText =
+    item.description?.trim() ||
+    "Detaylar için hizmet sayfasını inceleyin.";
+  const priceLabel =
+    price != null
+      ? `${price.toLocaleString("tr-TR")} ₺`
+      : "Fiyat bilgisi isteyin";
+  const hasMeta = true;
   const showActions =
     detailHref != null ||
     showMessageButton ||
@@ -199,35 +206,31 @@ export function MarketplaceServiceCard({
             </p>
           )}
           <div className="min-h-[2.75rem]">
-            {item.description ? (
-              <p className="line-clamp-2 text-sm leading-relaxed text-zinc-400">
-                {item.description}
-              </p>
-            ) : null}
+            <p className="line-clamp-2 text-sm leading-relaxed text-zinc-400">
+              {descriptionText}
+            </p>
           </div>
         </div>
 
-        {hasMeta ? (
-          <div className="mt-4 shrink-0 border-t border-white/10 pt-3">
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-zinc-300">
-              {price != null && (
-                <span>
-                  Fiyat:{" "}
-                  <strong className="text-white">
-                    {price.toLocaleString("tr-TR")} ₺
-                  </strong>
-                </span>
-              )}
-              {rating != null && (
-                <span>
-                  ★ {rating}
-                  {item.reviewCount != null ? ` (${item.reviewCount})` : ""}
-                </span>
-              )}
-              {capacity != null && <span>Kapasite: {capacity} kişi</span>}
-            </div>
+        <div className="mt-4 shrink-0 border-t border-white/10 pt-3">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-zinc-300">
+            <span>
+              Fiyat:{" "}
+              <strong className={price != null ? "text-white" : "text-zinc-400"}>
+                {priceLabel}
+              </strong>
+            </span>
+            {rating != null ? (
+              <span>
+                ★ {rating}
+                {item.reviewCount != null ? ` (${item.reviewCount})` : ""}
+              </span>
+            ) : null}
+            {capacity != null ? (
+              <span>Kapasite: {capacity} kişi</span>
+            ) : null}
           </div>
-        ) : null}
+        </div>
 
         {showActions ? (
           <div

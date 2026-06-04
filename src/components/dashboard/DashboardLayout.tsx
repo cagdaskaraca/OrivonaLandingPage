@@ -29,8 +29,6 @@ type DashboardLayoutProps = {
   storageKey?: string;
   onLogout?: () => void;
   fullWidth?: boolean;
-  sidebarExpandedWidthClassName?: string;
-  sidebarCollapsedWidthClassName?: string;
   toolbar?: ReactNode;
   children: ReactNode;
 };
@@ -43,8 +41,6 @@ export function DashboardLayout({
   storageKey = "default",
   onLogout,
   fullWidth = false,
-  sidebarExpandedWidthClassName = "lg:w-[280px]",
-  sidebarCollapsedWidthClassName = "lg:w-[72px]",
   toolbar,
   children,
 }: DashboardLayoutProps) {
@@ -112,10 +108,8 @@ export function DashboardLayout({
           mobileOpen={mobileOpen}
           onMobileOpenChange={setMobileOpen}
           onLogout={onLogout}
-          expandedWidthClassName={sidebarExpandedWidthClassName}
-          collapsedWidthClassName={sidebarCollapsedWidthClassName}
         />
-        <div className="orivona-panel-content min-w-0 flex-1 overflow-x-clip pb-20 lg:pb-[240px]">
+        <div className="orivona-panel-content pb-20 lg:pb-[240px]">
           {toolbar ? (
             <div className="mb-6 flex flex-wrap items-center gap-3">{toolbar}</div>
           ) : null}
