@@ -214,11 +214,6 @@ function DashboardContent() {
       onLogout={handleLogout}
       toolbar={toolbar}
     >
-      <section id="admin-account" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="text-lg font-semibold text-white">Hesabım</h2>
-        <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
-      </section>
-
       <section id="admin-summary" className="mb-8 scroll-mt-24">
         <h2 className="mb-4 text-lg font-semibold text-white">Platform özeti</h2>
         <AdminSummaryCards summary={summary} loading={summaryLoading} />
@@ -231,24 +226,12 @@ function DashboardContent() {
         </div>
       </section>
 
-      <section id="admin-campaigns" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="mb-4 text-lg font-semibold text-white">Kampanyalar</h2>
-        <AdminCampaignsSection />
-      </section>
-
-      <section id="admin-coupons" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="mb-4 text-lg font-semibold text-white">Kupon yönetimi</h2>
-        <AdminCouponsSection />
-      </section>
-
-      <section id="admin-promotions" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="mb-4 text-lg font-semibold text-white">Sponsorlu / öne çıkan tanıtımlar</h2>
-        <AdminPromotionsSection />
-      </section>
-
-      <section id="admin-categories" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="text-lg font-semibold text-white">Kategori yönetimi</h2>
-        <AdminCategoryManagement
+      <section id="admin-users" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="text-lg font-semibold text-white">Kullanıcı yönetimi</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Müşteri, işletme ve yönetici hesaplarının durumu.
+        </p>
+        <AdminUserManagement
           onToastSuccess={toast.success}
           onToastError={toast.error}
         />
@@ -284,22 +267,6 @@ function DashboardContent() {
         />
       </section>
 
-      <section id="admin-users" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="text-lg font-semibold text-white">Kullanıcı yönetimi</h2>
-        <p className="mt-1 text-sm text-zinc-500">
-          Müşteri, işletme ve yönetici hesaplarının durumu.
-        </p>
-        <AdminUserManagement
-          onToastSuccess={toast.success}
-          onToastError={toast.error}
-        />
-      </section>
-
-      <section id="admin-notifications" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <h2 className="mb-4 text-lg font-semibold text-white">Bildirimler</h2>
-        <NotificationsPanel />
-      </section>
-
       <section id="admin-services" className={`${glassCard} mb-8 scroll-mt-24`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -316,6 +283,39 @@ function DashboardContent() {
           onToggleFeature={handleToggleFeature}
           onPromote={setPromoteTarget}
         />
+      </section>
+
+      <section id="admin-categories" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="text-lg font-semibold text-white">Kategori yönetimi</h2>
+        <AdminCategoryManagement
+          onToastSuccess={toast.success}
+          onToastError={toast.error}
+        />
+      </section>
+
+      <section id="admin-notifications" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Bildirimler</h2>
+        <NotificationsPanel />
+      </section>
+
+      <section id="admin-campaigns" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Kampanyalar</h2>
+        <AdminCampaignsSection />
+      </section>
+
+      <section id="admin-coupons" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Kupon yönetimi</h2>
+        <AdminCouponsSection />
+      </section>
+
+      <section id="admin-promotions" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="mb-4 text-lg font-semibold text-white">Sponsorlu / öne çıkan tanıtımlar</h2>
+        <AdminPromotionsSection />
+      </section>
+
+      <section id="admin-account" className={`${glassCard} mb-8 scroll-mt-24`}>
+        <h2 className="text-lg font-semibold text-white">Hesabım</h2>
+        <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
       </section>
 
       <PromoteServiceModal

@@ -278,8 +278,6 @@ function DashboardContent() {
     >
       <MobileHomeSummary />
 
-      <DashboardHelpPanel role="vendor" />
-
       {!profileLoading && profile && profile.isApproved === false ? (
         <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
           İşletme profiliniz henüz doğrulanmadı. Hizmetleriniz marketplace&apos;te
@@ -298,107 +296,29 @@ function DashboardContent() {
         <VendorSummaryCards />
       </section>
 
+      <DashboardHelpPanel role="vendor" />
+
       <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
         <ActivityFeedSection role="vendor" />
       </DashboardSection>
+
+      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
+        <VendorOfferRequestsPanel />
+      </section>
 
       <DashboardSection id="dashboard-pipeline" title="CRM Pipeline">
         <VendorPipelineSection />
       </DashboardSection>
 
-      <DashboardSection id="dashboard-analytics" title="Analitik">
-        <p className="mb-4 text-sm text-zinc-400">
-          Marketplace Intelligence — görüntülenme, dönüşüm ve hizmet performansı.
-        </p>
-        <VendorAnalyticsSection />
-      </DashboardSection>
+      <section id="dashboard-reservations" className={`${orivonaDashboardAnchor} mb-8`}>
+        <VendorReservationsPanel />
+      </section>
 
       <DashboardSection id="dashboard-crm" title="İşletme CRM">
         <p className="mb-4 text-sm text-zinc-400">
           Lead listesi, durum güncelleme ve notlar. Müşteri adları gizlidir.
         </p>
         <VendorCrmSection />
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-review-intel" title="Yorum özeti">
-        <VendorReviewIntelligenceSection />
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-account" title="Hesabım">
-        {user ? (
-          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                Ad
-              </dt>
-              <dd className="text-white">
-                {user.fullName ?? user.name ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                E-posta
-              </dt>
-              <dd className="text-white">{user.email ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                İşletme adı
-              </dt>
-              <dd className="text-white">
-                {profile?.businessName?.trim() || "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-zinc-500">
-                Onay durumu
-              </dt>
-              <dd className={isApproved ? "text-emerald-300" : "text-amber-300"}>
-                {profileLoading
-                  ? "…"
-                  : isApproved
-                    ? "Onaylı"
-                    : "Onay bekliyor"}
-              </dd>
-            </div>
-          </dl>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
-        )}
-      </DashboardSection>
-
-      <DashboardSection id="dashboard-profile" title="İşletme profili">
-        {profileLoading ? (
-          <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
-        ) : profile ? (
-          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
-            <div>
-              <dt className="text-xs text-zinc-500">İşletme</dt>
-              <dd className="text-white">{profile.businessName ?? "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-zinc-500">Konum</dt>
-              <dd className="text-white">
-                {[profile.city, profile.district].filter(Boolean).join(" · ") ||
-                  "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-zinc-500">Onay durumu</dt>
-              <dd className={isApproved ? "text-emerald-300" : "text-amber-300"}>
-                {isApproved ? "Onaylı" : "Onay bekliyor"}
-              </dd>
-            </div>
-            {profile.description ? (
-              <div>
-                <dt className="text-xs text-zinc-500">Açıklama</dt>
-                <dd>{profile.description}</dd>
-              </div>
-            ) : null}
-          </dl>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-500">Profil yüklenemedi.</p>
-        )}
       </DashboardSection>
 
       <DashboardSection id="dashboard-services" title="Hizmetlerim">
@@ -562,7 +482,7 @@ function DashboardContent() {
                   city={form.city}
                   basePrice={form.basePrice}
                 />
-                <div id="dashboard-service-media" className="scroll-mt-24">
+                <div className="scroll-mt-24">
                   <VendorServiceMediaPanel serviceId={editingId} />
                 </div>
               </>
@@ -633,28 +553,23 @@ function DashboardContent() {
         </VendorSectionState>
       </DashboardSection>
 
-      <section id="dashboard-coupons" className="scroll-mt-24 mb-8">
-        <VendorCouponsSection />
-      </section>
-
-      <section id="dashboard-promotions" className="scroll-mt-24 mb-8">
-        <VendorPromotionsSection />
-      </section>
-
-      <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
-        <VendorOfferRequestsPanel />
-      </section>
-
-      <section id="dashboard-reservations" className={`${orivonaDashboardAnchor} mb-8`}>
-        <VendorReservationsPanel />
-      </section>
-
       <section id="dashboard-availability" className={`${orivonaDashboardAnchor} mb-8`}>
         <VendorAvailabilityPanel />
       </section>
 
-      <DashboardSection id="dashboard-heatmap" title="Yoğunluk takvimi">
+      <section id="dashboard-coupons" className="scroll-mt-24 mb-8">
+        <VendorCouponsSection />
+      </section>
+
+      <DashboardSection id="dashboard-heatmap" title="Yoğunluk Takvimi">
         <AvailabilityHeatmapPanel variant="vendor" />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-analytics" title="Analitik">
+        <p className="mb-4 text-sm text-zinc-400">
+          Marketplace Intelligence — görüntülenme, dönüşüm ve hizmet performansı.
+        </p>
+        <VendorAnalyticsSection />
       </DashboardSection>
 
       <DashboardSection id="dashboard-checkin" title="QR Check-in">
@@ -665,8 +580,100 @@ function DashboardContent() {
         <MessagingPanel viewerRole="Vendor" />
       </section>
 
+      <DashboardSection id="dashboard-profile" title="İşletme profili">
+        {profileLoading ? (
+          <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
+        ) : profile ? (
+          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
+            <div>
+              <dt className="text-xs text-zinc-500">İşletme</dt>
+              <dd className="text-white">{profile.businessName ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-zinc-500">Konum</dt>
+              <dd className="text-white">
+                {[profile.city, profile.district].filter(Boolean).join(" · ") ||
+                  "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-zinc-500">Onay durumu</dt>
+              <dd className={isApproved ? "text-emerald-300" : "text-amber-300"}>
+                {isApproved ? "Onaylı" : "Onay bekliyor"}
+              </dd>
+            </div>
+            {profile.description ? (
+              <div>
+                <dt className="text-xs text-zinc-500">Açıklama</dt>
+                <dd>{profile.description}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : (
+          <p className="mt-3 text-sm text-zinc-500">Profil yüklenemedi.</p>
+        )}
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-service-media" title="Galeri">
+        <p className="text-sm text-zinc-400">
+          Hizmet galerisi görsellerini &quot;Hizmetlerim&quot; bölümünden bir hizmeti
+          düzenlerken yönetebilirsiniz.
+        </p>
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-review-intel" title="Yorum özeti">
+        <VendorReviewIntelligenceSection />
+      </DashboardSection>
+
+      <section id="dashboard-promotions" className="scroll-mt-24 mb-8">
+        <VendorPromotionsSection />
+      </section>
+
       <DashboardSection id="dashboard-notifications" title="Bildirimler">
         <NotificationsPanel />
+      </DashboardSection>
+
+      <DashboardSection id="dashboard-account" title="Ayarlar">
+        {user ? (
+          <dl className="mt-4 space-y-2 text-sm text-zinc-400">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                Ad
+              </dt>
+              <dd className="text-white">
+                {user.fullName ?? user.name ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                E-posta
+              </dt>
+              <dd className="text-white">{user.email ?? "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                İşletme adı
+              </dt>
+              <dd className="text-white">
+                {profile?.businessName?.trim() || "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-zinc-500">
+                Onay durumu
+              </dt>
+              <dd className={isApproved ? "text-emerald-300" : "text-amber-300"}>
+                {profileLoading
+                  ? "…"
+                  : isApproved
+                    ? "Onaylı"
+                    : "Onay bekliyor"}
+              </dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="mt-3 text-sm text-zinc-500">Yükleniyor…</p>
+        )}
       </DashboardSection>
 
     </DashboardLayout>

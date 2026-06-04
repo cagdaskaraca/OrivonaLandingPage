@@ -32,6 +32,11 @@ export function scrollNavItems(groups: DashboardNavGroup[]): DashboardNavItem[] 
   );
 }
 
+/** DOM / scroll-spy order — matches sidebar menu order. */
+export function orderedScrollSectionIds(groups: DashboardNavGroup[]): string[] {
+  return scrollNavItems(groups).map((item) => item.id);
+}
+
 export function flatItemsToGroups(
   items: DashboardNavItem[],
   fallbackIcon: LucideIcon,

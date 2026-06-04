@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DashboardNavGroup, DashboardNavItem } from "@/src/lib/dashboardNavTypes";
+import { orderedScrollSectionIds } from "@/src/lib/dashboardNavTypes";
 import {
   DASHBOARD_SCROLL_OFFSET_PX,
   scrollToHashWhenReady,
@@ -88,6 +89,7 @@ export function DashboardSidebar({
   const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const scrollSpyItems = groups.flatMap((g) => g.items).filter(isScrollSpyItem);
+  const sectionOrder = orderedScrollSectionIds(groups);
   const initialActive = scrollSpyItems[0]?.id ?? "";
   const [activeId, setActiveId] = useState(initialActive);
 
@@ -95,6 +97,7 @@ export function DashboardSidebar({
     if (scrollSpyItems.length === 0) return;
 
     const offset = DASHBOARD_SCROLL_OFFSET_PX + 8;
+    const orderIndex = new Map(sectionOrder.map((id, i) => [id, i]));
     const positioned = scrollSpyItems
       .map((item) => {
         const el = document.getElementById(item.id);
@@ -103,10 +106,11 @@ export function DashboardSidebar({
           id: item.id,
           top: el.getBoundingClientRect().top,
           docTop: el.getBoundingClientRect().top + window.scrollY,
+          order: orderIndex.get(item.id) ?? 999,
         };
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
-      .sort((a, b) => a.docTop - b.docTop);
+      .sort((a, b) => a.docTop - b.docTop || a.order - b.order);
 
     if (positioned.length === 0) return;
 
@@ -126,7 +130,7 @@ export function DashboardSidebar({
     }
 
     setActiveId((prev) => (prev === current ? prev : current));
-  }, [scrollSpyItems]);
+  }, [scrollSpyItems, sectionOrder]);
 
   useEffect(() => {
     let raf = 0;

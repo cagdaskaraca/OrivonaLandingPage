@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { DashboardNavGroup } from "@/src/lib/dashboardNavTypes";
 
-/** Admin panel sidebar — only links to existing section ids. */
+/** Admin panel sidebar — section ids match AdminDashboardView DOM order. */
 export const ADMIN_DASHBOARD_NAV: DashboardNavGroup[] = [
   {
     title: "BAŞLANGIÇ",

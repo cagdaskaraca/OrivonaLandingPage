@@ -45,7 +45,7 @@ export const VENDOR_DASHBOARD_NAV: DashboardNavGroup[] = [
       { id: "dashboard-services", label: "Hizmetlerim", icon: Briefcase },
       { id: "dashboard-availability", label: "Uygunluk / Takvim", icon: Calendar },
       { id: "dashboard-coupons", label: "Paketler / Fiyatlar", icon: Package },
-      { id: "dashboard-heatmap", label: "Yoğunluk takvimi", icon: Calendar },
+      { id: "dashboard-heatmap", label: "Yoğunluk Takvimi", icon: Calendar },
       { id: "dashboard-analytics", label: "Analitik", icon: LayoutDashboard },
       { id: "dashboard-checkin", label: "QR Check-in", icon: QrCode },
     ],
