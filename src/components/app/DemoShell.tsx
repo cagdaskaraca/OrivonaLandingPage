@@ -12,6 +12,8 @@ type DemoShellProps = {
   stickyNav?: boolean;
   /** Override main container layout (rare; use sparingly). */
   mainClassName?: string;
+  /** Full-width panel layout (sidebar + content), no narrow centered column. */
+  panelLayout?: boolean;
   children: ReactNode;
 };
 
@@ -21,8 +23,13 @@ export function DemoShell({
   centerHeader = false,
   stickyNav = false,
   mainClassName,
+  panelLayout = false,
   children,
 }: DemoShellProps) {
+  const defaultMainClass = panelLayout
+    ? "orivona-panel-main mx-auto w-full max-w-[1680px] px-4 sm:px-6 lg:px-8"
+    : "mx-auto max-w-6xl px-4 sm:px-6";
+
   return (
     <div
       className={`relative min-h-screen text-zinc-100 ${
@@ -35,9 +42,7 @@ export function DemoShell({
         showSearch={stickyNav}
       />
       <main
-        className={`relative ${
-          mainClassName ?? "mx-auto max-w-6xl px-4 sm:px-6"
-        } ${
+        className={`relative z-10 ${mainClassName ?? defaultMainClass} ${
           stickyNav
             ? "orivona-main-below-header pb-10 sm:pb-14"
             : "orivona-main-below-header py-10 sm:py-14"

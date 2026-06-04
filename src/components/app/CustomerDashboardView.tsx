@@ -19,7 +19,6 @@ import { EventOsRemindersSection } from "@/src/components/event-os/EventOsRemind
 import { EventOsRsvpSection } from "@/src/components/event-os/EventOsRsvpSection";
 import { EventOsSeatingSection } from "@/src/components/event-os/EventOsSeatingSection";
 import { EventPlansSection } from "@/src/components/event-os/EventPlansSection";
-import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
 import { buildCustomerDashboardNavGroups } from "@/src/lib/customerDashboardNav";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
@@ -320,17 +319,34 @@ function DashboardContentInner() {
     [logout],
   );
 
-  const navItems: DashboardNavItem[] = navGroups.flatMap((g) => g.items);
+  const toolbar = (
+    <>
+      <Link href="/account" className={btnSecondary}>
+        Profil düzenle
+      </Link>
+      <Link href="/marketplace" className={btnSecondary}>
+        Marketplace
+      </Link>
+      <Link href="/event-wizard" className={btnSecondary}>
+        Etkinlik Sihirbazı
+      </Link>
+    </>
+  );
 
   return (
     <DashboardLayout
       title="Müşteri Paneli"
       subtitle="Profiliniz, Smart Event OS ve etkinlik talepleriniz."
-      navItems={navItems}
       navGroups={navGroups}
+      storageKey="customer"
+      onLogout={() => {
+        logout();
+        window.location.href = "/login";
+      }}
       fullWidth
       sidebarExpandedWidthClassName="lg:w-[280px]"
       sidebarCollapsedWidthClassName="lg:w-[72px]"
+      toolbar={toolbar}
     >
       <MobileHomeSummary />
 

@@ -2,40 +2,30 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { DashboardNavGroup, DashboardNavItem } from "@/src/lib/dashboardNavTypes";
 import {
   DASHBOARD_SCROLL_OFFSET_PX,
   scrollToHashWhenReady,
 } from "@/src/lib/scrollToDashboardSection";
 import { orivonaScrollY } from "@/src/lib/ui";
 
-export type DashboardNavItem = {
-  id: string;
-  label: string;
-  href?: string;
-  onClick?: () => void;
-  icon?: LucideIcon;
-};
-
-export type DashboardNavGroup = {
-  title: string;
-  items: DashboardNavItem[];
-};
+export type { DashboardNavItem, DashboardNavGroup };
 
 function isScrollSpyItem(item: DashboardNavItem): boolean {
-  return !item.href && !item.onClick;
+  return !item.href && !item.onClick && item.action !== "logout";
 }
 
 type DashboardSidebarProps = {
-  items: DashboardNavItem[];
-  groups?: DashboardNavGroup[];
+  groups: DashboardNavGroup[];
   expandedWidthClassName?: string;
   collapsedWidthClassName?: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
   mobileOpen: boolean;
   onMobileOpenChange: (open: boolean) => void;
+  onLogout?: () => void;
 };
 
 function NavItemContent({
@@ -80,7 +70,7 @@ function CollapsedTooltip({ label }: { label: string }) {
   return (
     <span
       role="tooltip"
-      className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-violet-400/25 bg-[#120a1c] px-2.5 py-1.5 text-xs font-medium text-violet-50 shadow-lg group-hover:block group-focus-within:block"
+      className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-[80] hidden -translate-y-1/2 whitespace-nowrap rounded-lg border border-violet-400/25 bg-[#120a1c] px-2.5 py-1.5 text-xs font-medium text-violet-50 shadow-lg group-hover:block group-focus-within:block"
     >
       {label}
     </span>
@@ -88,7 +78,6 @@ function CollapsedTooltip({ label }: { label: string }) {
 }
 
 export function DashboardSidebar({
-  items,
   groups,
   expandedWidthClassName = "lg:w-[280px]",
   collapsedWidthClassName = "lg:w-[72px]",
@@ -96,12 +85,14 @@ export function DashboardSidebar({
   onToggleCollapsed,
   mobileOpen,
   onMobileOpenChange,
+  onLogout,
 }: DashboardSidebarProps) {
   const router = useRouter();
   const sidebarScrollRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const scrollSpyItems = items.filter(isScrollSpyItem);
-  const initialActive = scrollSpyItems[0]?.id ?? items[0]?.id ?? "";
+
+  const scrollSpyItems = groups.flatMap((g) => g.items).filter(isScrollSpyItem);
+  const initialActive = scrollSpyItems[0]?.id ?? "";
   const [activeId, setActiveId] = useState(initialActive);
 
   const updateActiveFromScroll = useCallback(() => {
@@ -171,6 +162,11 @@ export function DashboardSidebar({
 
   const handleItemClick = useCallback(
     (item: DashboardNavItem) => {
+      if (item.action === "logout") {
+        onLogout?.();
+        onMobileOpenChange(false);
+        return;
+      }
       if (item.onClick) {
         item.onClick();
         onMobileOpenChange(false);
@@ -194,18 +190,18 @@ export function DashboardSidebar({
       });
       onMobileOpenChange(false);
     },
-    [onMobileOpenChange, router],
+    [onMobileOpenChange, onLogout, router],
   );
 
-  const itemClassName = (active: boolean, collapsed: boolean) =>
+  const itemClassName = (active: boolean, isCollapsed: boolean) =>
     `group relative flex w-full items-center rounded-xl text-sm font-medium transition ${
-      collapsed ? "justify-center px-0 py-1" : "gap-2.5 px-3 py-2.5 text-left"
+      isCollapsed ? "justify-center px-0 py-1" : "gap-2.5 px-3 py-2.5 text-left"
     } ${
       active
-        ? collapsed
+        ? isCollapsed
           ? ""
           : "bg-violet-500/25 text-white ring-1 ring-inset ring-violet-400/35"
-        : collapsed
+        : isCollapsed
           ? ""
           : "text-zinc-400 hover:bg-white/[0.05] hover:text-violet-100"
     }`;
@@ -240,6 +236,7 @@ export function DashboardSidebar({
           type="button"
           onClick={() => handleItemClick(item)}
           className={itemClassName(active, collapsed)}
+          disabled={item.disabled}
         >
           <NavItemContent item={item} collapsed={collapsed} active={active} />
         </button>
@@ -248,9 +245,9 @@ export function DashboardSidebar({
     );
   };
 
-  const renderGroups = (groupsToRender: DashboardNavGroup[]) => (
+  const navButtons = (
     <nav className="flex flex-col gap-1 p-2">
-      {groupsToRender.map((group, groupIndex) => (
+      {groups.map((group, groupIndex) => (
         <div key={group.title} className="space-y-1">
           {collapsed ? (
             groupIndex > 0 ? (
@@ -264,7 +261,9 @@ export function DashboardSidebar({
               {group.title}
             </p>
           )}
-          <div className={`flex flex-col ${collapsed ? "items-center gap-0.5" : "gap-0.5"}`}>
+          <div
+            className={`flex flex-col ${collapsed ? "items-center gap-0.5" : "gap-0.5"}`}
+          >
             {group.items.map((item) => renderNavButton(item))}
           </div>
         </div>
@@ -272,69 +271,84 @@ export function DashboardSidebar({
     </nav>
   );
 
-  const navButtons = renderGroups(
-    groups?.length
-      ? groups
-      : [
-          {
-            title: "Menü",
-            items,
-          },
-        ],
-  );
-
   const widthClass = collapsed ? collapsedWidthClassName : expandedWidthClassName;
+
+  const asideInner = (
+    <div
+      className={`orivona-panel-sidebar-inner flex h-full flex-col rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/98 to-[#08050f]/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY}`}
+    >
+      <div
+        className={`flex shrink-0 items-center border-b border-violet-500/15 px-2 py-2.5 ${
+          collapsed ? "justify-center" : "justify-between gap-2"
+        }`}
+      >
+        {!collapsed ? (
+          <span className="truncate px-2 text-xs font-semibold uppercase tracking-wide text-violet-300/80">
+            Menü
+          </span>
+        ) : null}
+        <button
+          type="button"
+          className="shrink-0 rounded-lg border border-violet-400/25 p-1.5 text-violet-200 transition-colors hover:bg-violet-500/15"
+          onClick={onToggleCollapsed}
+          aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      <div
+        ref={sidebarScrollRef}
+        className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
+      >
+        {navButtons}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-2 lg:hidden">
+      <div className="mb-4 flex items-center gap-2 lg:hidden">
         <button
           type="button"
           className="rounded-xl border border-violet-400/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-100"
-          onClick={() => onMobileOpenChange(!mobileOpen)}
+          onClick={() => onMobileOpenChange(true)}
         >
-          {mobileOpen ? "Menüyü kapat" : "Menü"}
+          Menü
         </button>
       </div>
 
       {mobileOpen ? (
-        <div className="mb-6 rounded-2xl border border-violet-500/25 bg-[#0c0814]/95 p-1 lg:hidden">
-          {navButtons}
-        </div>
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm lg:hidden"
+          aria-hidden
+          onClick={() => onMobileOpenChange(false)}
+        />
+      ) : null}
+
+      {mobileOpen ? (
+        <aside className="orivona-panel-sidebar-drawer fixed inset-y-0 left-0 z-[61] flex w-[min(280px,88vw)] flex-col p-3 pt-[calc(var(--orivona-header-h)+0.75rem)] lg:hidden">
+          <button
+            type="button"
+            className="absolute right-3 top-[calc(var(--orivona-header-h)+0.5rem)] rounded-lg border border-white/10 p-1.5 text-zinc-400 hover:text-white"
+            onClick={() => onMobileOpenChange(false)}
+            aria-label="Menüyü kapat"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {asideInner}
+        </aside>
       ) : null}
 
       <aside
-        className={`hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${widthClass} lg:top-24 lg:h-[calc(100vh-120px)]`}
+        className={`orivona-panel-sidebar hidden shrink-0 lg:sticky lg:z-40 lg:block lg:self-start ${widthClass} ${
+          collapsed ? "is-collapsed" : ""
+        } lg:top-24 lg:h-[calc(100vh-120px)]`}
       >
-        <div
-          className={`flex h-full flex-col rounded-2xl border border-violet-500/20 bg-gradient-to-b from-[#100818]/95 to-[#08050f]/90 shadow-[inset_0_1px_0_rgba(167,139,250,0.06)] ${orivonaScrollY}`}
-        >
-          <div
-            className={`flex shrink-0 items-center border-b border-violet-500/15 px-2 py-2.5 ${
-              collapsed ? "justify-center" : "justify-between gap-2"
-            }`}
-          >
-            {!collapsed ? (
-              <span className="truncate px-2 text-xs font-semibold uppercase tracking-wide text-violet-300/80">
-                Menü
-              </span>
-            ) : null}
-            <button
-              type="button"
-              className="shrink-0 rounded-lg border border-violet-400/25 px-2.5 py-1.5 text-xs text-violet-200 transition-colors hover:bg-violet-500/15"
-              onClick={onToggleCollapsed}
-              aria-label={collapsed ? "Menüyü genişlet" : "Menüyü daralt"}
-            >
-              {collapsed ? "›" : "‹"}
-            </button>
-          </div>
-          <div
-            ref={sidebarScrollRef}
-            className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden"
-          >
-            {navButtons}
-          </div>
-        </div>
+        {asideInner}
       </aside>
     </>
   );

@@ -7,8 +7,10 @@ import { AdminSummaryCards } from "@/src/components/admin/AdminSummaryCards";
 import { AdminUserManagement } from "@/src/components/admin/AdminUserManagement";
 import { AdminVendorRejectModal } from "@/src/components/admin/AdminVendorRejectModal";
 import { AdminVendorTable } from "@/src/components/admin/AdminVendorTable";
-import { DemoShell } from "@/src/components/app/DemoShell";
+import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
+import { ADMIN_DASHBOARD_NAV } from "@/src/lib/adminDashboardNav";
+import { notifyDashboardLayoutReady } from "@/src/lib/scrollToDashboardSection";
 import {
   activateAdminVendor,
   approveAdminVendor,
@@ -94,6 +96,12 @@ function DashboardContent() {
     loadSummaryAndServices();
     loadVendors();
   }, [loadSummaryAndServices, loadVendors]);
+
+  useEffect(() => {
+    if (!summaryLoading && !vendorsLoading && !servicesLoading) {
+      notifyDashboardLayoutReady();
+    }
+  }, [summaryLoading, vendorsLoading, servicesLoading]);
 
   function refreshAll() {
     void loadSummaryAndServices();
@@ -181,37 +189,35 @@ function DashboardContent() {
 
   const refreshing = summaryLoading || vendorsLoading || servicesLoading;
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
+
+  const toolbar = (
+    <button
+      type="button"
+      className={btnSecondary}
+      onClick={refreshAll}
+      disabled={refreshing}
+    >
+      {refreshing ? "Yenileniyor…" : "Yenile"}
+    </button>
+  );
+
   return (
-    <DemoShell
+    <DashboardLayout
       title="Yönetici Paneli"
       subtitle="Kategori, işletme, kullanıcı ve hizmet yönetimi."
-      stickyNav
+      navGroups={ADMIN_DASHBOARD_NAV}
+      storageKey="admin"
+      onLogout={handleLogout}
+      toolbar={toolbar}
     >
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className={btnSecondary}
-          onClick={refreshAll}
-          disabled={refreshing}
-        >
-          {refreshing ? "Yenileniyor…" : "Yenile"}
-        </button>
-        <button
-          type="button"
-          className={btnSecondary}
-          onClick={() => {
-            logout();
-            window.location.href = "/login";
-          }}
-        >
-          Çıkış
-        </button>
-      </div>
-
-      <div className={`${glassCard} mb-8`}>
+      <section id="admin-account" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Hesabım</h2>
         <p className="mt-2 text-sm text-zinc-400">{user?.email ?? "—"}</p>
-      </div>
+      </section>
 
       <section id="admin-summary" className="mb-8 scroll-mt-24">
         <h2 className="mb-4 text-lg font-semibold text-white">Platform özeti</h2>
@@ -294,7 +300,7 @@ function DashboardContent() {
         <NotificationsPanel />
       </section>
 
-      <section className={`${glassCard} scroll-mt-24`}>
+      <section id="admin-services" className={`${glassCard} mb-8 scroll-mt-24`}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-white">Hizmetler</h2>
@@ -322,7 +328,7 @@ function DashboardContent() {
           void loadSummaryAndServices();
         }}
       />
-    </DemoShell>
+    </DashboardLayout>
   );
 }
 

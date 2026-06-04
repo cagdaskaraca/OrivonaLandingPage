@@ -151,6 +151,51 @@ html {
 /* Dashboard: sticky nav height + ORIVONA scrollbars */
 .orivona-dashboard-shell {
   --orivona-dashboard-nav-h: var(--orivona-header-h);
+  --orivona-sidebar-expanded: 280px;
+  --orivona-sidebar-collapsed: 72px;
+}
+
+/* Panel layout — fixed left sidebar + content */
+.orivona-panel-layout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  gap: 0;
+}
+
+@media (min-width: 1024px) {
+  .orivona-panel-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+}
+
+.orivona-panel-sidebar {
+  width: var(--orivona-sidebar-expanded);
+  flex-shrink: 0;
+  top: calc(var(--orivona-header-h) + 0.75rem);
+  height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+  max-height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+}
+
+.orivona-panel-sidebar.is-collapsed {
+  width: var(--orivona-sidebar-collapsed);
+}
+
+.orivona-panel-sidebar-inner {
+  height: 100%;
+  min-height: 14rem;
+}
+
+.orivona-panel-content {
+  width: 100%;
+  min-width: 0;
+}
+
+.orivona-panel-main {
+  overflow-x: clip;
 }
 
 .orivona-scroll-x {

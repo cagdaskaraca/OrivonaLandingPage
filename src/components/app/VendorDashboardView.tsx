@@ -16,7 +16,7 @@ import { NotificationsPanel } from "@/src/components/dashboard/NotificationsPane
 import { VendorAnalyticsSection } from "@/src/components/vendor-intelligence/VendorAnalyticsSection";
 import { VendorCrmSection } from "@/src/components/vendor-intelligence/VendorCrmSection";
 import { VendorReviewIntelligenceSection } from "@/src/components/vendor-intelligence/VendorReviewIntelligenceSection";
-import type { DashboardNavItem } from "@/src/components/dashboard/DashboardSidebar";
+import { VENDOR_DASHBOARD_NAV } from "@/src/lib/vendorDashboardNav";
 import { ProtectedRoute } from "@/src/components/app/ProtectedRoute";
 import {
   createVendorService,
@@ -237,39 +237,13 @@ function DashboardContent() {
 
   const isApproved = profile?.isApproved !== false;
 
-  const navItems: DashboardNavItem[] = [
-    { id: "dashboard-help", label: "Başlarken" },
-    { id: "dashboard-account", label: "Hesabım" },
-    { id: "dashboard-activity", label: "Son Aktiviteler" },
-    { id: "dashboard-pipeline", label: "CRM Pipeline" },
-    { id: "dashboard-analytics", label: "Analitik" },
-    { id: "dashboard-crm", label: "CRM / Leadler" },
-    { id: "dashboard-heatmap", label: "Yoğunluk" },
-    { id: "dashboard-checkin", label: "QR Check-in" },
-    { id: "dashboard-review-intel", label: "Yorum Özeti" },
-    { id: "dashboard-profile", label: "İşletme Profili" },
-    { id: "dashboard-services", label: "Hizmetlerim" },
-    { id: "dashboard-coupons", label: "Kuponlar" },
-    { id: "dashboard-promotions", label: "Tanıtımlar" },
-    { id: "dashboard-offers", label: "Gelen Teklifler" },
-    { id: "dashboard-reservations", label: "Rezervasyonlar" },
-    { id: "dashboard-availability", label: "Müsaitlik Takvimi" },
-    { id: "dashboard-messages", label: "Mesajlar" },
-    { id: "dashboard-notifications", label: "Bildirimler" },
-  ];
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/login";
+  };
 
   const toolbar = (
     <>
-      <button
-        type="button"
-        className={btnSecondary}
-        onClick={() => {
-          logout();
-          window.location.href = "/login";
-        }}
-      >
-        Çıkış
-      </button>
       <Link href="/account" className={btnSecondary}>
         Profil düzenle
       </Link>
@@ -296,7 +270,9 @@ function DashboardContent() {
     <DashboardLayout
       title="İşletme Paneli"
       subtitle="Hizmetlerinizi yönetin ve marketplace'te yayınlayın."
-      navItems={navItems}
+      navGroups={VENDOR_DASHBOARD_NAV}
+      storageKey="vendor"
+      onLogout={handleLogout}
       toolbar={toolbar}
     >
       <MobileHomeSummary />

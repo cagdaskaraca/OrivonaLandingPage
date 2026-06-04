@@ -25,7 +25,7 @@ import {
 import type {
   DashboardNavGroup,
   DashboardNavItem,
-} from "@/src/components/dashboard/DashboardSidebar";
+} from "@/src/lib/dashboardNavTypes";
 
 export type CustomerNavItemDef = DashboardNavItem & {
   icon: LucideIcon;
