@@ -834,8 +834,15 @@ function buildAdminCategoryBody(payload: AdminCategoryPayload) {
 function normalizeAdminService(raw: unknown): AdminService {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const rawBadges = Array.isArray(o.badges)
+    ? (o.badges as unknown[]).map(String)
+    : Array.isArray(o.Badges)
+      ? (o.Badges as unknown[]).map(String)
+      : undefined;
+
   return {
     id: recordId(o),
+    vendorId: recordId(o, "vendorId", "VendorId"),
     title:
       recordStr(o, "title", "Title") ??
       recordStr(o, "serviceTitle", "ServiceTitle"),
@@ -847,6 +854,7 @@ function normalizeAdminService(raw: unknown): AdminService {
     isFeatured: recordBool(o, "isFeatured", "IsFeatured"),
     isActive: recordBool(o, "isActive", "IsActive"),
     basePrice: recordNum(o, "basePrice", "BasePrice"),
+    badges: rawBadges,
   };
 }
 

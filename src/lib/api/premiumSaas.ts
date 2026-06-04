@@ -350,18 +350,49 @@ export async function fetchBadgeCatalog(): Promise<string[]> {
   );
 }
 
+function normalizeBadgeList(raw: unknown): string[] {
+  const list = toList(raw);
+  if (list.length === 0 && Array.isArray(raw)) {
+    return raw.map(String).filter(Boolean);
+  }
+  return list
+    .map((b) =>
+      typeof b === "string"
+        ? b
+        : pickStr(toRecord(b), "type", "Type", "badgeType", "BadgeType", "name") ??
+          "",
+    )
+    .filter(Boolean);
+}
+
 export async function fetchServiceBadges(
   serviceId: string | number,
 ): Promise<string[]> {
   return withOptionalNotFound(
     async () => {
       const raw = await apiGet<unknown>(`/services/${serviceId}/badges`);
-      return toList(raw).map((b) =>
-        typeof b === "string" ? b : pickStr(toRecord(b), "type", "badgeType") ?? "",
-      ).filter(Boolean);
+      return normalizeBadgeList(raw);
     },
     [],
   );
+}
+
+/** Vendor-level badges (admin assigns here first; services inherit pool). */
+export async function fetchVendorBadges(
+  vendorId: string | number,
+): Promise<string[]> {
+  const paths = [
+    `/admin/vendors/${vendorId}/badges`,
+    `/vendors/${vendorId}/badges`,
+  ];
+  for (const path of paths) {
+    const list = await withOptionalNotFound(
+      async () => normalizeBadgeList(await apiGet<unknown>(path)),
+      null,
+    );
+    if (list && list.length > 0) return list;
+  }
+  return [];
 }
 
 export async function assignAdminVendorBadge(

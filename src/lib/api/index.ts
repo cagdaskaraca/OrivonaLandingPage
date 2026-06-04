@@ -237,7 +237,12 @@ export async function fetchServiceById(
   assertApiEnvelopeSuccess(body);
   const payload = body.data;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
-    return normalizeMarketplaceItem(payload);
+    const item = normalizeMarketplaceItem(payload);
+    const { resolveServiceDisplayBadges } = await import(
+      "@/src/lib/serviceBadges"
+    );
+    const badges = await resolveServiceDisplayBadges(item);
+    return { ...item, badges };
   }
   throw new Error("Hizmet detayı bulunamadı.");
 }

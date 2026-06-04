@@ -12,6 +12,7 @@ const BADGE_LABELS: Record<string, string> = {
   New: "Yeni",
   Featured: "Öne Çıkan",
   ÖneÇıkan: "Öne Çıkan",
+  Sponsored: "Sponsorlu",
 };
 
 export function formatBadgeLabel(badge: string): string {

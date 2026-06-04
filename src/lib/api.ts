@@ -206,6 +206,7 @@ export {
   fetchAiPricingInsights,
   fetchBadgeCatalog,
   fetchServiceBadges,
+  fetchVendorBadges,
   assignAdminVendorBadge,
   removeAdminVendorBadge,
   assignAdminServiceBadge,
