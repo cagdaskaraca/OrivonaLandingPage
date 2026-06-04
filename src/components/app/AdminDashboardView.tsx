@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AdminCategoryManagement } from "@/src/components/admin/AdminCategoryManagement";
-import { AdminServiceTable } from "@/src/components/admin/AdminServiceTable";
+import { AdminServicesSection } from "@/src/components/admin/AdminServicesSection";
 import { AdminSummaryCards } from "@/src/components/admin/AdminSummaryCards";
 import { AdminUserManagement } from "@/src/components/admin/AdminUserManagement";
 import { AdminVendorRejectModal } from "@/src/components/admin/AdminVendorRejectModal";
@@ -269,20 +269,16 @@ function DashboardContent() {
       </section>
 
       <section id="admin-services" className={`${glassCard} mb-8 scroll-mt-24`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-white">Hizmetler</h2>
-            <p className="mt-1 text-sm text-zinc-500">
-              Marketplace hizmetleri — öne çıkanları yönetin.
-            </p>
-          </div>
-        </div>
-        <AdminServiceTable
+        <AdminServicesSection
           services={services}
+          vendors={vendors}
           loading={servicesLoading}
           actionServiceId={actionServiceId}
           onToggleFeature={handleToggleFeature}
           onPromote={setPromoteTarget}
+          onRefresh={loadSummaryAndServices}
+          onToastSuccess={toast.success}
+          onToastError={toast.error}
         />
       </section>
 

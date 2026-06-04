@@ -23,6 +23,7 @@ import type {
   AdminService,
   AdminUser,
   AdminVendor,
+  VendorServicePayload,
   AiDetectedEvent,
   AiEventPlanRequest,
   AiEventPlanResult,
@@ -849,6 +850,30 @@ function normalizeAdminService(raw: unknown): AdminService {
   };
 }
 
+function buildAdminServiceBody(
+  vendorId: string | number,
+  payload: VendorServicePayload,
+) {
+  const categoryId = payload.categoryId;
+  if (categoryId == null || String(categoryId).trim() === "") {
+    throw new Error("Geçerli bir kategori seçin.");
+  }
+  const price = payload.basePrice;
+  return {
+    vendorId,
+    categoryId,
+    title: payload.title.trim(),
+    description: payload.description.trim(),
+    basePrice: price,
+    price,
+    city: payload.city.trim(),
+    district: payload.district.trim(),
+    capacityMin: payload.capacityMin,
+    capacityMax: payload.capacityMax,
+    isActive: payload.isActive,
+  };
+}
+
 export async function fetchAdminVendors(): Promise<AdminVendor[]> {
   const body = await apiGetRaw<ApiEnvelope>("/admin/vendors");
   assertSuccess(body);
@@ -965,6 +990,44 @@ export async function fetchAdminServices(): Promise<AdminService[]> {
   const body = await apiGetRaw<ApiEnvelope>("/admin/services");
   assertSuccess(body);
   return toList(body.data).map(normalizeAdminService);
+}
+
+export async function createAdminService(
+  vendorId: string | number,
+  payload: VendorServicePayload,
+): Promise<AdminService> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    "/admin/services",
+    buildAdminServiceBody(vendorId, payload),
+  );
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeAdminService(data);
+  }
+  return normalizeAdminService(payload);
+}
+
+export async function updateAdminService(
+  id: string | number,
+  vendorId: string | number,
+  payload: VendorServicePayload,
+): Promise<AdminService> {
+  const body = await apiPutRaw<ApiEnvelope>(
+    `/admin/services/${id}`,
+    buildAdminServiceBody(vendorId, payload),
+  );
+  assertSuccess(body);
+  const data = body.data;
+  if (data && typeof data === "object" && !Array.isArray(data)) {
+    return normalizeAdminService(data);
+  }
+  return normalizeAdminService({ ...payload, id });
+}
+
+export async function deleteAdminService(id: string | number): Promise<void> {
+  const body = await apiDeleteRaw<ApiEnvelope>(`/admin/services/${id}`);
+  assertSuccess(body);
 }
 
 export async function featureAdminService(id: string | number): Promise<void> {
