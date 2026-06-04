@@ -1,13 +1,16 @@
 import type { MarketplaceItem } from "@/src/lib/api/types";
-import { fetchServiceBadges } from "@/src/lib/api/premiumSaas";
+import {
+  fetchServiceBadges,
+  fetchVendorBadges,
+} from "@/src/lib/api/premiumSaas";
 
-/** Dedupe badge codes (case-insensitive). */
+/** API rozet kodlarını tek listede birleştirir (büyük/küçük harf duyarsız). */
 export function mergeBadgeLists(
-  ...lists: (string[] | undefined)[]
+  ...sources: (string[] | undefined)[]
 ): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const list of lists) {
+  for (const list of sources) {
     for (const raw of list ?? []) {
       const b = raw.trim();
       if (!b) continue;
@@ -24,66 +27,33 @@ function serviceIdOf(item: MarketplaceItem): string | number | undefined {
   return item.vendorServiceId ?? item.id;
 }
 
-/** Fills missing `badges` on marketplace rows via GET /services/{id}/badges. */
-export async function enrichMarketplaceItemsWithBadges(
-  items: MarketplaceItem[],
-  options?: { maxConcurrent?: number },
-): Promise<MarketplaceItem[]> {
-  const maxConcurrent = options?.maxConcurrent ?? 8;
-  const needsEnrich = items.filter((item) => {
-    const id = serviceIdOf(item);
-    if (id == null) return false;
-    return (item.badges ?? []).length === 0;
-  });
-  if (needsEnrich.length === 0) return items;
-
-  const badgeById = new Map<string, string[]>();
-  let index = 0;
-
-  async function worker() {
-    while (index < needsEnrich.length) {
-      const i = index++;
-      const item = needsEnrich[i];
-      const id = serviceIdOf(item);
-      if (id == null) continue;
-      try {
-        const badges = await fetchServiceBadges(id);
-        if (badges.length > 0) badgeById.set(String(id), badges);
-      } catch {
-        /* optional endpoint */
-      }
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(maxConcurrent, needsEnrich.length) }, () =>
-      worker(),
-    ),
-  );
-
-  return items.map((item) => {
-    const id = serviceIdOf(item);
-    if (id == null || (item.badges ?? []).length > 0) return item;
-    const fetched = badgeById.get(String(id));
-    if (!fetched?.length) return item;
-    return { ...item, badges: mergeBadgeLists(item.badges, fetched) };
-  });
-}
-
-/** Public UI: only badges assigned to this service (admin → POST /admin/services/{id}/badges). */
-export async function resolveServiceDisplayBadges(
+/** Hizmet + işletme rozetlerini public API'den çözümler. */
+export async function resolveEffectiveServiceBadges(
   item: MarketplaceItem,
 ): Promise<string[]> {
-  const serviceId = serviceIdOf(item);
-  let serviceBadges = item.badges ?? [];
+  const id = serviceIdOf(item);
+  const embedded = item.badges ?? [];
 
-  if (serviceId != null && serviceBadges.length === 0) {
-    try {
-      serviceBadges = await fetchServiceBadges(serviceId);
-    } catch {
-      serviceBadges = [];
-    }
-  }
+  const [fromServiceEndpoint, fromVendor] = await Promise.all([
+    id != null ? fetchServiceBadges(id) : Promise.resolve([]),
+    item.vendorId != null
+      ? fetchVendorBadges(item.vendorId)
+      : Promise.resolve([]),
+  ]);
 
-  return mergeBadgeLists(serviceBadges);
+  return mergeBadgeLists(embedded, fromServiceEndpoint, fromVendor);
+}
+
+export async function enrichMarketplaceItemWithBadges(
+  item: MarketplaceItem,
+): Promise<MarketplaceItem> {
+  const badges = await resolveEffectiveServiceBadges(item);
+  return { ...item, badges };
+}
+
+export async function enrichMarketplaceItemsWithBadges(
+  items: MarketplaceItem[],
+): Promise<MarketplaceItem[]> {
+  if (items.length === 0) return items;
+  return Promise.all(items.map(enrichMarketplaceItemWithBadges));
 }

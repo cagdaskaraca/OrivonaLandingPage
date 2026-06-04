@@ -5,7 +5,7 @@ import { Fragment, useMemo } from "react";
 import { AdminPaginationBar } from "@/src/components/admin/AdminPaginationBar";
 import { useAdminPagination } from "@/src/components/admin/useAdminPagination";
 import { AdminBadgeControls } from "@/src/components/premium/AdminBadgeControls";
-import type { AdminService, AdminVendor } from "@/src/lib/api/types";
+import type { AdminService } from "@/src/lib/api/types";
 import { btnPrimary, btnSecondary, skeletonClass } from "@/src/lib/ui";
 
 const btnDanger =
@@ -26,25 +26,8 @@ function filterService(service: AdminService, query: string): boolean {
   return hay.includes(q);
 }
 
-function resolveVendorId(
-  service: AdminService,
-  vendors: AdminVendor[],
-): string | number | undefined {
-  if (service.vendorId != null && String(service.vendorId).trim() !== "") {
-    return service.vendorId;
-  }
-  const name = service.vendorName?.trim().toLowerCase();
-  if (!name) return undefined;
-  const match = vendors.find(
-    (v) => v.businessName?.trim().toLowerCase() === name,
-  );
-  return match?.id;
-}
-
 export type ServiceListTableProps = {
   services: AdminService[];
-  vendors?: AdminVendor[];
-  onBadgesUpdated?: () => void;
   loading?: boolean;
   actionServiceId?: string | number | null;
   deletingId?: string | number | null;
@@ -56,8 +39,6 @@ export type ServiceListTableProps = {
 
 export function ServiceListTable({
   services,
-  vendors = [],
-  onBadgesUpdated,
   loading,
   actionServiceId,
   deletingId,
@@ -234,12 +215,7 @@ export function ServiceListTable({
                     {id != null ? (
                       <tr className="bg-white/[0.01]">
                         <td colSpan={8} className="px-4 py-2">
-                          <AdminBadgeControls
-                            entityType="service"
-                            entityId={id}
-                            vendorId={resolveVendorId(s, vendors)}
-                            onUpdated={onBadgesUpdated}
-                          />
+                          <AdminBadgeControls entityType="service" entityId={id} />
                         </td>
                       </tr>
                     ) : null}

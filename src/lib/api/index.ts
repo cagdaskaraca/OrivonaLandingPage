@@ -238,11 +238,10 @@ export async function fetchServiceById(
   const payload = body.data;
   if (payload && typeof payload === "object" && !Array.isArray(payload)) {
     const item = normalizeMarketplaceItem(payload);
-    const { resolveServiceDisplayBadges } = await import(
+    const { enrichMarketplaceItemWithBadges } = await import(
       "@/src/lib/serviceBadges"
     );
-    const badges = await resolveServiceDisplayBadges(item);
-    return { ...item, badges };
+    return enrichMarketplaceItemWithBadges(item);
   }
   throw new Error("Hizmet detayı bulunamadı.");
 }
@@ -348,9 +347,14 @@ export async function fetchMarketplace(
     `/services${query}`,
   );
   const response: MarketplaceHttpResponse = { data: body };
+  const items = extractMarketplaceItems(response);
+  const { enrichMarketplaceItemsWithBadges } = await import(
+    "@/src/lib/serviceBadges"
+  );
+  const enriched = await enrichMarketplaceItemsWithBadges(items);
   return {
     response,
-    items: extractMarketplaceItems(response),
+    items: enriched,
     queryParams,
   };
 }

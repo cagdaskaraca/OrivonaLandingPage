@@ -464,7 +464,6 @@ export type AdminUser = {
 
 export type AdminService = {
   id?: string | number;
-  vendorId?: string | number;
   title?: string;
   vendorName?: string;
   categoryName?: string;
@@ -474,7 +473,6 @@ export type AdminService = {
   isFeatured?: boolean;
   isActive?: boolean;
   basePrice?: number;
-  badges?: string[];
 };
 
 export type AiRecommendationRequest = {

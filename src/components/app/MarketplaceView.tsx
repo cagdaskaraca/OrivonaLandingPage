@@ -118,11 +118,7 @@ export function MarketplaceView() {
     try {
       const { response, items: raw } = await fetchMarketplace(next);
       console.log("Marketplace response", response.data);
-      const { enrichMarketplaceItemsWithBadges } = await import(
-        "@/src/lib/serviceBadges"
-      );
-      const withBadges = await enrichMarketplaceItemsWithBadges(raw);
-      setItems(sortMarketplaceItems(withBadges, next.sortBy ?? ""));
+      setItems(sortMarketplaceItems(raw, next.sortBy ?? ""));
     } catch (e) {
       if (e instanceof ApiError) console.log("Marketplace fetch failed", e.body);
       setItems([]);

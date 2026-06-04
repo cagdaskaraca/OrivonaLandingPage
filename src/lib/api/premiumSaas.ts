@@ -350,12 +350,8 @@ export async function fetchBadgeCatalog(): Promise<string[]> {
   );
 }
 
-function normalizeBadgeList(raw: unknown): string[] {
-  const list = toList(raw);
-  if (list.length === 0 && Array.isArray(raw)) {
-    return raw.map(String).filter(Boolean);
-  }
-  return list
+function parseBadgeList(raw: unknown): string[] {
+  return toList(raw)
     .map((b) =>
       typeof b === "string"
         ? b
@@ -368,30 +364,45 @@ function normalizeBadgeList(raw: unknown): string[] {
 export async function fetchServiceBadges(
   serviceId: string | number,
 ): Promise<string[]> {
+  const path = `/services/${serviceId}/badges`;
+  const fromPublic = await withOptionalNotFound(
+    async () => {
+      const raw = await apiGetPublic<unknown>(path);
+      return parseBadgeList(raw);
+    },
+    null,
+  );
+  if (fromPublic != null && fromPublic.length > 0) return fromPublic;
+
   return withOptionalNotFound(
     async () => {
-      const raw = await apiGet<unknown>(`/services/${serviceId}/badges`);
-      return normalizeBadgeList(raw);
+      const raw = await apiGet<unknown>(path);
+      return parseBadgeList(raw);
     },
     [],
   );
 }
 
-/** Vendor-level badges (admin assigns here first; services inherit pool). */
+/** İşletmeye atanmış rozetler (hizmet kartlarında miras alınır). */
 export async function fetchVendorBadges(
   vendorId: string | number,
 ): Promise<string[]> {
   const paths = [
-    `/admin/vendors/${vendorId}/badges`,
     `/vendors/${vendorId}/badges`,
+    `/admin/vendors/${vendorId}/badges`,
   ];
+
   for (const path of paths) {
     const list = await withOptionalNotFound(
-      async () => normalizeBadgeList(await apiGet<unknown>(path)),
+      async () => {
+        const raw = await apiGet<unknown>(path);
+        return parseBadgeList(raw);
+      },
       null,
     );
-    if (list && list.length > 0) return list;
+    if (list != null && list.length > 0) return list;
   }
+
   return [];
 }
 

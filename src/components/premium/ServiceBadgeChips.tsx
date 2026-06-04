@@ -25,7 +25,7 @@ export function ServiceBadgeChips({ badges, className = "" }: ServiceBadgeChipsP
       {list.map((label) => (
         <span
           key={label}
-          className={`${badgeClass} normal-case tracking-normal ${badgeTone[label] ?? ""}`.trim()}
+          className={`${badgeClass} ${badgeTone[label] ?? ""}`.trim()}
         >
           {label}
         </span>

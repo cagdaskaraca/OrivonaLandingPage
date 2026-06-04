@@ -163,7 +163,6 @@ export function AdminServicesSection({
 
       <ServiceListTable
         services={services}
-        vendors={vendors}
         loading={loading}
         actionServiceId={actionServiceId}
         deletingId={deletingId}
@@ -171,7 +170,6 @@ export function AdminServicesSection({
         onPromote={onPromote}
         onEdit={openEdit}
         onDelete={handleDelete}
-        onBadgesUpdated={() => void onRefresh()}
       />
 
       <AdminServiceFormModal

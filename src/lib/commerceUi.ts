@@ -25,7 +25,7 @@ export function promotionTypeLabel(type?: string): string {
 }
 
 export const sponsoredBadgeClass =
-  "inline-flex rounded-full border border-fuchsia-300/70 bg-gradient-to-r from-fuchsia-700/92 via-violet-700/88 to-violet-900/85 px-2.5 py-1 text-[11px] font-semibold normal-case tracking-normal text-fuchsia-50 shadow-[0_2px_16px_rgba(0,0,0,0.55),0_0_18px_rgba(192,38,211,0.35)] backdrop-blur-sm";
+  "inline-flex rounded-full border border-fuchsia-300/45 bg-gradient-to-r from-fuchsia-500/30 via-violet-500/25 to-violet-600/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-fuchsia-100 shadow-[0_0_16px_rgba(192,38,211,0.35)]";
 
 export function isServiceSponsored(item: MarketplaceItem): boolean {
   if (item.isSponsored === true) return true;

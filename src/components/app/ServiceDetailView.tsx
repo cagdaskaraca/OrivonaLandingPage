@@ -31,10 +31,7 @@ import {
   isPremiumVendor,
   premiumBadgeClass,
 } from "@/src/lib/marketplacePremium";
-import {
-  formatBadgeLabel,
-  marketplaceImageBadgeClass,
-} from "@/src/lib/premiumLabels";
+import { formatBadgeLabel } from "@/src/lib/premiumLabels";
 import {
   btnPrimary,
   btnSecondary,
@@ -227,20 +224,12 @@ export function ServiceDetailView() {
                     <span className={premiumBadgeClass}>Premium</span>
                   ) : null}
                   {(service.badges ?? [])
-                    .filter((b) => {
-                      const raw = b.toLowerCase();
-                      const label = formatBadgeLabel(b).toLowerCase();
-                      if (raw.includes("premium") || label.includes("premium"))
-                        return false;
-                      if (
-                        raw.includes("featured") ||
-                        label.includes("öne çıkan")
-                      )
-                        return false;
-                      return true;
-                    })
+                    .filter((b) => !b.toLowerCase().includes("premium"))
                     .map((b) => (
-                      <span key={b} className={marketplaceImageBadgeClass(b)}>
+                      <span
+                        key={b}
+                        className="inline-flex rounded-full border border-violet-400/25 bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-100"
+                      >
                         {formatBadgeLabel(b)}
                       </span>
                     ))}

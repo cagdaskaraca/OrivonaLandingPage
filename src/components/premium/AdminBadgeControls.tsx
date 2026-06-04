@@ -10,6 +10,7 @@ import {
   removeAdminServiceBadge,
   removeAdminVendorBadge,
 } from "@/src/lib/api/premiumSaas";
+import { mergeBadgeLists } from "@/src/lib/serviceBadges";
 import { formatBadgeLabel } from "@/src/lib/premiumLabels";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { btnPrimary, selectClass } from "@/src/lib/ui";
@@ -17,87 +18,62 @@ import { btnPrimary, selectClass } from "@/src/lib/ui";
 type AdminBadgeControlsProps = {
   entityType: "vendor" | "service";
   entityId: string | number;
-  /** Required for service rows — assignable badges come from this vendor. */
-  vendorId?: string | number | null;
+  /** Liste yanıtından gelen rozetler (varsa); API ile birleştirilir. */
+  seedBadges?: string[];
   onUpdated?: () => void;
 };
 
 export function AdminBadgeControls({
   entityType,
   entityId,
-  vendorId,
+  seedBadges = [],
   onUpdated,
 }: AdminBadgeControlsProps) {
-  const [assigned, setAssigned] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<string[]>([]);
+  const [badges, setBadges] = useState<string[]>(seedBadges);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
-  const [loadingMeta, setLoadingMeta] = useState(true);
+  const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadAssigned = useCallback(async () => {
-    if (entityType === "service") {
-      return fetchServiceBadges(entityId);
-    }
-    return fetchVendorBadges(entityId);
-  }, [entityType, entityId]);
-
-  const loadCatalog = useCallback(async () => {
-    if (entityType === "service") {
-      if (vendorId == null || vendorId === "") return [];
-      return fetchVendorBadges(vendorId);
-    }
-    const global = await fetchBadgeCatalog();
-    if (global.length > 0) return global;
-    return [
-      "Verified",
-      "PremiumPartner",
-      "Popular",
-      "FastResponse",
-      "HighRating",
-      "New",
-      "Featured",
-    ];
-  }, [entityType, vendorId]);
-
-  const refresh = useCallback(async () => {
-    setLoadingMeta(true);
-    setError(null);
+  const loadBadges = useCallback(async () => {
+    setLoadingList(true);
     try {
-      const [current, pool] = await Promise.all([loadAssigned(), loadCatalog()]);
-      setAssigned(current);
-      setCatalog(pool);
-    } catch (err) {
-      logApiError("Load badges", err);
-      setAssigned([]);
-      setCatalog([]);
+      const fromApi =
+        entityType === "service"
+          ? await fetchServiceBadges(entityId)
+          : await fetchVendorBadges(entityId);
+      setBadges(mergeBadgeLists(seedBadges, fromApi));
+    } catch {
+      setBadges(mergeBadgeLists(seedBadges));
     } finally {
-      setLoadingMeta(false);
+      setLoadingList(false);
     }
-  }, [loadAssigned, loadCatalog]);
+  }, [entityId, entityType, seedBadges]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    fetchBadgeCatalog()
+      .then(setCatalog)
+      .catch(() =>
+        setCatalog([
+          "Verified",
+          "PremiumPartner",
+          "Popular",
+          "FastResponse",
+          "HighRating",
+          "New",
+          "Featured",
+          "Sponsored",
+        ]),
+      );
+  }, []);
 
-  const assignable = catalog.filter(
-    (b) => !assigned.some((a) => a.toLowerCase() === b.toLowerCase()),
-  );
+  useEffect(() => {
+    void loadBadges();
+  }, [loadBadges]);
 
   async function assign() {
     if (!selected) return;
-    if (entityType === "service" && (vendorId == null || vendorId === "")) {
-      setError("İşletme bilgisi eksik; rozet atanamıyor.");
-      return;
-    }
-    if (
-      entityType === "service" &&
-      !catalog.some((b) => b.toLowerCase() === selected.toLowerCase())
-    ) {
-      setError("Bu rozet işletmede tanımlı değil. Önce işletmeye rozet atayın.");
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
@@ -107,7 +83,7 @@ export function AdminBadgeControls({
         await assignAdminServiceBadge(entityId, selected);
       }
       setSelected("");
-      await refresh();
+      await loadBadges();
       onUpdated?.();
     } catch (err) {
       logApiError("Assign badge", err);
@@ -126,7 +102,7 @@ export function AdminBadgeControls({
       } else {
         await removeAdminServiceBadge(entityId, badgeType);
       }
-      await refresh();
+      await loadBadges();
       onUpdated?.();
     } catch (err) {
       setError(formatUiErrorMessage(err, "Rozet kaldırılamadı."));
@@ -135,83 +111,68 @@ export function AdminBadgeControls({
     }
   }
 
-  const serviceNeedsVendor =
-    entityType === "service" && (vendorId == null || vendorId === "");
+  const availableToAdd = catalog.filter(
+    (c) => !badges.some((b) => b.toLowerCase() === c.toLowerCase()),
+  );
 
   return (
     <div className="mt-2 space-y-2 border-t border-white/10 pt-2">
-      <p className="text-[10px] text-zinc-500">
-        {entityType === "service"
-          ? "Bu hizmette görünecek rozetler — yalnızca işletmede tanımlı rozetlerden seçilir. Marketplace ve hizmet detayında gösterilir."
-          : "İşletme rozetleri — bu işletmenin tüm hizmetlerine atanabilecek havuz."}
+      <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+        Rozetler
+        {entityType === "vendor"
+          ? " (işletme — bu işletmenin tüm hizmetlerinde görünür)"
+          : " (hizmet — yalnızca bu hizmet kartında)"}
       </p>
-      {loadingMeta ? (
+      {loadingList ? (
         <p className="text-[10px] text-zinc-500">Rozetler yükleniyor…</p>
-      ) : null}
-      <div className="flex flex-wrap gap-1">
-        {assigned.map((b) => (
-          <span
-            key={b}
-            className="inline-flex items-center gap-1 rounded-full border border-violet-400/25 bg-violet-500/10 px-2 py-0.5 text-[10px] text-violet-100"
-          >
-            {formatBadgeLabel(b)}
-            <button
-              type="button"
-              className="text-red-300 hover:text-red-200"
-              disabled={loading}
-              onClick={() => void remove(b)}
-              aria-label={`${formatBadgeLabel(b)} kaldır`}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        {!loadingMeta && assigned.length === 0 ? (
-          <span className="text-[10px] text-zinc-500">Atanmış rozet yok.</span>
-        ) : null}
-      </div>
-      {serviceNeedsVendor ? (
-        <p className="text-[10px] text-amber-200/90">
-          İşletme kimliği bulunamadı; rozet atamak için satırda vendorId gerekir.
-        </p>
-      ) : entityType === "service" && catalog.length === 0 ? (
-        <p className="text-[10px] text-amber-200/90">
-          Bu işletmede henüz rozet yok. Önce İşletme yönetimi tablosundan işletmeye
-          rozet ekleyin.
-        </p>
+      ) : badges.length === 0 ? (
+        <p className="text-[10px] text-zinc-500">Henüz rozet atanmadı.</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
-          <select
-            className={`${selectClass} !py-1.5 text-xs`}
-            value={selected}
-            disabled={loading || loadingMeta || assignable.length === 0}
-            onChange={(e) => setSelected(e.target.value)}
-          >
-            <option value="">
-              {assignable.length === 0 ? "Eklenecek rozet kalmadı" : "Rozet seç"}
-            </option>
-            {assignable.map((b) => (
-              <option key={b} value={b}>
-                {formatBadgeLabel(b)}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className={`${btnPrimary} !px-3 !py-1.5 text-xs`}
-            disabled={
-              loading ||
-              loadingMeta ||
-              !selected ||
-              serviceNeedsVendor ||
-              assignable.length === 0
-            }
-            onClick={() => void assign()}
-          >
-            Ekle
-          </button>
+        <div className="flex flex-wrap gap-1">
+          {badges.map((b) => (
+            <span
+              key={b}
+              className="inline-flex items-center gap-1 rounded-full border border-violet-400/25 bg-violet-500/10 px-2 py-0.5 text-[10px] text-violet-100"
+            >
+              {formatBadgeLabel(b)}
+              <button
+                type="button"
+                className="text-red-300 hover:text-red-200"
+                disabled={loading}
+                onClick={() => void remove(b)}
+                aria-label={`${formatBadgeLabel(b)} kaldır`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
         </div>
       )}
+      <div className="flex flex-wrap gap-2">
+        <select
+          className={`${selectClass} !py-1.5 text-xs`}
+          value={selected}
+          onChange={(e) => setSelected(e.target.value)}
+          disabled={loading || availableToAdd.length === 0}
+        >
+          <option value="">
+            {availableToAdd.length === 0 ? "Eklenecek rozet yok" : "Rozet seç"}
+          </option>
+          {availableToAdd.map((b) => (
+            <option key={b} value={b}>
+              {formatBadgeLabel(b)}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className={`${btnPrimary} !px-3 !py-1.5 text-xs`}
+          disabled={loading || !selected}
+          onClick={() => void assign()}
+        >
+          Ekle
+        </button>
+      </div>
       {error ? <p className="text-[10px] text-red-300">{error}</p> : null}
     </div>
   );
