@@ -8,6 +8,7 @@ import {
 } from "@/src/lib/api/commerce";
 import { promotionTypeLabel } from "@/src/lib/commerceUi";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { btnSecondary, glassCard } from "@/src/lib/ui";
 
@@ -63,12 +64,21 @@ export function AdminPromotionsSection() {
           description="Hizmetler bölümünden bir hizmeti tanıtabilirsiniz."
         />
       ) : (
-        <ul className={`${glassCard} divide-y divide-white/[0.06] !p-0`}>
-          {items.map((p) => (
-            <li
-              key={String(p.id)}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
+        <AdminPaginatedList
+          items={items}
+          getItemKey={(p) => String(p.id)}
+          searchPlaceholder="Tanıtım ara..."
+          filterItem={(p, q) => {
+            const hay = [p.serviceTitle, String(p.serviceId), p.promotionType]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q.trim().toLowerCase());
+          }}
+          listClassName={`${glassCard} divide-y divide-white/[0.06] !p-0`}
+          emptyMessage="Henüz kayıt yok."
+          renderItem={(p) => (
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
               <div>
                 <p className="font-medium text-white">
                   {p.serviceTitle ?? `Hizmet #${p.serviceId}`}
@@ -89,9 +99,9 @@ export function AdminPromotionsSection() {
               ) : (
                 <span className="text-xs text-zinc-600">Pasif</span>
               )}
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       )}
     </div>
   );

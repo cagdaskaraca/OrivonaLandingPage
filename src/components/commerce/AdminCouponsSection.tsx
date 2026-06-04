@@ -9,6 +9,7 @@ import {
   type Coupon,
 } from "@/src/lib/api/commerce";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { PaymentComingSoonNotice } from "@/src/components/commerce/PaymentComingSoonNotice";
 import { NumericInput } from "@/src/components/ui/NumericInput";
@@ -152,12 +153,17 @@ export function AdminCouponsSection() {
       ) : coupons.length === 0 ? (
         <EmptyState title="Kupon yok" description="Platform kuponu ekleyin." />
       ) : (
-        <ul className="divide-y divide-white/10 rounded-xl border border-white/10">
-          {coupons.map((c) => (
-            <li
-              key={String(c.id)}
-              className="flex justify-between gap-2 px-4 py-3 text-sm"
-            >
+        <AdminPaginatedList
+          items={coupons}
+          getItemKey={(c) => String(c.id)}
+          searchPlaceholder="Kupon ara..."
+          filterItem={(c, q) =>
+            (c.code ?? "").toLowerCase().includes(q.trim().toLowerCase())
+          }
+          listClassName="divide-y divide-white/10 rounded-xl border border-white/10"
+          emptyMessage="Henüz kayıt yok."
+          renderItem={(c) => (
+            <div className="flex justify-between gap-2 px-4 py-3 text-sm">
               <span className="font-mono text-violet-200">{c.code}</span>
               <span className="text-zinc-500">
                 {c.discountType === "FixedAmount" ? `${c.value}₺` : `%${c.value}`}
@@ -169,9 +175,9 @@ export function AdminCouponsSection() {
               >
                 Sil
               </button>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       )}
     </div>
   );

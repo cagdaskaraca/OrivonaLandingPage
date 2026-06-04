@@ -223,7 +223,7 @@ function DashboardContent() {
       <section id="admin-activity" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Son Aktiviteler</h2>
         <div className="mt-4">
-          <ActivityFeedSection role="admin" />
+          <ActivityFeedSection role="admin" paginate />
         </div>
       </section>
 
@@ -296,7 +296,7 @@ function DashboardContent() {
 
       <section id="admin-notifications" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="mb-4 text-lg font-semibold text-white">Bildirimler</h2>
-        <NotificationsPanel />
+        <NotificationsPanel paginate />
       </section>
 
       <section id="admin-campaigns" className={`${glassCard} mb-8 scroll-mt-24`}>

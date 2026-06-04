@@ -1,5 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
+import { AdminPaginationBar } from "@/src/components/admin/AdminPaginationBar";
+import { useAdminPagination } from "@/src/components/admin/useAdminPagination";
 import { AdminBadgeControls } from "@/src/components/premium/AdminBadgeControls";
 import type { AdminVendor } from "@/src/lib/api/types";
 import {
@@ -26,6 +29,22 @@ const btnActivate =
 
 const btnDeactivate =
   "inline-flex items-center justify-center rounded-full border border-zinc-400/30 bg-zinc-500/10 px-4 py-1.5 text-xs font-semibold text-zinc-200 transition hover:bg-zinc-500/18 disabled:opacity-50";
+
+function filterVendor(vendor: AdminVendor, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const hay = [
+    vendor.businessName,
+    vendor.ownerName,
+    vendor.city,
+    vendor.district,
+    vendor.email,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return hay.includes(q);
+}
 
 type AdminVendorTableProps = {
   vendors: AdminVendor[];
@@ -77,15 +96,43 @@ export function AdminVendorTable({
     );
   }
 
-  const sorted = [...vendors].sort((a, b) => {
-    const aPending = vendorCanModerate(a) ? 0 : 1;
-    const bPending = vendorCanModerate(b) ? 0 : 1;
-    if (aPending !== bPending) return aPending - bPending;
-    return (a.businessName ?? "").localeCompare(b.businessName ?? "", "tr");
-  });
+  const sorted = useMemo(
+    () =>
+      [...vendors].sort((a, b) => {
+        const aPending = vendorCanModerate(a) ? 0 : 1;
+        const bPending = vendorCanModerate(b) ? 0 : 1;
+        if (aPending !== bPending) return aPending - bPending;
+        return (a.businessName ?? "").localeCompare(b.businessName ?? "", "tr");
+      }),
+    [vendors],
+  );
+
+  const {
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    searchQuery,
+    setSearchQuery,
+    pageItems,
+    totalPages,
+    totalCount,
+  } = useAdminPagination(sorted, { filterFn: filterVendor });
 
   return (
-    <div className="orivona-scroll-x mt-4 rounded-xl border border-white/10 pb-0.5">
+    <div className="mt-4">
+      <AdminPaginationBar
+        page={page}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="İşletme ara..."
+      />
+      <div className="orivona-scroll-x rounded-xl border border-white/10 pb-0.5">
       <table className="w-full min-w-[1000px] text-left text-sm">
         <thead className="border-b border-white/10 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-zinc-500">
           <tr>
@@ -99,7 +146,7 @@ export function AdminVendorTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-white/[0.06]">
-          {sorted.map((v) => {
+          {pageItems.map((v) => {
             const id = v.id;
             const busy = id != null && actionVendorId === id;
             const canModerate = vendorCanModerate(v);
@@ -265,6 +312,10 @@ export function AdminVendorTable({
           })}
         </tbody>
       </table>
+      </div>
+      {pageItems.length === 0 ? (
+        <p className="mt-3 text-sm text-zinc-500">Arama sonucu bulunamadı.</p>
+      ) : null}
     </div>
   );
 }

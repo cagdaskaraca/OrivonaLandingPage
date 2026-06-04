@@ -10,6 +10,7 @@ import {
 } from "@/src/lib/api/commerce";
 import { CAMPAIGN_TARGET_OPTIONS } from "@/src/lib/commerceUi";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
+import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
@@ -207,12 +208,20 @@ export function AdminCampaignsSection() {
           description="Aktif banner için kampanya oluşturun."
         />
       ) : (
-        <ul className="space-y-2">
-          {campaigns.map((c) => (
-            <li
-              key={String(c.id)}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 px-4 py-3"
-            >
+        <AdminPaginatedList
+          items={campaigns}
+          getItemKey={(c) => String(c.id)}
+          searchPlaceholder="Kampanya ara..."
+          filterItem={(c, q) => {
+            const hay = [c.title, c.bannerText, c.targetType]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q.trim().toLowerCase());
+          }}
+          emptyMessage="Henüz kayıt yok."
+          renderItem={(c) => (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 px-4 py-3">
               <div>
                 <p className="font-medium text-white">{c.title}</p>
                 <p className="text-xs text-zinc-500">
@@ -250,9 +259,9 @@ export function AdminCampaignsSection() {
                   Sil
                 </button>
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       )}
     </div>
   );
