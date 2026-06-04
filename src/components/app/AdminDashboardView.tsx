@@ -289,6 +289,7 @@ function DashboardContent() {
       <section id="admin-categories" className={`${glassCard} mb-8 scroll-mt-24`}>
         <h2 className="text-lg font-semibold text-white">Kategori yönetimi</h2>
         <AdminCategoryManagement
+          allServices={services}
           onToastSuccess={toast.success}
           onToastError={toast.error}
         />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -8,12 +8,18 @@ import {
   updateAdminCategory,
 } from "@/src/lib/api";
 import { formatApiErrorMessage } from "@/src/lib/api/client";
-import type { AdminCategory, AdminCategoryPayload } from "@/src/lib/api/types";
+import type {
+  AdminCategory,
+  AdminCategoryPayload,
+  AdminService,
+} from "@/src/lib/api/types";
 import {
   activeStatusClass,
   formatAdminCategoryLabel,
   slugifyCategoryName,
 } from "@/src/lib/adminDashboard";
+import { linkedCountsForCategory } from "@/src/lib/adminCategoryLinks";
+import { AdminCategoryEditModal } from "@/src/components/admin/AdminCategoryEditModal";
 import { AdminPaginationBar } from "@/src/components/admin/AdminPaginationBar";
 import { useAdminPagination } from "@/src/components/admin/useAdminPagination";
 import { btnPrimary, btnSecondary, inputClass, skeletonClass } from "@/src/lib/ui";
@@ -36,11 +42,13 @@ function defaultForm(): AdminCategoryPayload {
 }
 
 type AdminCategoryManagementProps = {
+  allServices: AdminService[];
   onToastSuccess: (msg: string) => void;
   onToastError: (msg: string) => void;
 };
 
 export function AdminCategoryManagement({
+  allServices,
   onToastSuccess,
   onToastError,
 }: AdminCategoryManagementProps) {
@@ -49,8 +57,10 @@ export function AdminCategoryManagement({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
-  const [editingId, setEditingId] = useState<string | number | null>(null);
-  const [showForm, setShowForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<AdminCategory | null>(
+    null,
+  );
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [form, setForm] = useState<AdminCategoryPayload>(defaultForm);
   const [slugTouched, setSlugTouched] = useState(false);
 
@@ -72,15 +82,16 @@ export function AdminCategoryManagement({
   }, [load]);
 
   function openCreate() {
-    setEditingId(null);
+    setEditingCategory(null);
     setForm(defaultForm());
     setSlugTouched(false);
-    setShowForm(true);
+    setShowCreateForm(true);
   }
 
   function openEdit(cat: AdminCategory) {
     if (cat.id == null) return;
-    setEditingId(cat.id);
+    setShowCreateForm(false);
+    setEditingCategory(cat);
     setForm({
       name: cat.name ?? "",
       slug: cat.slug ?? "",
@@ -88,7 +99,11 @@ export function AdminCategoryManagement({
       isActive: cat.isActive !== false,
     });
     setSlugTouched(true);
-    setShowForm(true);
+  }
+
+  function closeEditModal() {
+    setEditingCategory(null);
+    setForm(defaultForm());
   }
 
   function handleNameChange(name: string) {
@@ -111,21 +126,20 @@ export function AdminCategoryManagement({
       isActive: form.isActive,
     };
     const slugTrim = (form.slug ?? "").trim();
-    if (slugTrim) {
-      payload.slug = slugTrim;
-    }
+    if (slugTrim) payload.slug = slugTrim;
+
     setSaving(true);
     try {
-      if (editingId != null) {
-        await updateAdminCategory(editingId, payload);
+      if (editingCategory?.id != null) {
+        await updateAdminCategory(editingCategory.id, payload);
         onToastSuccess("Kategori güncellendi.");
+        closeEditModal();
       } else {
         await createAdminCategory(payload);
         onToastSuccess("Kategori eklendi.");
+        setShowCreateForm(false);
+        setForm(defaultForm());
       }
-      setShowForm(false);
-      setEditingId(null);
-      setForm(defaultForm());
       await load();
     } catch (err) {
       onToastError(formatApiErrorMessage(err, "Kaydedilemedi."));
@@ -146,16 +160,22 @@ export function AdminCategoryManagement({
     totalCount,
   } = useAdminPagination(categories, { filterFn: filterCategory });
 
+  const countsByCategoryId = useMemo(() => {
+    const map = new Map<string, { serviceCount: number; vendorCount: number }>();
+    for (const cat of categories) {
+      if (cat.id == null) continue;
+      map.set(String(cat.id), linkedCountsForCategory(cat, allServices));
+    }
+    return map;
+  }, [categories, allServices]);
+
   async function handleDelete(id: string | number) {
     if (!window.confirm("Bu kategori silinsin mi?")) return;
     setDeletingId(id);
     try {
       await deleteAdminCategory(id);
       onToastSuccess("Kategori silindi.");
-      if (editingId === id) {
-        setShowForm(false);
-        setEditingId(null);
-      }
+      if (editingCategory?.id === id) closeEditModal();
       await load();
     } catch (err) {
       onToastError(
@@ -178,18 +198,21 @@ export function AdminCategoryManagement({
             burada yönetilen kayıtlar admin API üzerinden güncellenir.
           </p>
         </div>
-        {!showForm ? (
+        {!showCreateForm && editingCategory == null ? (
           <button type="button" className={btnPrimary} onClick={openCreate}>
             Kategori ekle
           </button>
         ) : null}
       </div>
 
-      {showForm ? (
+      {showCreateForm ? (
         <form
           onSubmit={handleSubmit}
           className="mt-4 grid gap-4 rounded-xl border border-violet-400/20 bg-violet-500/[0.06] p-4 sm:grid-cols-2"
         >
+          <p className="text-sm font-medium text-white sm:col-span-2">
+            Yeni kategori
+          </p>
           <label className="block text-sm sm:col-span-2">
             <span className="mb-1.5 block text-xs text-zinc-400">Ad</span>
             <input
@@ -240,14 +263,14 @@ export function AdminCategoryManagement({
           </label>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <button type="submit" className={btnPrimary} disabled={saving}>
-              {saving ? "Kaydediliyor…" : editingId != null ? "Güncelle" : "Ekle"}
+              {saving ? "Kaydediliyor…" : "Ekle"}
             </button>
             <button
               type="button"
               className={btnSecondary}
               onClick={() => {
-                setShowForm(false);
-                setEditingId(null);
+                setShowCreateForm(false);
+                setForm(defaultForm());
               }}
             >
               İptal
@@ -255,6 +278,19 @@ export function AdminCategoryManagement({
           </div>
         </form>
       ) : null}
+
+      <AdminCategoryEditModal
+        open={editingCategory != null}
+        category={editingCategory}
+        allServices={allServices}
+        form={form}
+        saving={saving}
+        onFormChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+        onNameChange={handleNameChange}
+        onSlugTouched={() => setSlugTouched(true)}
+        onSubmit={handleSubmit}
+        onClose={closeEditModal}
+      />
 
       {loading ? (
         <div className={`${skeletonClass} mt-4 h-40`} />
@@ -284,70 +320,92 @@ export function AdminCategoryManagement({
             onSearchChange={setSearchQuery}
             searchPlaceholder="Kategori ara..."
           />
-        <div className="orivona-scroll-x rounded-xl border border-white/10 pb-0.5">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b border-white/10 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              <tr>
-                <th className="px-4 py-3">Kategori</th>
-                <th className="px-4 py-3">Bağlantı kodu</th>
-                <th className="px-4 py-3">Açıklama</th>
-                <th className="px-4 py-3">Durum</th>
-                <th className="px-4 py-3 text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.06]">
-              {pageItems.map((cat) => {
-                const id = cat.id;
-                const busy = id != null && deletingId === id;
-                return (
-                  <tr
-                    key={String(id ?? cat.slug)}
-                    className="bg-white/[0.02] hover:bg-white/[0.04]"
-                  >
-                    <td className="px-4 py-3 font-medium text-white">
-                      {formatAdminCategoryLabel(cat)}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-400">{cat.slug ?? "—"}</td>
-                    <td className="max-w-[200px] truncate px-4 py-3 text-zinc-400">
-                      {cat.description?.trim() || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${activeStatusClass(cat.isActive)}`}
-                      >
-                        {cat.isActive === false ? "Pasif" : "Aktif"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <button
-                          type="button"
-                          className={`${btnSecondary} !px-3 !py-1.5 text-xs`}
-                          onClick={() => openEdit(cat)}
+          <div className="orivona-scroll-x rounded-xl border border-white/10 pb-0.5">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="border-b border-white/10 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <tr>
+                  <th className="px-4 py-3">Kategori</th>
+                  <th className="px-4 py-3">Açıklama</th>
+                  <th className="px-4 py-3">Bağlı</th>
+                  <th className="px-4 py-3">Durum</th>
+                  <th className="px-4 py-3 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.06]">
+                {pageItems.map((cat) => {
+                  const id = cat.id;
+                  const busy = id != null && deletingId === id;
+                  const counts =
+                    id != null
+                      ? countsByCategoryId.get(String(id))
+                      : undefined;
+                  const serviceCount =
+                    counts?.serviceCount ?? cat.serviceCount ?? 0;
+                  const vendorCount = counts?.vendorCount ?? 0;
+
+                  return (
+                    <tr
+                      key={String(id ?? cat.slug)}
+                      className="bg-white/[0.02] hover:bg-white/[0.04]"
+                    >
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-white">
+                          {formatAdminCategoryLabel(cat)}
+                        </p>
+                        <p className="mt-0.5 text-xs text-zinc-500">
+                          {cat.slug ?? "—"}
+                        </p>
+                      </td>
+                      <td className="max-w-[220px] truncate px-4 py-3 text-zinc-400">
+                        {cat.description?.trim() || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-zinc-300">
+                        <span className="block text-sm">
+                          {serviceCount} hizmet
+                        </span>
+                        {vendorCount > 0 ? (
+                          <span className="text-xs text-zinc-500">
+                            {vendorCount} işletme
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${activeStatusClass(cat.isActive)}`}
                         >
-                          Düzenle
-                        </button>
-                        {id != null ? (
+                          {cat.isActive === false ? "Pasif" : "Aktif"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <button
                             type="button"
-                            className={btnDanger}
-                            disabled={busy}
-                            onClick={() => void handleDelete(id)}
+                            className={`${btnSecondary} !px-3 !py-1.5 text-xs`}
+                            onClick={() => openEdit(cat)}
                           >
-                            {busy ? "…" : "Sil"}
+                            Düzenle
                           </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {pageItems.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-500">Arama sonucu bulunamadı.</p>
-        ) : null}
+                          {id != null ? (
+                            <button
+                              type="button"
+                              className={btnDanger}
+                              disabled={busy}
+                              onClick={() => void handleDelete(id)}
+                            >
+                              {busy ? "…" : "Sil"}
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {pageItems.length === 0 ? (
+            <p className="mt-3 text-sm text-zinc-500">Arama sonucu bulunamadı.</p>
+          ) : null}
         </div>
       )}
     </div>

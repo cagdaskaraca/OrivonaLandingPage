@@ -12,6 +12,7 @@ import {
 } from "@/src/lib/api/premiumSaas";
 import { formatUiErrorMessage, isApiNotFound, logApiError } from "@/src/lib/api/client";
 import { NumericInput } from "@/src/components/ui/NumericInput";
+import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
 import { btnPrimary, btnSecondary, glassCard, inputClass, selectClass } from "@/src/lib/ui";
 
 const STEPS = [
@@ -155,15 +156,11 @@ function WizardContent() {
           </label>
         ) : null}
         {step === 1 ? (
-          <label className="block text-sm">
-            <span className="mb-1 text-xs text-zinc-500">Tarih</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={eventDate}
-              onChange={(e) => setEventDate(e.target.value)}
-            />
-          </label>
+          <OrivonaDatePicker
+            label="Tarih"
+            value={eventDate}
+            onChange={setEventDate}
+          />
         ) : null}
         {step === 2 ? (
           <div className="space-y-3">

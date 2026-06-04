@@ -5,7 +5,8 @@ import { Modal } from "@/src/components/ui/Modal";
 import { promoteAdminService } from "@/src/lib/api/commerce";
 import { PROMOTION_TYPE_OPTIONS } from "@/src/lib/commerceUi";
 import { formatUiErrorMessage } from "@/src/lib/api/client";
-import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
+import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
+import { btnPrimary, btnSecondary, selectClass } from "@/src/lib/ui";
 
 type PromoteServiceModalProps = {
   open: boolean;
@@ -72,26 +73,19 @@ export function PromoteServiceModal({
             ))}
           </select>
         </label>
-        <label className="block text-sm">
-          <span className="mb-1 text-xs text-zinc-500">Başlangıç</span>
-          <input
-            type="date"
-            className={inputClass}
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            required
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 text-xs text-zinc-500">Bitiş</span>
-          <input
-            type="date"
-            className={inputClass}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            required
-          />
-        </label>
+        <OrivonaDatePicker
+          label="Başlangıç"
+          value={startDate}
+          onChange={setStartDate}
+          required
+        />
+        <OrivonaDatePicker
+          label="Bitiş"
+          value={endDate}
+          onChange={setEndDate}
+          min={startDate || undefined}
+          required
+        />
         {error ? <p className="text-sm text-red-300/90">{error}</p> : null}
         <div className="flex gap-2">
           <button type="submit" className={btnPrimary} disabled={loading}>

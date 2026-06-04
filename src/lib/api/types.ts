@@ -467,7 +467,9 @@ export type AdminService = {
   title?: string;
   vendorName?: string;
   categoryName?: string;
+  categoryId?: string | number;
   city?: string;
+  district?: string;
   isFeatured?: boolean;
   isActive?: boolean;
   basePrice?: number;

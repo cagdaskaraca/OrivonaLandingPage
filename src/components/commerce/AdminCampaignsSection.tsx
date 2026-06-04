@@ -12,6 +12,7 @@ import { CAMPAIGN_TARGET_OPTIONS } from "@/src/lib/commerceUi";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
+import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 function emptyCampaign(): Omit<Campaign, "id"> {
@@ -152,24 +153,17 @@ export function AdminCampaignsSection() {
               }
             />
           </label>
-          <label className="block text-sm">
-            <span className="mb-1 text-xs text-zinc-500">Başlangıç</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={form.startDate ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 text-xs text-zinc-500">Bitiş</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={form.endDate ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-            />
-          </label>
+          <OrivonaDatePicker
+            label="Başlangıç"
+            value={form.startDate ?? ""}
+            onChange={(startDate) => setForm((f) => ({ ...f, startDate }))}
+          />
+          <OrivonaDatePicker
+            label="Bitiş"
+            value={form.endDate ?? ""}
+            onChange={(endDate) => setForm((f) => ({ ...f, endDate }))}
+            min={form.startDate || undefined}
+          />
           <label className="block text-sm">
             <span className="mb-1 text-xs text-zinc-500">CTA metni</span>
             <input

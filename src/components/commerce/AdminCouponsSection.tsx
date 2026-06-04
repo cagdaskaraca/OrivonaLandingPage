@@ -13,6 +13,7 @@ import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { PaymentComingSoonNotice } from "@/src/components/commerce/PaymentComingSoonNotice";
 import { NumericInput } from "@/src/components/ui/NumericInput";
+import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
 
 function emptyForm(): Omit<Coupon, "id"> {
@@ -123,24 +124,17 @@ export function AdminCouponsSection() {
               onChange={(value) => setForm((f) => ({ ...f, value }))}
             />
           </label>
-          <label className="block text-sm">
-            <span className="mb-1 text-xs text-zinc-500">Başlangıç</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={form.startDate ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 text-xs text-zinc-500">Bitiş</span>
-            <input
-              type="date"
-              className={inputClass}
-              value={form.endDate ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
-            />
-          </label>
+          <OrivonaDatePicker
+            label="Başlangıç"
+            value={form.startDate ?? ""}
+            onChange={(startDate) => setForm((f) => ({ ...f, startDate }))}
+          />
+          <OrivonaDatePicker
+            label="Bitiş"
+            value={form.endDate ?? ""}
+            onChange={(endDate) => setForm((f) => ({ ...f, endDate }))}
+            min={form.startDate || undefined}
+          />
           <div className="sm:col-span-2">
             <button type="submit" className={btnPrimary} disabled={saving}>
               Kaydet

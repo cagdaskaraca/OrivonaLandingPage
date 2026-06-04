@@ -18,6 +18,7 @@ import { isMusicCategory } from "@/src/lib/playlist";
 import { CouponCodeField } from "@/src/components/commerce/CouponCodeField";
 import { PaymentComingSoonNotice } from "@/src/components/commerce/PaymentComingSoonNotice";
 import { NumericInput } from "@/src/components/ui/NumericInput";
+import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
 import { btnPrimary, inputClass, selectClass } from "@/src/lib/ui";
 
 const SUCCESS_MESSAGE = "Teklif talebiniz işletmeye gönderildi.";
@@ -353,15 +354,11 @@ export function OfferRequestModal({
             required
           />
         </label>
-        <label className="block text-sm">
-          <span className="mb-1.5 block text-xs text-zinc-400">Etkinlik tarihi</span>
-          <input
-            type="date"
-            className={inputClass}
-            value={eventDate}
-            onChange={(e) => setEventDate(e.target.value)}
-          />
-        </label>
+        <OrivonaDatePicker
+          label="Etkinlik tarihi"
+          value={eventDate}
+          onChange={setEventDate}
+        />
         {serviceId != null ? (
           <CouponCodeField
             serviceId={serviceId}
