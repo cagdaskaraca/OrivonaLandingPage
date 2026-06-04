@@ -151,6 +151,7 @@ html {
 /* Dashboard: sticky nav height + ORIVONA scrollbars */
 .orivona-dashboard-shell {
   --orivona-dashboard-nav-h: var(--orivona-header-h);
+  --dashboard-sidebar-top: calc(var(--orivona-header-h) + 0.5rem);
   --orivona-sidebar-expanded: 280px;
   --orivona-sidebar-collapsed: 72px;
 }
@@ -159,6 +160,7 @@ html {
 .orivona-panel-layout {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   width: 100%;
   max-width: 100%;
   gap: 0;
@@ -174,6 +176,7 @@ html {
 
 .orivona-panel-sidebar {
   display: none;
+  flex: 0 0 var(--orivona-sidebar-expanded);
   width: var(--orivona-sidebar-expanded);
   flex-shrink: 0;
 }
@@ -183,15 +186,18 @@ html {
     display: block;
     position: sticky;
     align-self: flex-start;
-    top: calc(var(--orivona-header-h) + 0.75rem);
-    height: calc(100vh - var(--orivona-header-h) - 1.5rem);
-    max-height: calc(100vh - var(--orivona-header-h) - 1.5rem);
+    flex: 0 0 var(--orivona-sidebar-expanded);
+    width: var(--orivona-sidebar-expanded);
+    top: var(--dashboard-sidebar-top, 96px);
+    height: calc(100vh - var(--dashboard-sidebar-top, 96px));
+    max-height: calc(100vh - var(--dashboard-sidebar-top, 96px));
     overflow: hidden;
     z-index: 40;
   }
 }
 
 .orivona-panel-sidebar.is-collapsed {
+  flex: 0 0 var(--orivona-sidebar-collapsed);
   width: var(--orivona-sidebar-collapsed);
 }
 
@@ -213,7 +219,7 @@ html {
 }
 
 .orivona-panel-content {
-  flex: 1 1 auto;
+  flex: 1;
   width: 100%;
   min-width: 0;
   overflow-x: clip;

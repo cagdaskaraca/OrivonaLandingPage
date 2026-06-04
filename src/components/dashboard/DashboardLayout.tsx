@@ -40,7 +40,7 @@ export function DashboardLayout({
   navItems,
   storageKey = "default",
   onLogout,
-  fullWidth = false,
+  fullWidth = true,
   toolbar,
   children,
 }: DashboardLayoutProps) {

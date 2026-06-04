@@ -212,6 +212,7 @@ function DashboardContent() {
       navGroups={ADMIN_DASHBOARD_NAV}
       storageKey="admin"
       onLogout={handleLogout}
+      fullWidth
       toolbar={toolbar}
     >
       <section id="admin-summary" className="mb-8 scroll-mt-24">
