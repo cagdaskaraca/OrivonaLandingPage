@@ -642,7 +642,7 @@ function DashboardContent() {
       </section>
 
       <DashboardSection id="dashboard-notifications" title="Bildirimler">
-        <NotificationsPanel />
+        <NotificationsPanel paginate />
       </DashboardSection>
 
       <DashboardSection id="dashboard-account" title="Ayarlar">

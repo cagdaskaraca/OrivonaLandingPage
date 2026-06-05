@@ -9,6 +9,7 @@ import {
   fetchServiceImages,
   fetchVendorDashboardSummary,
   fetchVendorReservations,
+  rejectVendorReservation,
   updateServiceImage,
 } from "@/src/lib/api";
 import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
@@ -25,10 +26,13 @@ import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
 import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { formatOfferDate } from "@/src/lib/offerRequest";
+import { OfferPriceBreakdown } from "@/src/components/offers/OfferPriceBreakdown";
 import {
   canVendorCompleteReservation,
   canVendorConfirmReservation,
+  canVendorRejectReservation,
   reservationActionId,
+  reservationPricingInput,
   vendorReservationActionHint,
 } from "@/src/lib/reservationUi";
 import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
@@ -64,7 +68,8 @@ export function VendorReservationsPanel() {
       <h2 className="text-lg font-semibold text-white">Rezervasyonlar</h2>
       <p className="mt-1 text-sm text-zinc-500">
         Müşteri teklifi kabul ettiğinde rezervasyon talebi oluşur. «Onayla» ile
-        kesinleştirirsiniz; etkinlik sonrası «Tamamla» ile kapatırsınız.
+        müşterinin ödemesine izin verirsiniz; uygun değilse «Reddet». Etkinlik
+        sonrası «Tamamla» ile kapatırsınız.
       </p>
       <VendorSectionState
         loading={loading}
@@ -107,14 +112,17 @@ export function VendorReservationsPanel() {
           renderItem={(r) => {
             const actionId = reservationActionId(r);
             const showConfirm = canVendorConfirmReservation(r.status);
+            const showReject = canVendorRejectReservation(r.status);
             const showComplete = canVendorCompleteReservation(r.status);
             const hint = vendorReservationActionHint(r.status);
             const dateLabel = formatOfferDate(r.eventDate) || r.eventDate;
+            const hasActions =
+              actionId != null && (showConfirm || showReject || showComplete);
 
             return (
               <div className="rounded-lg border border-white/10 px-3 py-2 text-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-white">
                       {r.serviceTitle ?? "—"}
                     </p>
@@ -127,17 +135,25 @@ export function VendorReservationsPanel() {
                         <StatusBadge status={r.status} context="vendor" />
                       </div>
                     ) : null}
+                    <div className="mt-2">
+                      <OfferPriceBreakdown
+                        pricing={reservationPricingInput(r)}
+                        size="sm"
+                      />
+                    </div>
                   </div>
-                  {actionId != null && (showConfirm || showComplete) ? (
+                  {hasActions ? (
                     <div className="flex flex-wrap gap-2">
                       {showConfirm ? (
                         <button
                           type="button"
-                          className={`${btnSecondary} text-xs`}
+                          className={`${btnPrimary} text-xs`}
                           onClick={async () => {
                             try {
-                              await confirmVendorReservation(actionId);
-                              toast.success("Rezervasyon onaylandı.");
+                              await confirmVendorReservation(actionId!);
+                              toast.success(
+                                "Rezervasyon onaylandı. Müşteri ödeme yapabilir.",
+                              );
                               load();
                             } catch (e) {
                               toast.error(
@@ -152,13 +168,42 @@ export function VendorReservationsPanel() {
                           Onayla
                         </button>
                       ) : null}
+                      {showReject ? (
+                        <button
+                          type="button"
+                          className={`${btnSecondary} text-xs text-rose-300 hover:text-rose-200`}
+                          onClick={async () => {
+                            if (
+                              !window.confirm(
+                                "Bu rezervasyon talebini reddetmek istediğinize emin misiniz?",
+                              )
+                            ) {
+                              return;
+                            }
+                            try {
+                              await rejectVendorReservation(actionId!);
+                              toast.success("Rezervasyon reddedildi.");
+                              load();
+                            } catch (e) {
+                              toast.error(
+                                formatApiErrorMessage(
+                                  e,
+                                  "Rezervasyon reddedilemedi. API uç noktası henüz aktif olmayabilir.",
+                                ),
+                              );
+                            }
+                          }}
+                        >
+                          Reddet
+                        </button>
+                      ) : null}
                       {showComplete ? (
                         <button
                           type="button"
                           className={`${btnSecondary} text-xs`}
                           onClick={async () => {
                             try {
-                              await completeVendorReservation(actionId);
+                              await completeVendorReservation(actionId!);
                               toast.success("Rezervasyon tamamlandı.");
                               load();
                             } catch (e) {
@@ -177,7 +222,12 @@ export function VendorReservationsPanel() {
                     </div>
                   ) : null}
                 </div>
-                {!showConfirm && !showComplete && hint ? (
+                {actionId == null ? (
+                  <p className="mt-2 text-xs text-amber-400/90">
+                    Rezervasyon kimliği alınamadı; onay/red işlemi yapılamıyor.
+                  </p>
+                ) : null}
+                {hint ? (
                   <p className="mt-2 text-xs text-zinc-500">{hint}</p>
                 ) : null}
               </div>

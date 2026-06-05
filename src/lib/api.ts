@@ -53,6 +53,7 @@ export {
   cancelReservation,
   confirmVendorReservation,
   completeVendorReservation,
+  rejectVendorReservation,
   fetchServiceImages,
   addServiceImage,
   updateServiceImage,

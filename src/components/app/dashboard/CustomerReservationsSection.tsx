@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cancelReservation, fetchMyReservations } from "@/src/lib/api";
+import { fetchMyReservations } from "@/src/lib/api";
 import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { Reservation } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
+import { CustomerReservationRow } from "@/src/components/reservations/CustomerReservationRow";
 import { EmptyState } from "@/src/components/ui/EmptyState";
-import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
-import { btnSecondary } from "@/src/lib/ui";
 
 export function CustomerReservationsSection() {
   const toast = useToast();
@@ -59,7 +58,7 @@ export function CustomerReservationsSection() {
       filterItem={(r, query) => {
         const q = query.trim().toLowerCase();
         if (!q) return true;
-        const hay = [r.serviceTitle, r.eventDate, r.status]
+        const hay = [r.serviceTitle, r.vendorName, r.eventDate, r.status]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
@@ -67,35 +66,7 @@ export function CustomerReservationsSection() {
       }}
       getItemKey={(r) => String(r.id)}
       renderItem={(r) => (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
-          <div>
-            <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
-            <p className="text-zinc-400">{r.eventDate}</p>
-            {r.status ? (
-              <div className="mt-1.5">
-                <StatusBadge status={r.status} context="customer" />
-              </div>
-            ) : null}
-          </div>
-          {r.id != null && r.status !== "Cancelled" ? (
-            <button
-              type="button"
-              className={`${btnSecondary} text-xs`}
-              onClick={async () => {
-                try {
-                  await cancelReservation(r.id!);
-                  toast.success("Rezervasyon iptal edildi.");
-                  load();
-                } catch (err) {
-                  logApiError("Cancel reservation", err);
-                  if (!isApiNotFound(err)) toast.error("İptal edilemedi.");
-                }
-              }}
-            >
-              İptal
-            </button>
-          ) : null}
-        </div>
+        <CustomerReservationRow reservation={r} onRefresh={load} />
       )}
     />
   );

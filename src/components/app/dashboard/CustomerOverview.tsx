@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
-  cancelReservation,
   fetchCustomerDashboardSummary,
   fetchFavorites,
   fetchMyReservations,
@@ -21,7 +20,7 @@ import {
   CUSTOMER_DEFAULT_ZERO_SUMMARY,
   CUSTOMER_EMPTY_DATA_MESSAGE,
 } from "@/src/lib/customerDashboard";
-import { StatusBadge } from "@/src/components/ui/StatusBadge";
+import { CustomerReservationRow } from "@/src/components/reservations/CustomerReservationRow";
 import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type Tab = "summary" | "favorites" | "reservations";
@@ -173,37 +172,10 @@ export function CustomerOverview() {
           listClassName="space-y-2"
           getItemKey={(r) => String(r.id)}
           renderItem={(r) => (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
-              <div>
-                <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
-                <p className="text-zinc-400">{r.eventDate}</p>
-                {r.status ? (
-                  <div className="mt-1.5">
-                    <StatusBadge status={r.status} context="customer" />
-                  </div>
-                ) : null}
-              </div>
-              {r.id != null && r.status !== "Cancelled" ? (
-                <button
-                  type="button"
-                  className={`${btnSecondary} text-xs`}
-                  onClick={async () => {
-                    try {
-                      await cancelReservation(r.id!);
-                      toast.success("Rezervasyon iptal edildi.");
-                      loadReservations();
-                    } catch (err) {
-                      logApiError("Cancel reservation", err);
-                      if (!isApiNotFound(err)) {
-                        toast.error("İptal edilemedi.");
-                      }
-                    }
-                  }}
-                >
-                  İptal
-                </button>
-              ) : null}
-            </div>
+            <CustomerReservationRow
+              reservation={r}
+              onRefresh={loadReservations}
+            />
           )}
         />
       )}

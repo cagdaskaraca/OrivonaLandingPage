@@ -15,7 +15,7 @@ import { useAdminPagination } from "@/src/components/admin/useAdminPagination";
 import { btnSecondary } from "@/src/lib/ui";
 
 type NotificationsPanelProps = {
-  /** Admin dashboard: paginate long notification lists (customer/vendor unchanged). */
+  /** 5’li sayfalama + arama (admin / işletme). */
   paginate?: boolean;
   searchPlaceholder?: string;
 };

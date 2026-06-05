@@ -320,9 +320,20 @@ export type Reservation = {
   eventDate?: string;
   guestCount?: number;
   totalPrice?: number;
+  originalPrice?: number;
+  finalPrice?: number;
+  agreedPrice?: number;
+  hasDiscount?: boolean;
+  discountAmount?: number;
+  discountPercent?: number;
+  couponCode?: string;
   status?: string;
   notes?: string;
   createdAt?: string;
+};
+
+export type RejectVendorReservationPayload = {
+  reason?: string;
 };
 
 export type CreateReservationPayload = {

@@ -49,6 +49,7 @@ import type {
   FavoriteItem,
   OfferRequest,
   RejectCustomerOfferPayload,
+  RejectVendorReservationPayload,
   Reservation,
   SendVendorOfferPayload,
   ServiceImage,
@@ -511,7 +512,29 @@ function normalizeReservation(raw: unknown): Reservation {
     recordId(base, "reservationId", "ReservationId") ??
     recordId(base) ??
     recordId(o, "reservationId", "ReservationId") ??
-    recordId(o);
+    recordId(o) ??
+    recordId(base, "bookingId", "BookingId") ??
+    recordId(o, "bookingId", "BookingId");
+  const offerNested =
+    base.offer && typeof base.offer === "object" && !Array.isArray(base.offer)
+      ? (base.offer as Record<string, unknown>)
+      : base.vendorOffer &&
+          typeof base.vendorOffer === "object" &&
+          !Array.isArray(base.vendorOffer)
+        ? (base.vendorOffer as Record<string, unknown>)
+        : undefined;
+  const merged = mergeOfferPricingFields(
+    nested && nested !== o ? (o as Record<string, unknown>) : base,
+    offerNested ?? (nested !== o ? base : undefined),
+  );
+  const listPrice =
+    recordNum(base, "totalPrice", "TotalPrice") ??
+    recordNum(o, "totalPrice", "TotalPrice");
+  const payAmount =
+    merged.finalPrice ??
+    merged.agreedPrice ??
+    listPrice ??
+    merged.originalPrice;
   return {
     id,
     vendorServiceId:
@@ -532,9 +555,14 @@ function normalizeReservation(raw: unknown): Reservation {
     guestCount:
       recordNum(base, "guestCount", "GuestCount") ??
       recordNum(o, "guestCount", "GuestCount"),
-    totalPrice:
-      recordNum(base, "totalPrice", "TotalPrice") ??
-      recordNum(o, "totalPrice", "TotalPrice"),
+    totalPrice: payAmount ?? undefined,
+    originalPrice: merged.originalPrice ?? undefined,
+    finalPrice: merged.finalPrice ?? payAmount ?? undefined,
+    agreedPrice: merged.agreedPrice ?? merged.finalPrice ?? payAmount ?? undefined,
+    hasDiscount: merged.hasDiscount ?? undefined,
+    discountAmount: merged.discountAmount ?? undefined,
+    discountPercent: merged.discountPercent ?? undefined,
+    couponCode: merged.couponCode ?? undefined,
     status:
       recordStr(base, "status", "Status") ?? recordStr(o, "status", "Status"),
     notes: recordStr(base, "notes", "Notes") ?? recordStr(o, "notes", "Notes"),
@@ -595,6 +623,20 @@ export async function completeVendorReservation(
   const body = await apiPostRaw<ApiEnvelope>(
     `/vendor/reservations/${id}/complete`,
     {},
+  );
+  assertSuccess(body);
+  return normalizeReservation(body.data);
+}
+
+export async function rejectVendorReservation(
+  id: string | number,
+  payload: RejectVendorReservationPayload = {},
+): Promise<Reservation> {
+  const reason =
+    payload.reason?.trim() || "İşletme tarafından reddedildi";
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/vendor/reservations/${id}/reject`,
+    { reason },
   );
   assertSuccess(body);
   return normalizeReservation(body.data);
