@@ -4,6 +4,7 @@ import {
   formatBudgetLineDisplay,
   formatTryCurrency,
 } from "@/src/lib/customerAgreementsUi";
+import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
 import type { EventPlanBudgetSummary } from "@/src/lib/api/types";
 import { glassCard } from "@/src/lib/ui";
 
@@ -45,9 +46,17 @@ export function EventOsBudgetSummary({
 
   const lines = summary?.items ?? summary?.lines ?? [];
   const totalBudget = summary?.totalBudget;
+  const spentFromLines =
+    lines.length > 0
+      ? lines.reduce((sum, line) => sum + resolveOfferDisplayPrice(line), 0)
+      : undefined;
   const spent =
-    summary?.spentBudget ?? summary?.totalSpent ?? 0;
-  const remaining = summary?.remainingBudget;
+    spentFromLines ??
+    summary?.spentBudget ??
+    summary?.totalSpent ??
+    0;
+  const remaining =
+    totalBudget != null ? Math.max(0, totalBudget - spent) : summary?.remainingBudget;
 
   if (
     lines.length === 0 &&

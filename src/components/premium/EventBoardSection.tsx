@@ -17,6 +17,11 @@ import {
   formatBoardDate,
   formatBoardPrice,
 } from "@/src/lib/eventBoardUi";
+import {
+  offerPriceHasDiscount,
+  resolveOfferDisplayPrice,
+  resolveOfferOriginalPrice,
+} from "@/src/lib/offerPricing";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { badgeClass, glassCard } from "@/src/lib/ui";
 
@@ -44,10 +49,17 @@ function BoardItemCard({ item }: { item: EventPlanBoardItem }) {
           <span className="text-zinc-500">İşletme:</span> {item.vendorName}
         </p>
       ) : null}
-      {item.price != null && item.price > 0 ? (
+      {resolveOfferDisplayPrice(item) > 0 ? (
         <p className="mt-1 text-xs font-medium text-violet-200">
           <span className="font-normal text-zinc-500">Teklif:</span>{" "}
-          {formatBoardPrice(item.price)}
+          {offerPriceHasDiscount(item) ? (
+            <>
+              <span className="text-zinc-500 line-through">
+                {formatBoardPrice(resolveOfferOriginalPrice(item) ?? 0)}
+              </span>{" "}
+            </>
+          ) : null}
+          {formatBoardPrice(resolveOfferDisplayPrice(item))}
         </p>
       ) : null}
       {item.status ? (

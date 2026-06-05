@@ -2,6 +2,7 @@ import { apiGetRaw, logApiError } from "@/src/lib/api/client";
 import {
   getEventPlanBoard as fetchEventPlanBoardCore,
 } from "@/src/lib/api/eventPlans";
+import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
 import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
@@ -76,7 +77,7 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     recordStr(o, "category", "Category") ??
     recordStr(o, "categoryName", "CategoryName");
 
-  return {
+  const agreement: CustomerAgreement = {
     id: recordId(o),
     eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
     category,
@@ -84,14 +85,12 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     serviceType: recordStr(o, "serviceType", "ServiceType"),
     vendorId: recordId(o, "vendorId", "VendorId") ?? null,
     vendorName: recordStr(o, "vendorName", "VendorName"),
-    agreedPrice:
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice") ??
-      recordNum(o, "agreedPrice", "AgreedPrice"),
     originalPrice: recordNum(o, "originalPrice", "OriginalPrice"),
     finalPrice:
       recordNum(o, "finalPrice", "FinalPrice") ??
       recordNum(o, "discountedPrice", "DiscountedPrice"),
+    displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
+    price: recordNum(o, "price", "Price"),
     discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
     couponCode: recordStr(o, "couponCode", "CouponCode"),
     agreementDate:
@@ -100,6 +99,9 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     note: recordStr(o, "note", "Note"),
     status: recordStr(o, "status", "Status"),
   };
+  const resolved = resolveOfferDisplayPrice(agreement);
+  agreement.agreedPrice = resolved > 0 ? resolved : undefined;
+  return agreement;
 }
 
 function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
@@ -108,19 +110,32 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
   const category =
     recordStr(o, "category", "Category") ??
     recordStr(o, "categoryName", "CategoryName");
-  const agreedPrice = recordNum(o, "agreedPrice", "AgreedPrice");
 
-  return {
+  const line: EventPlanBudgetLine = {
     id: recordId(o),
     category,
     categoryName: category,
     serviceType: recordStr(o, "serviceType", "ServiceType"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
-    agreedPrice,
-    amount: agreedPrice ?? recordNum(o, "amount", "Amount"),
+    originalPrice: recordNum(o, "originalPrice", "OriginalPrice"),
+    finalPrice:
+      recordNum(o, "finalPrice", "FinalPrice") ??
+      recordNum(o, "discountedPrice", "DiscountedPrice"),
+    displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
+    price: recordNum(o, "price", "Price"),
+    agreedPrice: recordNum(o, "agreedPrice", "AgreedPrice"),
+    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
+    couponCode: recordStr(o, "couponCode", "CouponCode"),
     agreementDate: recordStr(o, "agreementDate", "AgreementDate"),
     note: recordStr(o, "note", "Note"),
+    amount: recordNum(o, "amount", "Amount"),
   };
+  const resolved = resolveOfferDisplayPrice(line);
+  if (resolved > 0) {
+    line.agreedPrice = resolved;
+    line.amount = resolved;
+  }
+  return line;
 }
 
 export function normalizeEventPlanBudgetSummary(

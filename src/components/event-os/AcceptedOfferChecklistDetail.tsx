@@ -6,6 +6,11 @@ import {
   formatAgreementStatus,
   formatTryCurrency,
 } from "@/src/lib/customerAgreementsUi";
+import {
+  offerPriceHasDiscount,
+  resolveOfferDisplayPrice,
+  resolveOfferOriginalPrice,
+} from "@/src/lib/offerPricing";
 import { getOfferStatusStyle } from "@/src/lib/offerRequest";
 
 type AcceptedOfferChecklistDetailProps = {
@@ -18,13 +23,9 @@ export function AcceptedOfferChecklistDetail({
   const vendorName = agreement.vendorName?.trim() || "İşletme";
   const dateLabel = formatAgreementDate(agreement.agreementDate);
   const note = agreement.note?.trim();
-  const originalPrice = agreement.originalPrice;
-  const finalPrice =
-    agreement.finalPrice ?? agreement.agreedPrice;
-  const hasDiscount =
-    originalPrice != null &&
-    finalPrice != null &&
-    finalPrice < originalPrice;
+  const finalPrice = resolveOfferDisplayPrice(agreement);
+  const originalPrice = resolveOfferOriginalPrice(agreement);
+  const hasDiscount = offerPriceHasDiscount(agreement);
   const status = formatAgreementStatus(agreement.status);
   const statusStyle = getOfferStatusStyle(
     agreement.status ?? "CustomerAccepted",

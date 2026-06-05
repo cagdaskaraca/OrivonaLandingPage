@@ -1,5 +1,10 @@
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
+  offerPriceHasDiscount,
+  resolveOfferDisplayPrice,
+  resolveOfferOriginalPrice,
+} from "@/src/lib/offerPricing";
+import {
   getStatusBadgeClassName,
   getStatusLabel,
   normalizeStatusKey,
@@ -101,26 +106,26 @@ export function offerResponsePrice(offer: OfferRequest): number | undefined {
 }
 
 export function offerOriginalPrice(offer: OfferRequest): number | undefined {
-  const listed = offerResponsePrice(offer);
-  return offer.originalPrice ?? listed;
+  const resolved = resolveOfferOriginalPrice({
+    ...offer,
+    price: offer.price ?? offerResponsePrice(offer),
+  });
+  return resolved;
 }
 
 export function offerFinalPrice(offer: OfferRequest): number | undefined {
-  return (
-    offer.finalPrice ??
-    offer.discountedPrice ??
-    offerResponsePrice(offer)
-  );
+  const resolved = resolveOfferDisplayPrice({
+    ...offer,
+    price: offer.price ?? offerResponsePrice(offer),
+  });
+  return resolved > 0 ? resolved : undefined;
 }
 
 export function offerHasDiscount(offer: OfferRequest): boolean {
-  const original = offerOriginalPrice(offer);
-  const final = offerFinalPrice(offer);
-  return (
-    original != null &&
-    final != null &&
-    final < original
-  );
+  return offerPriceHasDiscount({
+    ...offer,
+    price: offer.price ?? offerResponsePrice(offer),
+  });
 }
 
 export function isAcceptedOfferStatus(status?: string | null): boolean {

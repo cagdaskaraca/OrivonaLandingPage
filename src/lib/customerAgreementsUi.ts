@@ -4,6 +4,11 @@ import type {
   EventPlanBudgetSummary,
   EventTask,
 } from "@/src/lib/api/types";
+import {
+  offerPriceHasDiscount,
+  resolveOfferDisplayPrice,
+  resolveOfferOriginalPrice,
+} from "@/src/lib/offerPricing";
 import { normalizeStatusKey } from "@/src/lib/statusLabels";
 
 const tryCurrency = new Intl.NumberFormat("tr-TR", {
@@ -209,7 +214,7 @@ export function dedupeBudgetSummary(
     (a, b) => budgetLineRecency(b) - budgetLineRecency(a),
   );
   const spent = deduped.reduce(
-    (sum, line) => sum + (line.agreedPrice ?? line.amount ?? 0),
+    (sum, line) => sum + resolveOfferDisplayPrice(line),
     0,
   );
   const totalBudget = summary.totalBudget;
@@ -248,8 +253,13 @@ export function formatBudgetLineLabel(line: EventPlanBudgetLine): string {
 }
 
 export function formatBudgetLineDisplay(line: EventPlanBudgetLine): string {
-  const amount = line.agreedPrice ?? line.amount;
-  return `${formatBudgetLineLabel(line)}: ${formatTryCurrency(amount)}`;
+  const amount = resolveOfferDisplayPrice(line);
+  const label = formatBudgetLineLabel(line);
+  if (offerPriceHasDiscount(line)) {
+    const original = resolveOfferOriginalPrice(line);
+    return `${label}: ${formatTryCurrency(original)} → ${formatTryCurrency(amount)}`;
+  }
+  return `${label}: ${formatTryCurrency(amount)}`;
 }
 
 export function formatPlanOptionLabel(

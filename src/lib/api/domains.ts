@@ -249,9 +249,22 @@ function normalizeOffer(raw: unknown): OfferRequest {
   const nested = nestedOfferRecord(o);
   const vendorOfferId = extractVendorOfferId(o, requestId);
 
+  const nestedListPrice =
+    nested ? recordNum(nested, "price", "Price") : undefined;
+  const nestedOriginal =
+    nested ? recordNum(nested, "originalPrice", "OriginalPrice") : undefined;
+  const nestedFinal =
+    nested
+      ? recordNum(nested, "finalPrice", "FinalPrice") ??
+        recordNum(nested, "discountedPrice", "DiscountedPrice")
+      : undefined;
+  const nestedDisplay =
+    nested ? recordNum(nested, "displayPrice", "DisplayPrice") : undefined;
+
   const vendorOfferPrice =
     recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
-    (nested ? recordNum(nested, "price", "Price") : undefined) ??
+    nestedOriginal ??
+    nestedListPrice ??
     recordNum(o, "offeredPrice", "OfferedPrice") ??
     recordNum(o, "price", "Price");
   const vendorOfferDescription =
@@ -293,15 +306,25 @@ function normalizeOffer(raw: unknown): OfferRequest {
     validUntil,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
     originalPrice:
-      recordNum(o, "originalPrice", "OriginalPrice") ?? vendorOfferPrice,
+      recordNum(o, "originalPrice", "OriginalPrice") ??
+      nestedOriginal ??
+      vendorOfferPrice,
     finalPrice:
       recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice"),
+      recordNum(o, "discountedPrice", "DiscountedPrice") ??
+      nestedFinal,
     discountedPrice:
       recordNum(o, "discountedPrice", "DiscountedPrice") ??
-      recordNum(o, "finalPrice", "FinalPrice"),
-    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
-    couponCode: recordStr(o, "couponCode", "CouponCode"),
+      recordNum(o, "finalPrice", "FinalPrice") ??
+      nestedFinal,
+    displayPrice:
+      recordNum(o, "displayPrice", "DisplayPrice") ?? nestedDisplay,
+    discountAmount:
+      recordNum(o, "discountAmount", "DiscountAmount") ??
+      (nested ? recordNum(nested, "discountAmount", "DiscountAmount") : undefined),
+    couponCode:
+      recordStr(o, "couponCode", "CouponCode") ??
+      (nested ? recordStr(nested, "couponCode", "CouponCode") : undefined),
     ...invitation,
     ...playlistFields,
   };
