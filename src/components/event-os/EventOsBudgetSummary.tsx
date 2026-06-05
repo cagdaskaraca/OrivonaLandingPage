@@ -7,6 +7,7 @@ import {
 } from "@/src/lib/customerAgreementsUi";
 import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
 import type { EventPlanBudgetSummary } from "@/src/lib/api/types";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { glassCard } from "@/src/lib/ui";
 
 type EventOsBudgetSummaryProps = {
@@ -77,19 +78,24 @@ export function EventOsBudgetSummary({
     <div className={`${glassCard} space-y-3 p-4`}>
       <h3 className="text-sm font-semibold text-white">Tahmini bütçe özeti</h3>
       {lines.length > 0 ? (
-        <ul className="space-y-2 border-b border-white/10 pb-3">
-          {lines.map((line, index) => (
-            <li
-              key={String(line.id ?? index)}
-              className="flex flex-wrap items-start justify-between gap-3 text-sm"
-            >
-              <span className="min-w-0 text-zinc-300">
-                {formatBudgetLineLabel(line)}
-              </span>
-              <OfferPriceBreakdown pricing={line} size="sm" className="text-right" />
-            </li>
-          ))}
-        </ul>
+        <div className="border-b border-white/10 pb-3">
+          <DashboardHorizontalRail
+            items={lines}
+            getItemKey={(line) =>
+              String(line.id ?? formatBudgetLineLabel(line))
+            }
+            hintThreshold={3}
+            showHint={lines.length > 3}
+            renderItem={(line) => (
+              <div className="flex h-full flex-col justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm">
+                <span className="min-w-0 text-zinc-300">
+                  {formatBudgetLineLabel(line)}
+                </span>
+                <OfferPriceBreakdown pricing={line} size="sm" />
+              </div>
+            )}
+          />
+        </div>
       ) : null}
       <dl className="space-y-1.5 text-sm">
         {totalBudget != null ? (

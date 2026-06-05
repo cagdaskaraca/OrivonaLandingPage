@@ -12,6 +12,7 @@ import {
 } from "@/src/lib/api/eventPlans";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventReminder } from "@/src/lib/api/types";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { btnPrimary, btnSecondary } from "@/src/lib/ui";
 
 function RemindersPanel({ planId }: { planId: string | number }) {
@@ -78,12 +79,14 @@ function RemindersPanel({ planId }: { planId: string | number }) {
           Henüz hatırlatma yok. Oluştur butonuna basın.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {reminders.map((r, i) => (
-            <li
-              key={String(r.id ?? i)}
-              className="rounded-xl border border-violet-400/15 bg-violet-500/[0.05] px-4 py-3"
-            >
+        <DashboardHorizontalRail
+          items={reminders}
+          getItemKey={(r) =>
+            String(r.id ?? `${r.title ?? "reminder"}-${r.dueDate ?? r.scheduledAt ?? ""}`)
+          }
+          hintThreshold={3}
+          renderItem={(r) => (
+            <div className="h-full rounded-xl border border-violet-400/15 bg-violet-500/[0.05] px-4 py-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-white">{r.title ?? "Hatırlatma"}</p>
                 {r.type?.trim() ? (
@@ -100,9 +103,9 @@ function RemindersPanel({ planId }: { planId: string | number }) {
                   {r.dueDate ?? r.scheduledAt}
                 </p>
               ) : null}
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       )}
     </div>
   );

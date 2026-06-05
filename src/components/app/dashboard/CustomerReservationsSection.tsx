@@ -8,6 +8,7 @@ import { useToast } from "@/src/contexts/ToastContext";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { btnSecondary } from "@/src/lib/ui";
 
 export function CustomerReservationsSection() {
@@ -51,12 +52,12 @@ export function CustomerReservationsSection() {
   }
 
   return (
-    <ul className="space-y-2 text-sm">
-      {reservations.map((r) => (
-        <li
-          key={String(r.id)}
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
-        >
+    <DashboardHorizontalRail
+      items={reservations}
+      getItemKey={(r) => String(r.id)}
+      hintThreshold={3}
+      renderItem={(r) => (
+        <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm">
           <div>
             <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
             <p className="text-zinc-400">{r.eventDate}</p>
@@ -69,7 +70,7 @@ export function CustomerReservationsSection() {
           {r.id != null && r.status !== "Cancelled" ? (
             <button
               type="button"
-              className={`${btnSecondary} text-xs`}
+              className={`${btnSecondary} w-fit text-xs`}
               onClick={async () => {
                 try {
                   await cancelReservation(r.id!);
@@ -84,8 +85,8 @@ export function CustomerReservationsSection() {
               İptal
             </button>
           ) : null}
-        </li>
-      ))}
-    </ul>
+        </div>
+      )}
+    />
   );
 }

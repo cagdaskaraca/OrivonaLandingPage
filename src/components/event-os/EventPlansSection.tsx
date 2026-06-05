@@ -19,6 +19,7 @@ import {
   planDisplayTitle,
   taskProgressPercent,
 } from "@/src/lib/eventOs";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { EventPlanCountdown } from "@/src/components/premium/EventPlanCountdown";
 import { NumericInput } from "@/src/components/ui/NumericInput";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -156,13 +157,13 @@ export function EventPlansSection() {
       {loadingPlans ? (
         <p className="text-sm text-zinc-500">Planlar yükleniyor…</p>
       ) : plans.length > 0 ? (
-        <ul className="space-y-3">
-          {plans.map((p) => (
-            <li
-              key={String(p.id)}
-              className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
+        <DashboardHorizontalRail
+          items={plans}
+          getItemKey={(p) => String(p.id)}
+          hintThreshold={3}
+          renderItem={(p) => (
+            <div className="flex h-full flex-col rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex flex-1 flex-wrap items-start justify-between gap-3">
                 <button
                   type="button"
                   className="text-left"
@@ -199,9 +200,9 @@ export function EventPlansSection() {
                   <EventOsProgressBar percent={progressByPlan[String(p.id)]!} />
                 </div>
               ) : null}
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       ) : (
         <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-zinc-500">
           Henüz etkinlik planınız yok. Aşağıdan oluşturun.

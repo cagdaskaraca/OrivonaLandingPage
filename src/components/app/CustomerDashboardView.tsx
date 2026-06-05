@@ -7,6 +7,7 @@ import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { CustomerFavoritesSection } from "@/src/components/app/dashboard/CustomerFavoritesSection";
 import { CustomerReservationsSection } from "@/src/components/app/dashboard/CustomerReservationsSection";
 import { CustomerSummarySection } from "@/src/components/app/dashboard/CustomerSummarySection";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
@@ -383,12 +384,13 @@ function DashboardContentInner() {
           <p className="mt-3 text-sm text-zinc-500">Talepler yükleniyor…</p>
         ) : null}
         {!loadingList && requests.length > 0 ? (
-          <ul className="mt-4 space-y-3">
-            {requests.map((r) => (
-              <li
-                key={String(r.id)}
-                className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm"
-              >
+          <DashboardHorizontalRail
+            className="mt-4"
+            items={requests}
+            getItemKey={(r) => String(r.id)}
+            hintThreshold={3}
+            renderItem={(r) => (
+              <div className="flex h-full flex-col rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
                 <p className="font-medium text-white">
                   {displayEventRequestTitle(r)}
                 </p>
@@ -404,7 +406,7 @@ function DashboardContentInner() {
                     <StatusBadge status={r.status} context="customer" />
                   </div>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-auto flex flex-wrap gap-2 pt-3">
                   <button
                     type="button"
                     className={`${btnSecondary} px-4 py-1.5 text-xs`}
@@ -422,9 +424,9 @@ function DashboardContentInner() {
                     {deletingId === r.id ? "Siliniyor…" : "Sil"}
                   </button>
                 </div>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          />
         ) : (
           !loadingList && (
             <p className="mt-3 text-sm leading-relaxed text-zinc-500">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { OfferRequestCard } from "@/src/components/offers/OfferRequestCard";
 import { VendorSendOfferModal } from "@/src/components/offers/VendorSendOfferModal";
 import { VendorInvitationRevisionModal } from "@/src/components/invitation-design/VendorInvitationRevisionModal";
@@ -109,8 +110,11 @@ export function VendorOfferRequestsPanel() {
           />
         }
       >
-        <ul className="mt-2 space-y-4">
-          {offers.map((o) => {
+        <DashboardHorizontalRail
+          className="mt-2"
+          items={offers}
+          getItemKey={(o) => String(o.id)}
+          renderItem={(o) => {
             const canAct = canVendorActOnRequest(o.status) && o.id != null;
             const cancelled = isCancelledOfferStatus(o.status);
             const busy = rejectingId === o.id;
@@ -121,17 +125,18 @@ export function VendorOfferRequestsPanel() {
               isInvitationCategory(o.serviceTitle);
 
             return (
-              <li
-                key={String(o.id)}
-                className={
+              <div
+                className={`flex h-full min-h-0 flex-col ${
                   cancelled
                     ? "rounded-xl border border-zinc-500/25 bg-zinc-500/[0.04] p-1 opacity-90"
-                    : undefined
-                }
+                    : ""
+                }`}
               >
                 <OfferRequestCard
                   offer={o}
                   variant="vendor"
+                  as="div"
+                  className="flex-1"
                   onUploadRevision={
                     showInvitation && requestId != null
                       ? () => setRevisionRequestId(requestId)
@@ -164,10 +169,10 @@ export function VendorOfferRequestsPanel() {
                     </button>
                   </div>
                 ) : null}
-              </li>
+              </div>
             );
-          })}
-        </ul>
+          }}
+        />
       </VendorSectionState>
 
       <VendorSendOfferModal

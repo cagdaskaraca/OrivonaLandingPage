@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { CustomerOfferListItem } from "@/src/components/offers/CustomerOfferListItem";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -200,8 +201,13 @@ export function CustomerOfferRequestsPanel({
       ) : null}
 
       {!loading && offers.length > 0 ? (
-        <ul className="space-y-4">
-          {offers.map((o) => {
+        <DashboardHorizontalRail
+          items={offers}
+          getItemKey={(o) => {
+            const actionId = getCustomerOfferActionId(o);
+            return String(o.id ?? actionId);
+          }}
+          renderItem={(o) => {
             const actionId = getCustomerOfferActionId(o);
             const busy = actionId != null && actionOfferId === actionId;
             const showDemoConfirm =
@@ -210,7 +216,7 @@ export function CustomerOfferRequestsPanel({
 
             return (
               <CustomerOfferListItem
-                key={String(o.id ?? actionId)}
+                as="div"
                 offer={o}
                 busy={busy}
                 showDemoConfirm={showDemoConfirm}
@@ -220,8 +226,8 @@ export function CustomerOfferRequestsPanel({
                 onApplyCoupon={handleApplyCoupon}
               />
             );
-          })}
-        </ul>
+          }}
+        />
       ) : null}
     </>
   );

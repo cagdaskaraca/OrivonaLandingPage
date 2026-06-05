@@ -6,6 +6,7 @@ import { fetchFavorites } from "@/src/lib/api";
 import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { FavoriteItem } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 
 export function CustomerFavoritesSection() {
@@ -44,18 +45,18 @@ export function CustomerFavoritesSection() {
   }
 
   return (
-    <ul className="space-y-2 text-sm">
-      {favorites.map((f) => (
-        <li
-          key={String(f.id ?? f.vendorServiceId)}
-          className="rounded-lg border border-white/10 px-3 py-2"
-        >
+    <DashboardHorizontalRail
+      items={favorites}
+      getItemKey={(f) => String(f.id ?? f.vendorServiceId)}
+      hintThreshold={3}
+      renderItem={(f) => (
+        <div className="h-full rounded-lg border border-white/10 px-3 py-2 text-sm">
           <p className="font-medium text-white">{f.serviceTitle ?? "Hizmet"}</p>
           <p className="text-zinc-400">
             {f.vendorName} · {[f.city, f.district].filter(Boolean).join(" · ")}
           </p>
-        </li>
-      ))}
-    </ul>
+        </div>
+      )}
+    />
   );
 }

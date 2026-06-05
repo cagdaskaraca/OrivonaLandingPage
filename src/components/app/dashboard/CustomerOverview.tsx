@@ -15,6 +15,7 @@ import type {
   Reservation,
 } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
+import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
 import { SummaryCards } from "@/src/components/dashboard/SummaryCards";
 import {
   CUSTOMER_DEFAULT_ZERO_SUMMARY,
@@ -148,31 +149,33 @@ export function CustomerOverview() {
             &apos;ten keşfedebilirsiniz.
           </p>
         ) : (
-          <ul className="space-y-2 text-sm">
-            {favorites.map((f) => (
-              <li
-                key={String(f.id ?? f.vendorServiceId)}
-                className="rounded-lg border border-white/10 px-3 py-2"
-              >
+          <DashboardHorizontalRail
+            items={favorites}
+            getItemKey={(f) => String(f.id ?? f.vendorServiceId)}
+            hintThreshold={3}
+            showHint={false}
+            renderItem={(f) => (
+              <div className="rounded-lg border border-white/10 px-3 py-2 text-sm">
                 <p className="font-medium text-white">
                   {f.serviceTitle ?? "Hizmet"}
                 </p>
                 <p className="text-zinc-400">
                   {f.vendorName} · {[f.city, f.district].filter(Boolean).join(" · ")}
                 </p>
-              </li>
-            ))}
-          </ul>
+              </div>
+            )}
+          />
         )
       ) : reservations.length === 0 ? (
         <p className="text-sm text-zinc-500">{CUSTOMER_EMPTY_DATA_MESSAGE}</p>
       ) : (
-        <ul className="space-y-2 text-sm">
-          {reservations.map((r) => (
-            <li
-              key={String(r.id)}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2"
-            >
+        <DashboardHorizontalRail
+          items={reservations}
+          getItemKey={(r) => String(r.id)}
+          hintThreshold={3}
+          showHint={false}
+          renderItem={(r) => (
+            <div className="flex flex-col justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
               <div>
                 <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
                 <p className="text-zinc-400">{r.eventDate}</p>
@@ -185,7 +188,7 @@ export function CustomerOverview() {
               {r.id != null && r.status !== "Cancelled" ? (
                 <button
                   type="button"
-                  className={`${btnSecondary} text-xs`}
+                  className={`${btnSecondary} w-fit text-xs`}
                   onClick={async () => {
                     try {
                       await cancelReservation(r.id!);
@@ -202,9 +205,9 @@ export function CustomerOverview() {
                   İptal
                 </button>
               ) : null}
-            </li>
-          ))}
-        </ul>
+            </div>
+          )}
+        />
       )}
     </div>
   );
