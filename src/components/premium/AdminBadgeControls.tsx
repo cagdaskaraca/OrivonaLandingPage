@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   assignAdminServiceBadge,
   assignAdminVendorBadge,
@@ -18,6 +18,8 @@ import { btnPrimary, selectClass } from "@/src/lib/ui";
 type AdminBadgeControlsProps = {
   entityType: "vendor" | "service";
   entityId: string | number;
+  /** Service ise, ilgili işletmenin id'si varsa rozetler miras alınır. */
+  vendorId?: string | number;
   /** Liste yanıtından gelen rozetler (varsa); API ile birleştirilir. */
   seedBadges?: string[];
   onUpdated?: () => void;
@@ -26,11 +28,17 @@ type AdminBadgeControlsProps = {
 export function AdminBadgeControls({
   entityType,
   entityId,
-  seedBadges = [],
+  vendorId,
+  seedBadges,
   onUpdated,
 }: AdminBadgeControlsProps) {
+  const stableSeedBadges = useMemo(
+    () => seedBadges ?? [],
+    [seedBadges],
+  );
+
   const [catalog, setCatalog] = useState<string[]>([]);
-  const [badges, setBadges] = useState<string[]>(seedBadges);
+  const [badges, setBadges] = useState<string[]>(stableSeedBadges);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
@@ -39,17 +47,27 @@ export function AdminBadgeControls({
   const loadBadges = useCallback(async () => {
     setLoadingList(true);
     try {
-      const fromApi =
-        entityType === "service"
-          ? await fetchServiceBadges(entityId)
-          : await fetchVendorBadges(entityId);
-      setBadges(mergeBadgeLists(seedBadges, fromApi));
+      if (entityType === "service") {
+        const [fromService, fromVendor] = await Promise.all([
+          fetchServiceBadges(entityId),
+          vendorId != null ? fetchVendorBadges(vendorId) : Promise.resolve([]),
+        ]);
+        setBadges(mergeBadgeLists(stableSeedBadges, fromService, fromVendor));
+      } else {
+        const fromApi = await fetchVendorBadges(entityId);
+        setBadges(mergeBadgeLists(stableSeedBadges, fromApi));
+      }
     } catch {
-      setBadges(mergeBadgeLists(seedBadges));
+      setBadges(mergeBadgeLists(stableSeedBadges));
     } finally {
       setLoadingList(false);
     }
-  }, [entityId, entityType, seedBadges]);
+  }, [entityId, entityType, stableSeedBadges, vendorId]);
+
+  useEffect(() => {
+    // SeedBadges değişirse hemen UI'ı güncelle (özellikle Admin tabloları yeniden render olunca).
+    setBadges(stableSeedBadges);
+  }, [stableSeedBadges]);
 
   useEffect(() => {
     fetchBadgeCatalog()

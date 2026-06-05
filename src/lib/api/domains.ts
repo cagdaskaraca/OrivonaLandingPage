@@ -836,6 +836,7 @@ function normalizeAdminService(raw: unknown): AdminService {
   const o = raw as Record<string, unknown>;
   return {
     id: recordId(o),
+    vendorId: recordId(o, "vendorId", "VendorId"),
     title:
       recordStr(o, "title", "Title") ??
       recordStr(o, "serviceTitle", "ServiceTitle"),

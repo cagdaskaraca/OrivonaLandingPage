@@ -215,7 +215,11 @@ export function ServiceListTable({
                     {id != null ? (
                       <tr className="bg-white/[0.01]">
                         <td colSpan={8} className="px-4 py-2">
-                          <AdminBadgeControls entityType="service" entityId={id} />
+                          <AdminBadgeControls
+                            entityType="service"
+                            entityId={id}
+                            vendorId={s.vendorId ?? undefined}
+                          />
                         </td>
                       </tr>
                     ) : null}
