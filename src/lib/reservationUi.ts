@@ -47,9 +47,7 @@ export function canVendorConfirmReservation(
     s === "awaitingconfirmation" ||
     s === "awaitingvendorconfirmation" ||
     s === "awaitingvendor" ||
-    s === "submitted" ||
-    s === "demopending" ||
-    s === "demo"
+    s === "submitted"
   );
 }
 
@@ -74,7 +72,7 @@ export function vendorReservationActionHint(
     return "Bu rezervasyon tamamlandı.";
   }
   if (canVendorConfirmReservation(status)) {
-    return "Müşteri teklifi kabul ettiğinde rezervasyon oluşur; siz «Onayla» ile kesinleştirirsiniz.";
+    return "Müşteri teklifi kabul ettiğinde rezervasyon talebi oluşur; siz «Onayla» ile kesinleştirirsiniz.";
   }
   if (canVendorCompleteReservation(status)) {
     return "Etkinlik gerçekleştikten sonra «Tamamla» ile kapatın.";

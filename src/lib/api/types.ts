@@ -287,8 +287,9 @@ export type SendVendorOfferPayload = {
 };
 
 export type AcceptCustomerOfferPayload = {
-  paymentMode: string;
-  note: string;
+  /** Production: `Agreement` — demo ödeme kaldırıldı. */
+  paymentMode?: "Agreement" | string;
+  note?: string;
   eventPlanId?: string | number | null;
   couponCode?: string;
 };

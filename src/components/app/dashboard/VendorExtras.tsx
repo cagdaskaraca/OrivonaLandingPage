@@ -63,7 +63,7 @@ export function VendorReservationsPanel() {
     <div className={`${glassCard} mb-8`}>
       <h2 className="text-lg font-semibold text-white">Rezervasyonlar</h2>
       <p className="mt-1 text-sm text-zinc-500">
-        Müşteri teklifi kabul ettiğinde demo rezervasyon oluşur. «Onayla» ile
+        Müşteri teklifi kabul ettiğinde rezervasyon talebi oluşur. «Onayla» ile
         kesinleştirirsiniz; etkinlik sonrası «Tamamla» ile kapatırsınız.
       </p>
       <VendorSectionState

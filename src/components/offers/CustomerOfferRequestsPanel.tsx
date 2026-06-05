@@ -42,7 +42,7 @@ export function CustomerOfferRequestsPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionOfferId, setActionOfferId] = useState<string | number | null>(null);
-  const [demoConfirmationId, setDemoConfirmationId] = useState<
+  const [acceptConfirmationId, setAcceptConfirmationId] = useState<
     string | number | null
   >(null);
 
@@ -75,14 +75,15 @@ export function CustomerOfferRequestsPanel({
     setActionOfferId(offerId);
     try {
       await acceptCustomerOffer(offerId, {
-        paymentMode: "Demo",
-        note: "Demo ödeme ile kabul edildi",
+        paymentMode: "Agreement",
         eventPlanId: offer.eventPlanId ?? null,
         couponCode,
       });
       if (offer.id != null) clearOfferRequestCoupon(offer.id);
-      toast.success("Teklif kabul edildi. Demo rezervasyon oluşturuldu.");
-      setDemoConfirmationId(offer.id ?? offerId);
+      toast.success(
+        "Teklif kabul edildi. Anlaşma oluşturuldu; işletme onayı bekleniyor.",
+      );
+      setAcceptConfirmationId(offer.id ?? offerId);
       await load();
       notifyOfferChange?.();
     } catch (e) {
@@ -128,7 +129,7 @@ export function CustomerOfferRequestsPanel({
     try {
       await cancelCustomerOfferFlow(offer);
       toast.success("Teklif iptal edildi.");
-      setDemoConfirmationId(null);
+      setAcceptConfirmationId(null);
       await load();
       notifyOfferChange?.();
     } catch (e) {
@@ -149,7 +150,7 @@ export function CustomerOfferRequestsPanel({
     try {
       await rejectCustomerOffer(offerId);
       toast.success("Teklif reddedildi.");
-      setDemoConfirmationId(null);
+      setAcceptConfirmationId(null);
       await load();
     } catch (e) {
       if (e instanceof ApiError) console.log("Reject offer failed", e.body);
@@ -226,15 +227,16 @@ export function CustomerOfferRequestsPanel({
           renderItem={(o) => {
             const actionId = getCustomerOfferActionId(o);
             const busy = actionId != null && actionOfferId === actionId;
-            const showDemoConfirm =
-              demoConfirmationId != null &&
-              (o.id === demoConfirmationId || actionId === demoConfirmationId);
+            const showAcceptConfirmation =
+              acceptConfirmationId != null &&
+              (o.id === acceptConfirmationId ||
+                actionId === acceptConfirmationId);
 
             return (
               <CustomerOfferListItem
                 offer={o}
                 busy={busy}
-                showDemoConfirm={showDemoConfirm}
+                showAcceptConfirmation={showAcceptConfirmation}
                 onAccept={(offer, coupon) => void handleAccept(offer, coupon)}
                 onReject={(offer) => void handleReject(offer)}
                 onCancel={(offer) => void handleCancel(offer)}

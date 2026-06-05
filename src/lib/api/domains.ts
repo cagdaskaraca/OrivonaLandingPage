@@ -428,15 +428,12 @@ export async function rejectVendorOfferRequest(
 
 export async function acceptCustomerOffer(
   offerId: string | number,
-  payload: AcceptCustomerOfferPayload = {
-    paymentMode: "Demo",
-    note: "Demo ödeme ile kabul edildi",
-  },
+  payload: AcceptCustomerOfferPayload = {},
 ): Promise<OfferRequest> {
   const couponCode = payload.couponCode?.trim().toUpperCase();
   const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/accept`, {
-    paymentMode: payload.paymentMode,
-    note: payload.note,
+    paymentMode: payload.paymentMode ?? "Agreement",
+    ...(payload.note?.trim() ? { note: payload.note.trim() } : {}),
     eventPlanId: payload.eventPlanId ?? null,
     ...(couponCode
       ? {

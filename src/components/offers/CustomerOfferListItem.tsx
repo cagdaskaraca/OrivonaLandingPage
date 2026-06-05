@@ -21,7 +21,7 @@ const btnDangerClass =
 type CustomerOfferListItemProps = {
   offer: OfferRequest;
   busy: boolean;
-  showDemoConfirm: boolean;
+  showAcceptConfirmation: boolean;
   onAccept: (offer: OfferRequest, couponCode?: string) => void;
   onReject: (offer: OfferRequest) => void;
   onCancel: (offer: OfferRequest) => void;
@@ -31,7 +31,7 @@ type CustomerOfferListItemProps = {
 export function CustomerOfferListItem({
   offer,
   busy,
-  showDemoConfirm,
+  showAcceptConfirmation,
   onAccept,
   onReject,
   onCancel,
@@ -61,12 +61,13 @@ export function CustomerOfferListItem({
           Bu teklif iptal edildi; checklist ve bütçeye dahil değildir.
         </p>
       ) : null}
-      {showDemoConfirm ? (
+      {showAcceptConfirmation ? (
         <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-          <p className="font-medium">Demo rezervasyon onayı</p>
+          <p className="font-medium">Teklif kabul edildi</p>
           <p className="mt-1 text-emerald-200/90">
-            Teklif kabul edildi. Rezervasyon kaydınız oluşturuldu. Ödeme altyapısı
-            yakında aktif edilecektir.
+            Anlaşmanız oluşturuldu ve rezervasyon talebi işletmeye iletildi.
+            İşletme «Onayla» dediğinde rezervasyon kesinleşir; checklist ve bütçe
+            güncellenir.
           </p>
         </div>
       ) : null}
