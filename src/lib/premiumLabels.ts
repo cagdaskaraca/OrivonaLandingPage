@@ -16,33 +16,67 @@ const BADGE_LABELS: Record<string, string> = {
   Sponsorlu: "Sponsorlu",
 };
 
-/** DELETE/POST API için rozet kodunu normalize eder (ör. "Premium Partner" → PremiumPartner). */
+/** Backend BadgeType enum değerleri. */
+export const API_BADGE_TYPES = [
+  "Verified",
+  "PremiumPartner",
+  "Popular",
+  "FastResponse",
+  "HighRating",
+  "New",
+  "Featured",
+  "Sponsored",
+] as const;
+
+function compactBadgeKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/ı/g, "i")
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s_\-]+/g, "");
+}
+
+/** DELETE/POST API için rozet kodunu normalize eder (ör. "Sponsorlu" → Sponsored). */
 export function normalizeBadgeTypeForApi(badge: string): string {
   const key = badge.trim();
   if (!key) return key;
 
-  const reverse: Record<string, string> = {
-    "Doğrulandı": "Verified",
-    "Premium Partner": "PremiumPartner",
-    "Popüler": "Popular",
-    "Hızlı Dönüş": "FastResponse",
-    "Yüksek Puan": "HighRating",
-    "Yeni": "New",
-    "Öne Çıkan": "Featured",
-    "Sponsorlu": "Sponsored",
-  };
-  if (reverse[key]) return reverse[key];
-
-  for (const [labelKey, apiKey] of Object.entries(BADGE_LABELS)) {
-    if (labelKey === apiKey) continue;
-    if (labelKey.toLowerCase() === key.toLowerCase()) return apiKey;
+  for (const apiType of API_BADGE_TYPES) {
+    if (apiType.toLowerCase() === key.toLowerCase()) return apiType;
   }
 
-  if (!/\s/.test(key)) return key;
-  return key
-    .split(/\s+/)
+  for (const [apiKey, label] of Object.entries(BADGE_LABELS)) {
+    if (!API_BADGE_TYPES.includes(apiKey as (typeof API_BADGE_TYPES)[number])) {
+      continue;
+    }
+    if (label.toLowerCase() === key.toLowerCase()) return apiKey;
+  }
+
+  const compact = compactBadgeKey(key);
+  for (const apiType of API_BADGE_TYPES) {
+    if (compactBadgeKey(apiType) === compact) return apiType;
+  }
+
+  const pascal = key
+    .split(/[\s_\-]+/)
+    .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join("");
+  if (pascal) {
+    for (const apiType of API_BADGE_TYPES) {
+      if (compactBadgeKey(apiType) === compactBadgeKey(pascal)) return apiType;
+    }
+    return pascal;
+  }
+
+  return key;
 }
 
 export function formatBadgeLabel(badge: string): string {

@@ -4,9 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   assignAdminServiceBadge,
   assignAdminVendorBadge,
+  fetchAdminServiceBadges,
   fetchBadgeCatalog,
-  fetchServiceBadges,
   fetchVendorBadges,
+  isServiceBadgeNotFoundError,
   removeAdminServiceBadge,
   removeAdminVendorBadge,
 } from "@/src/lib/api/premiumSaas";
@@ -93,10 +94,10 @@ export function AdminBadgeControls({
     try {
       if (entityType === "service") {
         const [fromService, fromVendor] = await Promise.all([
-          fetchServiceBadges(entityId),
+          fetchAdminServiceBadges(entityId),
           vendorId != null ? fetchVendorBadges(vendorId) : Promise.resolve([]),
         ]);
-        setServiceBadges(mergeBadgeLists(stableSeedBadges, fromService));
+        setServiceBadges(fromService);
         setVendorBadges(fromVendor);
       } else {
         const fromApi = await fetchVendorBadges(entityId);
@@ -116,7 +117,23 @@ export function AdminBadgeControls({
 
   useEffect(() => {
     fetchBadgeCatalog()
-      .then(setCatalog)
+      .then((items) =>
+        setCatalog(
+          mergeBadgeLists(
+            items.map((item) => normalizeBadgeTypeForApi(item)),
+            [
+              "Verified",
+              "PremiumPartner",
+              "Popular",
+              "FastResponse",
+              "HighRating",
+              "New",
+              "Featured",
+              "Sponsored",
+            ],
+          ),
+        ),
+      )
       .catch(() =>
         setCatalog([
           "Verified",
@@ -162,15 +179,24 @@ export function AdminBadgeControls({
     setLoading(true);
     setError(null);
     try {
+      const targetVendorId = entityType === "vendor" ? entityId : vendorId;
+
       if (entityType === "vendor" || row.source === "vendor") {
-        const targetVendorId = entityType === "vendor" ? entityId : vendorId;
         if (targetVendorId == null) {
           setError("İşletme rozeti kaldırmak için işletme bilgisi gerekli.");
           return;
         }
         await removeAdminVendorBadge(targetVendorId, badgeType);
       } else {
-        await removeAdminServiceBadge(entityId, badgeType);
+        try {
+          await removeAdminServiceBadge(entityId, badgeType);
+        } catch (serviceErr) {
+          if (targetVendorId != null && isServiceBadgeNotFoundError(serviceErr)) {
+            await removeAdminVendorBadge(targetVendorId, badgeType);
+          } else {
+            throw serviceErr;
+          }
+        }
       }
       await loadBadges();
       onUpdated?.();

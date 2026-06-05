@@ -1,4 +1,5 @@
 import {
+  ApiError,
   apiDeleteRaw,
   apiGet,
   apiGetPublic,
@@ -7,6 +8,7 @@ import {
   buildQuery,
   withOptionalNotFound,
 } from "@/src/lib/api/client";
+import { normalizeBadgeTypeForApi } from "@/src/lib/premiumLabels";
 import {
   envelopeToList,
   vendorGetWithRetry,
@@ -361,25 +363,23 @@ function parseBadgeList(raw: unknown): string[] {
     .filter(Boolean);
 }
 
+/** Admin: yalnızca hizmete doğrudan atanmış rozetler. */
+export async function fetchAdminServiceBadges(
+  serviceId: string | number,
+): Promise<string[]> {
+  return withOptionalNotFound(
+    async () => {
+      const raw = await apiGet<unknown>(`/admin/services/${serviceId}/badges`);
+      return parseBadgeList(raw);
+    },
+    [],
+  );
+}
+
+/** Public/marketplace: hizmet + işletme birleşik rozetler. */
 export async function fetchServiceBadges(
   serviceId: string | number,
 ): Promise<string[]> {
-  const paths = [
-    `/admin/services/${serviceId}/badges`,
-    `/services/${serviceId}/badges`,
-  ];
-
-  for (const path of paths) {
-    const list = await withOptionalNotFound(
-      async () => {
-        const raw = await apiGet<unknown>(path);
-        return parseBadgeList(raw);
-      },
-      null,
-    );
-    if (list != null && list.length > 0) return list;
-  }
-
   const fromPublic = await withOptionalNotFound(
     async () => {
       const raw = await apiGetPublic<unknown>(`/services/${serviceId}/badges`);
@@ -387,7 +387,25 @@ export async function fetchServiceBadges(
     },
     null,
   );
-  return fromPublic ?? [];
+  if (fromPublic != null && fromPublic.length > 0) return fromPublic;
+
+  return withOptionalNotFound(
+    async () => {
+      const raw = await apiGet<unknown>(`/services/${serviceId}/badges`);
+      return parseBadgeList(raw);
+    },
+    [],
+  );
+}
+
+export function isServiceBadgeNotFoundError(err: unknown): boolean {
+  if (!(err instanceof ApiError)) return false;
+  const message = err.message.toLowerCase();
+  return (
+    err.status === 404 ||
+    message.includes("hizmet rozeti bulunamadı") ||
+    message.includes("service badge")
+  );
 }
 
 /** İşletmeye atanmış rozetler (hizmet kartlarında miras alınır). */
@@ -417,28 +435,36 @@ export async function assignAdminVendorBadge(
   vendorId: string | number,
   badgeType: string,
 ): Promise<void> {
-  await apiPost(`/admin/vendors/${vendorId}/badges`, { badgeType });
+  const normalized = normalizeBadgeTypeForApi(badgeType);
+  await apiPost(`/admin/vendors/${vendorId}/badges`, { badgeType: normalized });
 }
 
 export async function removeAdminVendorBadge(
   vendorId: string | number,
   badgeType: string,
 ): Promise<void> {
-  await apiDeleteRaw(`/admin/vendors/${vendorId}/badges/${encodeURIComponent(badgeType)}`);
+  const normalized = normalizeBadgeTypeForApi(badgeType);
+  await apiDeleteRaw(
+    `/admin/vendors/${vendorId}/badges/${encodeURIComponent(normalized)}`,
+  );
 }
 
 export async function assignAdminServiceBadge(
   serviceId: string | number,
   badgeType: string,
 ): Promise<void> {
-  await apiPost(`/admin/services/${serviceId}/badges`, { badgeType });
+  const normalized = normalizeBadgeTypeForApi(badgeType);
+  await apiPost(`/admin/services/${serviceId}/badges`, { badgeType: normalized });
 }
 
 export async function removeAdminServiceBadge(
   serviceId: string | number,
   badgeType: string,
 ): Promise<void> {
-  await apiDeleteRaw(`/admin/services/${serviceId}/badges/${encodeURIComponent(badgeType)}`);
+  const normalized = normalizeBadgeTypeForApi(badgeType);
+  await apiDeleteRaw(
+    `/admin/services/${serviceId}/badges/${encodeURIComponent(normalized)}`,
+  );
 }
 
 // —— Service media ——
