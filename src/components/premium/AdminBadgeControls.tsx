@@ -11,19 +11,54 @@ import {
   removeAdminVendorBadge,
 } from "@/src/lib/api/premiumSaas";
 import { mergeBadgeLists } from "@/src/lib/serviceBadges";
-import { formatBadgeLabel } from "@/src/lib/premiumLabels";
+import {
+  formatBadgeLabel,
+  normalizeBadgeTypeForApi,
+} from "@/src/lib/premiumLabels";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { btnPrimary, selectClass } from "@/src/lib/ui";
+
+type BadgeRow = {
+  type: string;
+  source: "service" | "vendor";
+};
 
 type AdminBadgeControlsProps = {
   entityType: "vendor" | "service";
   entityId: string | number;
-  /** Service ise, ilgili işletmenin id'si varsa rozetler miras alınır. */
   vendorId?: string | number;
-  /** Liste yanıtından gelen rozetler (varsa); API ile birleştirilir. */
   seedBadges?: string[];
   onUpdated?: () => void;
 };
+
+function badgeKey(type: string): string {
+  return type.trim().toLowerCase();
+}
+
+function buildBadgeRows(
+  serviceBadges: string[],
+  vendorBadges: string[],
+  entityType: "vendor" | "service",
+): BadgeRow[] {
+  const rows: BadgeRow[] = [];
+  const seen = new Set<string>();
+
+  const push = (type: string, source: BadgeRow["source"]) => {
+    const key = badgeKey(type);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    rows.push({ type, source });
+  };
+
+  if (entityType === "vendor") {
+    for (const type of vendorBadges) push(type, "vendor");
+    return rows;
+  }
+
+  for (const type of serviceBadges) push(type, "service");
+  for (const type of vendorBadges) push(type, "vendor");
+  return rows;
+}
 
 export function AdminBadgeControls({
   entityType,
@@ -32,42 +67,52 @@ export function AdminBadgeControls({
   seedBadges,
   onUpdated,
 }: AdminBadgeControlsProps) {
-  const stableSeedBadges = useMemo(
-    () => seedBadges ?? [],
-    [seedBadges],
-  );
+  const stableSeedBadges = useMemo(() => seedBadges ?? [], [seedBadges]);
 
   const [catalog, setCatalog] = useState<string[]>([]);
-  const [badges, setBadges] = useState<string[]>(stableSeedBadges);
+  const [serviceBadges, setServiceBadges] = useState<string[]>([]);
+  const [vendorBadges, setVendorBadges] = useState<string[]>([]);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const displayBadges = useMemo(
+    () => buildBadgeRows(serviceBadges, vendorBadges, entityType),
+    [entityType, serviceBadges, vendorBadges],
+  );
+
+  const allBadges = useMemo(
+    () => displayBadges.map((row) => row.type),
+    [displayBadges],
+  );
+
   const loadBadges = useCallback(async () => {
     setLoadingList(true);
+    setError(null);
     try {
       if (entityType === "service") {
         const [fromService, fromVendor] = await Promise.all([
           fetchServiceBadges(entityId),
           vendorId != null ? fetchVendorBadges(vendorId) : Promise.resolve([]),
         ]);
-        setBadges(mergeBadgeLists(stableSeedBadges, fromService, fromVendor));
+        setServiceBadges(mergeBadgeLists(stableSeedBadges, fromService));
+        setVendorBadges(fromVendor);
       } else {
         const fromApi = await fetchVendorBadges(entityId);
-        setBadges(mergeBadgeLists(stableSeedBadges, fromApi));
+        setServiceBadges([]);
+        setVendorBadges(mergeBadgeLists(stableSeedBadges, fromApi));
       }
-    } catch {
-      setBadges(mergeBadgeLists(stableSeedBadges));
+    } catch (err) {
+      logApiError("Load badges", err);
+      setServiceBadges(entityType === "service" ? mergeBadgeLists(stableSeedBadges) : []);
+      setVendorBadges(
+        entityType === "vendor" ? mergeBadgeLists(stableSeedBadges) : [],
+      );
     } finally {
       setLoadingList(false);
     }
   }, [entityId, entityType, stableSeedBadges, vendorId]);
-
-  useEffect(() => {
-    // SeedBadges değişirse hemen UI'ı güncelle (özellikle Admin tabloları yeniden render olunca).
-    setBadges(stableSeedBadges);
-  }, [stableSeedBadges]);
 
   useEffect(() => {
     fetchBadgeCatalog()
@@ -92,13 +137,14 @@ export function AdminBadgeControls({
 
   async function assign() {
     if (!selected) return;
+    const badgeType = normalizeBadgeTypeForApi(selected);
     setLoading(true);
     setError(null);
     try {
       if (entityType === "vendor") {
-        await assignAdminVendorBadge(entityId, selected);
+        await assignAdminVendorBadge(entityId, badgeType);
       } else {
-        await assignAdminServiceBadge(entityId, selected);
+        await assignAdminServiceBadge(entityId, badgeType);
       }
       setSelected("");
       await loadBadges();
@@ -111,26 +157,40 @@ export function AdminBadgeControls({
     }
   }
 
-  async function remove(badgeType: string) {
+  async function remove(row: BadgeRow) {
+    const badgeType = normalizeBadgeTypeForApi(row.type);
     setLoading(true);
     setError(null);
     try {
-      if (entityType === "vendor") {
-        await removeAdminVendorBadge(entityId, badgeType);
+      if (entityType === "vendor" || row.source === "vendor") {
+        const targetVendorId = entityType === "vendor" ? entityId : vendorId;
+        if (targetVendorId == null) {
+          setError("İşletme rozeti kaldırmak için işletme bilgisi gerekli.");
+          return;
+        }
+        await removeAdminVendorBadge(targetVendorId, badgeType);
       } else {
         await removeAdminServiceBadge(entityId, badgeType);
       }
       await loadBadges();
       onUpdated?.();
     } catch (err) {
-      setError(formatUiErrorMessage(err, "Rozet kaldırılamadı."));
+      logApiError("Remove badge", err);
+      setError(
+        formatUiErrorMessage(
+          err,
+          row.source === "vendor"
+            ? "İşletme rozeti kaldırılamadı."
+            : "Hizmet rozeti kaldırılamadı.",
+        ),
+      );
     } finally {
       setLoading(false);
     }
   }
 
   const availableToAdd = catalog.filter(
-    (c) => !badges.some((b) => b.toLowerCase() === c.toLowerCase()),
+    (c) => !allBadges.some((b) => badgeKey(b) === badgeKey(c)),
   );
 
   return (
@@ -139,26 +199,42 @@ export function AdminBadgeControls({
         Rozetler
         {entityType === "vendor"
           ? " (işletme — bu işletmenin tüm hizmetlerinde görünür)"
-          : " (hizmet — yalnızca bu hizmet kartında)"}
+          : " (hizmet + işletmeden miras)"}
       </p>
       {loadingList ? (
         <p className="text-[10px] text-zinc-500">Rozetler yükleniyor…</p>
-      ) : badges.length === 0 ? (
+      ) : displayBadges.length === 0 ? (
         <p className="text-[10px] text-zinc-500">Henüz rozet atanmadı.</p>
       ) : (
-        <div className="flex flex-wrap gap-1">
-          {badges.map((b) => (
+        <div className="flex flex-wrap gap-1.5">
+          {displayBadges.map((row) => (
             <span
-              key={b}
-              className="inline-flex items-center gap-1 rounded-full border border-violet-400/25 bg-violet-500/10 px-2 py-0.5 text-[10px] text-violet-100"
+              key={`${row.source}-${row.type}`}
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] text-violet-100 ${
+                row.source === "vendor" && entityType === "service"
+                  ? "border-fuchsia-400/30 bg-fuchsia-500/10"
+                  : "border-violet-400/25 bg-violet-500/10"
+              }`}
+              title={
+                row.source === "vendor" && entityType === "service"
+                  ? "İşletme rozeti — tüm hizmetlerde görünür"
+                  : undefined
+              }
             >
-              {formatBadgeLabel(b)}
+              {formatBadgeLabel(row.type)}
+              {row.source === "vendor" && entityType === "service" ? (
+                <span className="text-[9px] text-fuchsia-200/70">işletme</span>
+              ) : null}
               <button
                 type="button"
-                className="text-red-300 hover:text-red-200"
+                className="pointer-events-auto relative z-10 ml-0.5 inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-base leading-none text-red-300 transition-colors hover:bg-red-500/20 hover:text-red-100 disabled:cursor-not-allowed disabled:opacity-40"
                 disabled={loading}
-                onClick={() => void remove(b)}
-                aria-label={`${formatBadgeLabel(b)} kaldır`}
+                aria-label={`${formatBadgeLabel(row.type)} kaldır`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void remove(row);
+                }}
               >
                 ×
               </button>

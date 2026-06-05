@@ -16,6 +16,35 @@ const BADGE_LABELS: Record<string, string> = {
   Sponsorlu: "Sponsorlu",
 };
 
+/** DELETE/POST API için rozet kodunu normalize eder (ör. "Premium Partner" → PremiumPartner). */
+export function normalizeBadgeTypeForApi(badge: string): string {
+  const key = badge.trim();
+  if (!key) return key;
+
+  const reverse: Record<string, string> = {
+    "Doğrulandı": "Verified",
+    "Premium Partner": "PremiumPartner",
+    "Popüler": "Popular",
+    "Hızlı Dönüş": "FastResponse",
+    "Yüksek Puan": "HighRating",
+    "Yeni": "New",
+    "Öne Çıkan": "Featured",
+    "Sponsorlu": "Sponsored",
+  };
+  if (reverse[key]) return reverse[key];
+
+  for (const [labelKey, apiKey] of Object.entries(BADGE_LABELS)) {
+    if (labelKey === apiKey) continue;
+    if (labelKey.toLowerCase() === key.toLowerCase()) return apiKey;
+  }
+
+  if (!/\s/.test(key)) return key;
+  return key
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
 export function formatBadgeLabel(badge: string): string {
   const key = badge.trim();
   if (!key) return "";

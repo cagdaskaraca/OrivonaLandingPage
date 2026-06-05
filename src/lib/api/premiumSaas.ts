@@ -364,23 +364,30 @@ function parseBadgeList(raw: unknown): string[] {
 export async function fetchServiceBadges(
   serviceId: string | number,
 ): Promise<string[]> {
-  const path = `/services/${serviceId}/badges`;
+  const paths = [
+    `/admin/services/${serviceId}/badges`,
+    `/services/${serviceId}/badges`,
+  ];
+
+  for (const path of paths) {
+    const list = await withOptionalNotFound(
+      async () => {
+        const raw = await apiGet<unknown>(path);
+        return parseBadgeList(raw);
+      },
+      null,
+    );
+    if (list != null && list.length > 0) return list;
+  }
+
   const fromPublic = await withOptionalNotFound(
     async () => {
-      const raw = await apiGetPublic<unknown>(path);
+      const raw = await apiGetPublic<unknown>(`/services/${serviceId}/badges`);
       return parseBadgeList(raw);
     },
     null,
   );
-  if (fromPublic != null && fromPublic.length > 0) return fromPublic;
-
-  return withOptionalNotFound(
-    async () => {
-      const raw = await apiGet<unknown>(path);
-      return parseBadgeList(raw);
-    },
-    [],
-  );
+  return fromPublic ?? [];
 }
 
 /** İşletmeye atanmış rozetler (hizmet kartlarında miras alınır). */
