@@ -240,6 +240,7 @@ export type OfferRequest = {
   createdAt?: string;
   originalPrice?: number;
   finalPrice?: number;
+  agreedPrice?: number;
   discountedPrice?: number;
   displayPrice?: number;
   hasDiscount?: boolean;
@@ -247,6 +248,16 @@ export type OfferRequest = {
   discountPercent?: number;
   couponCode?: string;
   appliedCouponCode?: string;
+  vendorOffer?: {
+    originalPrice?: number;
+    finalPrice?: number;
+    agreedPrice?: number;
+    hasDiscount?: boolean;
+    discountAmount?: number;
+    discountPercent?: number;
+    couponCode?: string;
+    price?: number;
+  };
   invitationDesign?: InvitationDesign;
   invitationRevisions?: InvitationRevision[];
   playlist?: PlaylistItem[];

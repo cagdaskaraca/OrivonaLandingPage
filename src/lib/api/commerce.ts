@@ -359,6 +359,18 @@ export async function validateCoupon(
   );
 }
 
+/** Oturum stash’ine kupon yazar — teklif oluşturma/kabul/liste için tercih edilen yol. */
+export async function selectCoupon(
+  vendorServiceId: string | number,
+  couponCode: string,
+): Promise<CouponValidation> {
+  const raw = await apiPost<unknown>("/coupons/select", {
+    vendorServiceId,
+    couponCode: couponCode.trim().toUpperCase(),
+  });
+  return normalizeCouponValidation(raw);
+}
+
 export async function fetchVendorCoupons(): Promise<Coupon[]> {
   const body = await vendorGetWithRetry("/vendor/coupons", {
     sectionKey: "coupons",

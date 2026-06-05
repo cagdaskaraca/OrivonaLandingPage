@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { validateCoupon, type CouponValidation } from "@/src/lib/api/commerce";
+import { selectCoupon, type CouponValidation } from "@/src/lib/api/commerce";
 import { formatDiscountPreview } from "@/src/lib/commerceUi";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { formatOfferMoney } from "@/src/lib/offerPricing";
@@ -40,7 +40,7 @@ export function CouponCodeField({
     setLoading(true);
     setError(null);
     try {
-      const res = await validateCoupon(trimmed, serviceId);
+      const res = await selectCoupon(serviceId, trimmed);
       if (!res.valid) {
         setResult(null);
         onValidated?.(null);
@@ -56,7 +56,7 @@ export function CouponCodeField({
       onValidated?.(normalized);
       notifyDraft(trimmed, normalized);
     } catch (err) {
-      logApiError("Coupon validate", err);
+      logApiError("Coupon select", err);
       setResult(null);
       onValidated?.(null);
       notifyDraft(trimmed, null);

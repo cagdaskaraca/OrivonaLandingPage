@@ -11,6 +11,7 @@ import { extractPlaylistFields } from "@/src/lib/api/eventPlaylist";
 import { vendorGetWithRetry } from "@/src/lib/api/vendorDashboardFetch";
 import { flattenAvailabilityPayload } from "@/src/lib/availability";
 import { CUSTOMER_DEFAULT_ZERO_SUMMARY } from "@/src/lib/customerDashboard";
+import { mergeOfferPricingFields } from "@/src/lib/mergeOfferPricing";
 import {
   recordBool,
   recordId,
@@ -249,25 +250,15 @@ function normalizeOffer(raw: unknown): OfferRequest {
     recordId(o, "offerRequestId", "OfferRequestId") ?? recordId(o);
   const nested = nestedOfferRecord(o);
   const vendorOfferId = extractVendorOfferId(o, requestId);
+  const merged = mergeOfferPricingFields(o, nested);
 
-  const nestedListPrice =
-    nested ? recordNum(nested, "price", "Price") : undefined;
-  const nestedOriginal =
-    nested ? recordNum(nested, "originalPrice", "OriginalPrice") : undefined;
-  const nestedFinal =
-    nested
-      ? recordNum(nested, "finalPrice", "FinalPrice") ??
-        recordNum(nested, "discountedPrice", "DiscountedPrice")
-      : undefined;
-  const nestedDisplay =
-    nested ? recordNum(nested, "displayPrice", "DisplayPrice") : undefined;
-
-  const vendorOfferPrice =
+  const listPrice =
     recordNum(o, "vendorOfferPrice", "VendorOfferPrice") ??
-    nestedOriginal ??
-    nestedListPrice ??
+    (nested ? recordNum(nested, "price", "Price") : undefined) ??
     recordNum(o, "offeredPrice", "OfferedPrice") ??
     recordNum(o, "price", "Price");
+  const vendorOfferPrice =
+    merged.originalPrice ?? listPrice ?? merged.finalPrice ?? undefined;
   const vendorOfferDescription =
     recordStr(o, "vendorOfferDescription", "VendorOfferDescription") ??
     (nested
@@ -279,9 +270,16 @@ function normalizeOffer(raw: unknown): OfferRequest {
   const validUntil =
     recordStr(o, "validUntil", "ValidUntil") ??
     (nested ? recordStr(nested, "validUntil", "ValidUntil") : undefined);
+  const nestedDisplay =
+    nested ? recordNum(nested, "displayPrice", "DisplayPrice") : undefined;
 
   const invitation = extractInvitationFields(extractPayload(o) ?? o);
   const playlistFields = extractPlaylistFields(o);
+
+  const hasDiscountData =
+    merged.hasDiscount === true ||
+    merged.finalPrice != null ||
+    Boolean(merged.couponCode);
 
   return {
     id: requestId,
@@ -301,41 +299,36 @@ function normalizeOffer(raw: unknown): OfferRequest {
     vendorOfferPrice,
     vendorOfferDescription,
     offeredPrice: vendorOfferPrice,
-    price: vendorOfferPrice,
+    price: hasDiscountData
+      ? undefined
+      : (merged.price ?? listPrice ?? undefined),
     responseDescription: vendorOfferDescription,
     description: vendorOfferDescription,
     validUntil,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
-    originalPrice:
-      recordNum(o, "originalPrice", "OriginalPrice") ??
-      nestedOriginal ??
-      vendorOfferPrice,
-    finalPrice:
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice") ??
-      nestedFinal,
-    discountedPrice:
-      recordNum(o, "discountedPrice", "DiscountedPrice") ??
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      nestedFinal,
+    originalPrice: merged.originalPrice ?? undefined,
+    finalPrice: merged.finalPrice ?? undefined,
+    agreedPrice: merged.agreedPrice ?? undefined,
+    discountedPrice: merged.finalPrice ?? undefined,
     displayPrice:
-      recordNum(o, "displayPrice", "DisplayPrice") ?? nestedDisplay,
-    hasDiscount:
-      recordBool(o, "hasDiscount", "HasDiscount") ??
-      (nested ? recordBool(nested, "hasDiscount", "HasDiscount") : undefined),
-    discountAmount:
-      recordNum(o, "discountAmount", "DiscountAmount") ??
-      (nested ? recordNum(nested, "discountAmount", "DiscountAmount") : undefined),
-    discountPercent:
-      recordNum(o, "discountPercent", "DiscountPercent") ??
-      (nested ? recordNum(nested, "discountPercent", "DiscountPercent") : undefined),
-    couponCode:
-      recordStr(o, "couponCode", "CouponCode") ??
-      recordStr(o, "appliedCouponCode", "AppliedCouponCode") ??
-      (nested
-        ? recordStr(nested, "couponCode", "CouponCode") ??
-          recordStr(nested, "appliedCouponCode", "AppliedCouponCode")
-        : undefined),
+      recordNum(o, "displayPrice", "DisplayPrice") ?? nestedDisplay ?? undefined,
+    hasDiscount: merged.hasDiscount ?? undefined,
+    discountAmount: merged.discountAmount ?? undefined,
+    discountPercent: merged.discountPercent ?? undefined,
+    couponCode: merged.couponCode ?? undefined,
+    appliedCouponCode: merged.couponCode ?? undefined,
+    vendorOffer: nested
+      ? {
+          originalPrice: merged.originalPrice ?? undefined,
+          finalPrice: merged.finalPrice ?? undefined,
+          agreedPrice: merged.agreedPrice ?? undefined,
+          hasDiscount: merged.hasDiscount ?? undefined,
+          discountAmount: merged.discountAmount ?? undefined,
+          discountPercent: merged.discountPercent ?? undefined,
+          couponCode: merged.couponCode ?? undefined,
+          price: listPrice ?? undefined,
+        }
+      : undefined,
     ...invitation,
     ...playlistFields,
   };
@@ -353,7 +346,7 @@ export async function createOfferRequest(
   payload: CreateOfferRequestPayload,
 ): Promise<OfferRequest> {
   const couponCode = payload.couponCode?.trim().toUpperCase();
-  const body = await apiPostRaw<ApiEnvelope>("/offer-requests", {
+  const requestFields = {
     vendorServiceId: payload.vendorServiceId,
     message: payload.message,
     eventDate: toEventDateIso(payload.eventDate),
@@ -371,8 +364,13 @@ export async function createOfferRequest(
           coupon: couponCode,
           promoCode: couponCode,
           discountCode: couponCode,
+          coupon_code: couponCode,
         }
       : {}),
+  };
+  const body = await apiPostRaw<ApiEnvelope>("/offer-requests", {
+    ...requestFields,
+    request: requestFields,
   });
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);

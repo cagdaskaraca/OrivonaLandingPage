@@ -2,8 +2,8 @@ import { apiGetRaw, logApiError } from "@/src/lib/api/client";
 import {
   getEventPlanBoard as fetchEventPlanBoardCore,
 } from "@/src/lib/api/eventPlans";
-import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
-import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
+import { mergeOfferPricingFields } from "@/src/lib/mergeOfferPricing";
+import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   CustomerAgreement,
@@ -77,6 +77,12 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     recordStr(o, "category", "Category") ??
     recordStr(o, "categoryName", "CategoryName");
 
+  const merged = mergeOfferPricingFields(o);
+  const hasDiscountData =
+    merged.hasDiscount === true ||
+    merged.finalPrice != null ||
+    Boolean(merged.couponCode);
+
   const agreement: CustomerAgreement = {
     id: recordId(o),
     eventPlanId: recordId(o, "eventPlanId", "EventPlanId"),
@@ -85,26 +91,21 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     serviceType: recordStr(o, "serviceType", "ServiceType"),
     vendorId: recordId(o, "vendorId", "VendorId") ?? null,
     vendorName: recordStr(o, "vendorName", "VendorName"),
-    originalPrice: recordNum(o, "originalPrice", "OriginalPrice"),
-    finalPrice:
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice"),
-    displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
-    price: recordNum(o, "price", "Price"),
-    hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
-    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
-    discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
-    couponCode:
-      recordStr(o, "couponCode", "CouponCode") ??
-      recordStr(o, "appliedCouponCode", "AppliedCouponCode"),
+    originalPrice: merged.originalPrice ?? undefined,
+    finalPrice: merged.finalPrice ?? undefined,
+    agreedPrice: merged.agreedPrice ?? merged.finalPrice ?? undefined,
+    displayPrice: merged.displayPrice ?? undefined,
+    price: hasDiscountData ? undefined : (merged.price ?? undefined),
+    hasDiscount: merged.hasDiscount ?? undefined,
+    discountAmount: merged.discountAmount ?? undefined,
+    discountPercent: merged.discountPercent ?? undefined,
+    couponCode: merged.couponCode ?? undefined,
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
       recordStr(o, "agreedAt", "AgreedAt"),
     note: recordStr(o, "note", "Note"),
     status: recordStr(o, "status", "Status"),
   };
-  const resolved = resolveOfferDisplayPrice(agreement);
-  agreement.agreedPrice = resolved > 0 ? resolved : undefined;
   return agreement;
 }
 
@@ -115,34 +116,37 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
     recordStr(o, "category", "Category") ??
     recordStr(o, "categoryName", "CategoryName");
 
+  const merged = mergeOfferPricingFields(o);
+  const hasDiscountData =
+    merged.hasDiscount === true ||
+    merged.finalPrice != null ||
+    Boolean(merged.couponCode);
+  const displayAmount =
+    merged.finalPrice ??
+    merged.agreedPrice ??
+    merged.price ??
+    merged.originalPrice ??
+    undefined;
+
   const line: EventPlanBudgetLine = {
     id: recordId(o),
     category,
     categoryName: category,
     serviceType: recordStr(o, "serviceType", "ServiceType"),
     vendorName: recordStr(o, "vendorName", "VendorName"),
-    originalPrice: recordNum(o, "originalPrice", "OriginalPrice"),
-    finalPrice:
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice"),
-    displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
-    price: recordNum(o, "price", "Price"),
-    agreedPrice: recordNum(o, "agreedPrice", "AgreedPrice"),
-    hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
-    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
-    discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
-    couponCode:
-      recordStr(o, "couponCode", "CouponCode") ??
-      recordStr(o, "appliedCouponCode", "AppliedCouponCode"),
+    originalPrice: merged.originalPrice ?? undefined,
+    finalPrice: merged.finalPrice ?? undefined,
+    agreedPrice: merged.agreedPrice ?? merged.finalPrice ?? undefined,
+    displayPrice: merged.displayPrice ?? undefined,
+    price: hasDiscountData ? undefined : (merged.price ?? undefined),
+    hasDiscount: merged.hasDiscount ?? undefined,
+    discountAmount: merged.discountAmount ?? undefined,
+    discountPercent: merged.discountPercent ?? undefined,
+    couponCode: merged.couponCode ?? undefined,
     agreementDate: recordStr(o, "agreementDate", "AgreementDate"),
     note: recordStr(o, "note", "Note"),
-    amount: recordNum(o, "amount", "Amount"),
+    amount: displayAmount,
   };
-  const resolved = resolveOfferDisplayPrice(line);
-  if (resolved > 0) {
-    line.agreedPrice = resolved;
-    line.amount = resolved;
-  }
   return line;
 }
 

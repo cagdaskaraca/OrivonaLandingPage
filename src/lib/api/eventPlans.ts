@@ -5,7 +5,7 @@ import {
   apiPutRaw,
 } from "@/src/lib/api/client";
 import { mapGuestRsvpToApi } from "@/src/lib/eventOs";
-import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
+import { mergeOfferPricingFields } from "@/src/lib/mergeOfferPricing";
 import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
@@ -652,7 +652,13 @@ export async function generateEventPlanReminders(
 function normalizeEventPlanBoardItem(raw: unknown): EventPlanBoardItem {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
-  const item: EventPlanBoardItem = {
+  const merged = mergeOfferPricingFields(o);
+  const hasDiscountData =
+    merged.hasDiscount === true ||
+    merged.finalPrice != null ||
+    Boolean(merged.couponCode);
+
+  return {
     id: recordId(o),
     type: recordStr(o, "type", "Type"),
     title: recordStr(o, "title", "Title"),
@@ -663,26 +669,20 @@ function normalizeEventPlanBoardItem(raw: unknown): EventPlanBoardItem {
       if (v === null) return null;
       return recordStr(o, "vendorName", "VendorName") ?? null;
     })(),
-    originalPrice: recordNum(o, "originalPrice", "OriginalPrice") ?? null,
-    finalPrice:
-      recordNum(o, "finalPrice", "FinalPrice") ??
-      recordNum(o, "discountedPrice", "DiscountedPrice") ??
-      null,
-    displayPrice: recordNum(o, "displayPrice", "DisplayPrice") ?? null,
-    price: recordNum(o, "price", "Price") ?? null,
-    hasDiscount: recordBool(o, "hasDiscount", "HasDiscount") ?? null,
-    discountAmount: recordNum(o, "discountAmount", "DiscountAmount") ?? null,
-    discountPercent: recordNum(o, "discountPercent", "DiscountPercent") ?? null,
-    couponCode: recordStr(o, "couponCode", "CouponCode") ?? null,
+    originalPrice: merged.originalPrice ?? null,
+    finalPrice: merged.finalPrice ?? null,
+    displayPrice: merged.displayPrice ?? null,
+    price: hasDiscountData ? null : (merged.price ?? null),
+    hasDiscount: merged.hasDiscount ?? null,
+    discountAmount: merged.discountAmount ?? null,
+    discountPercent: merged.discountPercent ?? null,
+    couponCode: merged.couponCode ?? null,
     status: recordStr(o, "status", "Status"),
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
     updatedAt:
       recordStr(o, "updatedAt", "UpdatedAt") ??
       (o.updatedAt === null || o.UpdatedAt === null ? null : undefined),
   };
-  const resolved = resolveOfferDisplayPrice(item);
-  item.price = resolved > 0 ? resolved : item.price;
-  return item;
 }
 
 function normalizeEventPlanBoardColumn(raw: unknown): EventPlanBoardColumn {

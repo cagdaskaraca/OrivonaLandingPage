@@ -262,6 +262,7 @@ export {
   promoteAdminService,
   disableAdminPromotion,
   validateCoupon,
+  selectCoupon,
   fetchVendorCoupons,
   createVendorCoupon,
   updateVendorCoupon,

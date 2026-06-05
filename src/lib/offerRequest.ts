@@ -107,22 +107,36 @@ export function offerResponsePrice(offer: OfferRequest): number | undefined {
 }
 
 export function offerPricingInput(offer: OfferRequest): OfferPricingFields {
+  const nested = offer.vendorOffer;
   const hasDiscountData =
     offer.hasDiscount === true ||
+    nested?.hasDiscount === true ||
     offer.finalPrice != null ||
+    nested?.finalPrice != null ||
+    offer.agreedPrice != null ||
+    nested?.agreedPrice != null ||
     offer.displayPrice != null ||
-    Boolean(offer.couponCode);
+    Boolean(offer.couponCode ?? nested?.couponCode);
   return {
-    originalPrice: offer.originalPrice,
-    finalPrice: offer.finalPrice ?? offer.discountedPrice,
+    originalPrice: offer.originalPrice ?? nested?.originalPrice,
+    finalPrice:
+      offer.finalPrice ??
+      offer.discountedPrice ??
+      offer.agreedPrice ??
+      nested?.finalPrice ??
+      nested?.agreedPrice,
+    agreedPrice: offer.agreedPrice ?? nested?.agreedPrice,
     displayPrice: offer.displayPrice,
-    hasDiscount: offer.hasDiscount,
-    discountAmount: offer.discountAmount,
-    discountPercent: offer.discountPercent,
-    couponCode: offer.couponCode ?? offer.appliedCouponCode,
+    hasDiscount: offer.hasDiscount ?? nested?.hasDiscount,
+    discountAmount: offer.discountAmount ?? nested?.discountAmount,
+    discountPercent: offer.discountPercent ?? nested?.discountPercent,
+    couponCode:
+      offer.couponCode ??
+      offer.appliedCouponCode ??
+      nested?.couponCode,
     price: hasDiscountData
       ? undefined
-      : (offer.price ?? offerResponsePrice(offer)),
+      : (offer.price ?? nested?.price ?? offerResponsePrice(offer)),
   };
 }
 
