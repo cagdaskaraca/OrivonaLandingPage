@@ -17,7 +17,7 @@ import { glassCard } from "@/src/lib/ui";
 
 type ActivityFeedSectionProps = {
   role: "customer" | "vendor" | "admin";
-  /** Admin dashboard only — paginate long activity lists. */
+  /** 5’li sayfalama + arama (admin / müşteri / işletme). */
   paginate?: boolean;
 };
 

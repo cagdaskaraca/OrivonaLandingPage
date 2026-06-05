@@ -63,6 +63,9 @@ const STATUS_LABELS: Record<string, string> = {
   // Rezervasyon
   confirmed: "Onaylandı",
   active: "Aktif",
+  awaitingconfirmation: "Onay bekliyor",
+  awaitingvendorconfirmation: "Onay bekliyor",
+  demopending: "Demo — onay bekliyor",
 
   // CRM / pipeline (görünürse)
   new: "Yeni",
@@ -84,6 +87,9 @@ const STATUS_VARIANTS: Record<string, StatusBadgeVariant> = {
   approved: "success",
   completed: "success",
   confirmed: "success",
+  awaitingconfirmation: "warning",
+  awaitingvendorconfirmation: "warning",
+  demopending: "warning",
   ready: "info",
   published: "info",
   attached: "info",

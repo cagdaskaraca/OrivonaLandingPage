@@ -24,6 +24,13 @@ import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
 import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
+import { formatOfferDate } from "@/src/lib/offerRequest";
+import {
+  canVendorCompleteReservation,
+  canVendorConfirmReservation,
+  reservationActionId,
+  vendorReservationActionHint,
+} from "@/src/lib/reservationUi";
 import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { btnPrimary, btnSecondary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
 
@@ -55,6 +62,10 @@ export function VendorReservationsPanel() {
   return (
     <div className={`${glassCard} mb-8`}>
       <h2 className="text-lg font-semibold text-white">Rezervasyonlar</h2>
+      <p className="mt-1 text-sm text-zinc-500">
+        Müşteri teklifi kabul ettiğinde demo rezervasyon oluşur. «Onayla» ile
+        kesinleştirirsiniz; etkinlik sonrası «Tamamla» ile kapatırsınız.
+      </p>
       <VendorSectionState
         loading={loading}
         error={error}
@@ -92,56 +103,86 @@ export function VendorReservationsPanel() {
               .toLowerCase();
             return hay.includes(q);
           }}
-          getItemKey={(r) => String(r.id)}
-          renderItem={(r) => (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
-              <div>
-                <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
-                <p className="text-zinc-400">
-                  {r.customerName} · {r.eventDate}
-                </p>
-                {r.status ? (
-                  <div className="mt-1.5">
-                    <StatusBadge status={r.status} context="vendor" />
+          getItemKey={(r) => String(reservationActionId(r) ?? r.serviceTitle)}
+          renderItem={(r) => {
+            const actionId = reservationActionId(r);
+            const showConfirm = canVendorConfirmReservation(r.status);
+            const showComplete = canVendorCompleteReservation(r.status);
+            const hint = vendorReservationActionHint(r.status);
+            const dateLabel = formatOfferDate(r.eventDate) || r.eventDate;
+
+            return (
+              <div className="rounded-lg border border-white/10 px-3 py-2 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-white">
+                      {r.serviceTitle ?? "—"}
+                    </p>
+                    <p className="text-zinc-400">
+                      {r.customerName ?? "Müşteri"}
+                      {dateLabel ? ` · ${dateLabel}` : ""}
+                    </p>
+                    {r.status ? (
+                      <div className="mt-1.5">
+                        <StatusBadge status={r.status} context="vendor" />
+                      </div>
+                    ) : null}
                   </div>
+                  {actionId != null && (showConfirm || showComplete) ? (
+                    <div className="flex flex-wrap gap-2">
+                      {showConfirm ? (
+                        <button
+                          type="button"
+                          className={`${btnSecondary} text-xs`}
+                          onClick={async () => {
+                            try {
+                              await confirmVendorReservation(actionId);
+                              toast.success("Rezervasyon onaylandı.");
+                              load();
+                            } catch (e) {
+                              toast.error(
+                                formatApiErrorMessage(
+                                  e,
+                                  "Rezervasyon onaylanamadı. Kayıt iptal edilmiş veya zaten onaylı olabilir.",
+                                ),
+                              );
+                            }
+                          }}
+                        >
+                          Onayla
+                        </button>
+                      ) : null}
+                      {showComplete ? (
+                        <button
+                          type="button"
+                          className={`${btnSecondary} text-xs`}
+                          onClick={async () => {
+                            try {
+                              await completeVendorReservation(actionId);
+                              toast.success("Rezervasyon tamamlandı.");
+                              load();
+                            } catch (e) {
+                              toast.error(
+                                formatApiErrorMessage(
+                                  e,
+                                  "Rezervasyon tamamlanamadı. Önce onaylanmış olmalıdır.",
+                                ),
+                              );
+                            }
+                          }}
+                        >
+                          Tamamla
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                {!showConfirm && !showComplete && hint ? (
+                  <p className="mt-2 text-xs text-zinc-500">{hint}</p>
                 ) : null}
               </div>
-              {r.id != null ? (
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className={`${btnSecondary} text-xs`}
-                    onClick={async () => {
-                      try {
-                        await confirmVendorReservation(r.id!);
-                        toast.success("Onaylandı.");
-                        load();
-                      } catch (e) {
-                        toast.error(formatApiErrorMessage(e, "Onaylanamadı."));
-                      }
-                    }}
-                  >
-                    Onayla
-                  </button>
-                  <button
-                    type="button"
-                    className={`${btnSecondary} text-xs`}
-                    onClick={async () => {
-                      try {
-                        await completeVendorReservation(r.id!);
-                        toast.success("Tamamlandı.");
-                        load();
-                      } catch (e) {
-                        toast.error(formatApiErrorMessage(e, "Tamamlanamadı."));
-                      }
-                    }}
-                  >
-                    Tamamla
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          )}
+            );
+          }}
         />
       </VendorSectionState>
     </div>

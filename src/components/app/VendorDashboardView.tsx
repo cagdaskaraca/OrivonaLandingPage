@@ -300,7 +300,7 @@ function DashboardContent() {
       <DashboardHelpPanel role="vendor" />
 
       <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
-        <ActivityFeedSection role="vendor" />
+        <ActivityFeedSection role="vendor" paginate />
       </DashboardSection>
 
       <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>

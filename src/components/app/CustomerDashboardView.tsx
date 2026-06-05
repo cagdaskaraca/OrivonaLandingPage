@@ -671,7 +671,7 @@ function DashboardContentInner() {
       </DashboardSection>
 
       <DashboardSection id="dashboard-activity" title="Son Aktiviteler">
-        <ActivityFeedSection role="customer" />
+        <ActivityFeedSection role="customer" paginate />
       </DashboardSection>
 
       {ENABLE_EVENT_BOARD ? (

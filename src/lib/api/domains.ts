@@ -505,18 +505,45 @@ export async function cancelCustomerOfferRequest(
 function normalizeReservation(raw: unknown): Reservation {
   if (!raw || typeof raw !== "object") return {};
   const o = raw as Record<string, unknown>;
+  const nested = o.reservation ?? o.Reservation;
+  const base =
+    nested && typeof nested === "object" && !Array.isArray(nested)
+      ? (nested as Record<string, unknown>)
+      : o;
+  const id =
+    recordId(base, "reservationId", "ReservationId") ??
+    recordId(base) ??
+    recordId(o, "reservationId", "ReservationId") ??
+    recordId(o);
   return {
-    id: recordId(o),
-    vendorServiceId: recordId(o, "vendorServiceId", "VendorServiceId"),
-    serviceTitle: recordStr(o, "serviceTitle", "ServiceTitle"),
-    vendorName: recordStr(o, "vendorName", "VendorName"),
-    customerName: recordStr(o, "customerName", "CustomerName"),
-    eventDate: recordStr(o, "eventDate", "EventDate"),
-    guestCount: recordNum(o, "guestCount", "GuestCount"),
-    totalPrice: recordNum(o, "totalPrice", "TotalPrice"),
-    status: recordStr(o, "status", "Status"),
-    notes: recordStr(o, "notes", "Notes"),
-    createdAt: recordStr(o, "createdAt", "CreatedAt"),
+    id,
+    vendorServiceId:
+      recordId(base, "vendorServiceId", "VendorServiceId") ??
+      recordId(o, "vendorServiceId", "VendorServiceId"),
+    serviceTitle:
+      recordStr(base, "serviceTitle", "ServiceTitle") ??
+      recordStr(o, "serviceTitle", "ServiceTitle"),
+    vendorName:
+      recordStr(base, "vendorName", "VendorName") ??
+      recordStr(o, "vendorName", "VendorName"),
+    customerName:
+      recordStr(base, "customerName", "CustomerName") ??
+      recordStr(o, "customerName", "CustomerName"),
+    eventDate:
+      recordStr(base, "eventDate", "EventDate") ??
+      recordStr(o, "eventDate", "EventDate"),
+    guestCount:
+      recordNum(base, "guestCount", "GuestCount") ??
+      recordNum(o, "guestCount", "GuestCount"),
+    totalPrice:
+      recordNum(base, "totalPrice", "TotalPrice") ??
+      recordNum(o, "totalPrice", "TotalPrice"),
+    status:
+      recordStr(base, "status", "Status") ?? recordStr(o, "status", "Status"),
+    notes: recordStr(base, "notes", "Notes") ?? recordStr(o, "notes", "Notes"),
+    createdAt:
+      recordStr(base, "createdAt", "CreatedAt") ??
+      recordStr(o, "createdAt", "CreatedAt"),
   };
 }
 
