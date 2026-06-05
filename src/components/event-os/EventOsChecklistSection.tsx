@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { AcceptedOfferChecklistDetail } from "@/src/components/event-os/AcceptedOfferChecklistDetail";
 import { EventOsBudgetSummary } from "@/src/components/event-os/EventOsBudgetSummary";
 import { EventOsChecklistPlanDropdown } from "@/src/components/event-os/EventOsChecklistPlanDropdown";
@@ -298,10 +298,20 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
           Henüz görev yok. AI ile oluşturun veya manuel ekleyin.
         </p>
       ) : (
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           items={tasksWithOffer}
+          listClassName="space-y-3"
+          searchPlaceholder="Görev ara…"
+          filterItem={({ task }, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [task.title, task.categoryName, task.description, task.status]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={({ task }) => String(task.id)}
-          hintThreshold={3}
           renderItem={({ task, acceptedOffer }) => {
             const current = normalizeTaskStatus(task.status);
             const hasAcceptedOffer = acceptedOffer != null;
@@ -309,7 +319,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
             return (
               <div
-                className={`flex h-full min-h-0 flex-col rounded-xl border px-4 py-3 ${
+                className={`rounded-xl border px-4 py-3 ${
                   hasAcceptedOffer
                     ? "border-emerald-400/25 bg-emerald-500/[0.06]"
                     : "border-white/10 bg-white/[0.02]"

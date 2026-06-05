@@ -24,7 +24,7 @@ import { StatusBadge } from "@/src/components/ui/StatusBadge";
 import { VendorSectionState } from "@/src/components/vendor/VendorSectionState";
 import { useVendorSectionLoad } from "@/src/hooks/useVendorSectionLoad";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { btnPrimary, btnSecondary, glassCard, inputClass, skeletonClass } from "@/src/lib/ui";
 
 export function VendorSummaryCards() {
@@ -78,13 +78,23 @@ export function VendorReservationsPanel() {
           </div>
         }
       >
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           className="mt-4"
           items={list}
+          listClassName="space-y-2"
+          searchPlaceholder="Rezervasyon ara…"
+          filterItem={(r, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [r.serviceTitle, r.customerName, r.eventDate, r.status]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={(r) => String(r.id)}
-          hintThreshold={3}
           renderItem={(r) => (
-            <div className="flex h-full flex-col justify-between gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm">
               <div>
                 <p className="font-medium text-white">{r.serviceTitle ?? "—"}</p>
                 <p className="text-zinc-400">
@@ -97,7 +107,7 @@ export function VendorReservationsPanel() {
                 ) : null}
               </div>
               {r.id != null ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2">
                   <button
                     type="button"
                     className={`${btnSecondary} text-xs`}

@@ -9,7 +9,7 @@ import {
 } from "@/src/components/app/dashboard/VendorExtras";
 import { VendorAvailabilityPanel } from "@/src/components/availability/VendorAvailabilityPanel";
 import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { VendorOfferRequestsPanel } from "@/src/components/offers/VendorOfferRequestsPanel";
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
@@ -502,14 +502,24 @@ function DashboardContent() {
             </p>
           }
         >
-          <DashboardHorizontalRail
+          <DashboardPaginatedList
             className="mt-4"
             items={services}
+            listClassName="space-y-3"
+            searchPlaceholder="Hizmet ara…"
+            filterItem={(s, query) => {
+              const q = query.trim().toLowerCase();
+              if (!q) return true;
+              const hay = [s.title, s.categoryName, s.category, s.city, s.district]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+              return hay.includes(q);
+            }}
             getItemKey={(s) => String(s.id)}
-            hintThreshold={3}
             renderItem={(s) => (
-              <div className="flex h-full flex-col rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
-                <div className="flex flex-1 flex-wrap items-start justify-between gap-2">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-medium text-white">{s.title ?? "Hizmet"}</p>
                     <p className="mt-1 text-zinc-400">

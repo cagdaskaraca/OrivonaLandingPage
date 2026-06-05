@@ -12,7 +12,7 @@ import {
 } from "@/src/lib/api/eventPlans";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventReminder } from "@/src/lib/api/types";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { btnPrimary, btnSecondary } from "@/src/lib/ui";
 
 function RemindersPanel({ planId }: { planId: string | number }) {
@@ -79,14 +79,23 @@ function RemindersPanel({ planId }: { planId: string | number }) {
           Henüz hatırlatma yok. Oluştur butonuna basın.
         </p>
       ) : (
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           items={reminders}
+          searchPlaceholder="Hatırlatma ara…"
+          filterItem={(r, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [r.title, r.type, r.message, r.description]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={(r) =>
             String(r.id ?? `${r.title ?? "reminder"}-${r.dueDate ?? r.scheduledAt ?? ""}`)
           }
-          hintThreshold={3}
           renderItem={(r) => (
-            <div className="h-full rounded-xl border border-violet-400/15 bg-violet-500/[0.05] px-4 py-3">
+            <div className="rounded-xl border border-violet-400/15 bg-violet-500/[0.05] px-4 py-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-white">{r.title ?? "Hatırlatma"}</p>
                 {r.type?.trim() ? (

@@ -6,7 +6,7 @@ import { fetchFavorites } from "@/src/lib/api";
 import { isApiNotFound, logApiError } from "@/src/lib/api/client";
 import type { FavoriteItem } from "@/src/lib/api/types";
 import { useToast } from "@/src/contexts/ToastContext";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { CUSTOMER_EMPTY_DATA_MESSAGE } from "@/src/lib/customerDashboard";
 
 export function CustomerFavoritesSection() {
@@ -45,12 +45,22 @@ export function CustomerFavoritesSection() {
   }
 
   return (
-    <DashboardHorizontalRail
+    <DashboardPaginatedList
       items={favorites}
+      listClassName="space-y-2"
+      searchPlaceholder="Favori ara…"
+      filterItem={(f, query) => {
+        const q = query.trim().toLowerCase();
+        if (!q) return true;
+        const hay = [f.serviceTitle, f.vendorName, f.city, f.district]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(q);
+      }}
       getItemKey={(f) => String(f.id ?? f.vendorServiceId)}
-      hintThreshold={3}
       renderItem={(f) => (
-        <div className="h-full rounded-lg border border-white/10 px-3 py-2 text-sm">
+        <div className="rounded-lg border border-white/10 px-3 py-2 text-sm">
           <p className="font-medium text-white">{f.serviceTitle ?? "Hizmet"}</p>
           <p className="text-zinc-400">
             {f.vendorName} · {[f.city, f.district].filter(Boolean).join(" · ")}

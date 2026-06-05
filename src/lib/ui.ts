@@ -31,9 +31,6 @@ export const skeletonClass =
 /** Themed horizontal scroll for dashboard tables (see globals.css). */
 export const orivonaScrollX = "orivona-scroll-x";
 
-/** ~5-up horizontal card rail on xl (see globals.css .orivona-horizontal-rail). */
-export const orivonaHorizontalRail = "orivona-horizontal-rail";
-
 /** Themed vertical scroll for sticky sidebar nav. */
 export const orivonaScrollY = "orivona-scroll-y";
 

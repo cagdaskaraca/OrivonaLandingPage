@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { OfferRequestCard } from "@/src/components/offers/OfferRequestCard";
 import { VendorSendOfferModal } from "@/src/components/offers/VendorSendOfferModal";
 import { VendorInvitationRevisionModal } from "@/src/components/invitation-design/VendorInvitationRevisionModal";
@@ -110,9 +110,25 @@ export function VendorOfferRequestsPanel() {
           />
         }
       >
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           className="mt-2"
           items={offers}
+          listClassName="space-y-4"
+          searchPlaceholder="Talep ara (müşteri, hizmet…)"
+          filterItem={(o, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [
+              o.customerName,
+              o.serviceTitle,
+              o.category,
+              o.status,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={(o) => String(o.id)}
           renderItem={(o) => {
             const canAct = canVendorActOnRequest(o.status) && o.id != null;
@@ -126,17 +142,16 @@ export function VendorOfferRequestsPanel() {
 
             return (
               <div
-                className={`flex h-full min-h-0 flex-col ${
+                className={
                   cancelled
                     ? "rounded-xl border border-zinc-500/25 bg-zinc-500/[0.04] p-1 opacity-90"
-                    : ""
-                }`}
+                    : undefined
+                }
               >
                 <OfferRequestCard
                   offer={o}
                   variant="vendor"
                   as="div"
-                  className="flex-1"
                   onUploadRevision={
                     showInvitation && requestId != null
                       ? () => setRevisionRequestId(requestId)

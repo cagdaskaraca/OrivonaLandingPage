@@ -7,7 +7,7 @@ import { MessagingPanel } from "@/src/components/messaging/MessagingPanel";
 import { CustomerFavoritesSection } from "@/src/components/app/dashboard/CustomerFavoritesSection";
 import { CustomerReservationsSection } from "@/src/components/app/dashboard/CustomerReservationsSection";
 import { CustomerSummarySection } from "@/src/components/app/dashboard/CustomerSummarySection";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { CustomerOfferRequestsPanel } from "@/src/components/offers/CustomerOfferRequestsPanel";
 import { DashboardLayout } from "@/src/components/dashboard/DashboardLayout";
 import { DashboardSection } from "@/src/components/dashboard/DashboardSection";
@@ -384,13 +384,28 @@ function DashboardContentInner() {
           <p className="mt-3 text-sm text-zinc-500">Talepler yükleniyor…</p>
         ) : null}
         {!loadingList && requests.length > 0 ? (
-          <DashboardHorizontalRail
+          <DashboardPaginatedList
             className="mt-4"
             items={requests}
+            listClassName="space-y-3"
+            searchPlaceholder="Talep ara…"
+            filterItem={(r, query) => {
+              const q = query.trim().toLowerCase();
+              if (!q) return true;
+              const hay = [
+                displayEventRequestTitle(r),
+                r.city,
+                r.district,
+                r.status,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+              return hay.includes(q);
+            }}
             getItemKey={(r) => String(r.id)}
-            hintThreshold={3}
             renderItem={(r) => (
-              <div className="flex h-full flex-col rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm">
                 <p className="font-medium text-white">
                   {displayEventRequestTitle(r)}
                 </p>
@@ -406,7 +421,7 @@ function DashboardContentInner() {
                     <StatusBadge status={r.status} context="customer" />
                   </div>
                 ) : null}
-                <div className="mt-auto flex flex-wrap gap-2 pt-3">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     className={`${btnSecondary} px-4 py-1.5 text-xs`}

@@ -19,7 +19,7 @@ import {
   planDisplayTitle,
   taskProgressPercent,
 } from "@/src/lib/eventOs";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { EventPlanCountdown } from "@/src/components/premium/EventPlanCountdown";
 import { NumericInput } from "@/src/components/ui/NumericInput";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -157,13 +157,22 @@ export function EventPlansSection() {
       {loadingPlans ? (
         <p className="text-sm text-zinc-500">Planlar yükleniyor…</p>
       ) : plans.length > 0 ? (
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           items={plans}
+          searchPlaceholder="Plan ara…"
+          filterItem={(p, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [planDisplayTitle(p), p.city, p.district]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={(p) => String(p.id)}
-          hintThreshold={3}
           renderItem={(p) => (
-            <div className="flex h-full flex-col rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
-              <div className="flex flex-1 flex-wrap items-start justify-between gap-3">
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <button
                   type="button"
                   className="text-left"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { CustomerOfferListItem } from "@/src/components/offers/CustomerOfferListItem";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useToast } from "@/src/contexts/ToastContext";
@@ -201,8 +201,24 @@ export function CustomerOfferRequestsPanel({
       ) : null}
 
       {!loading && offers.length > 0 ? (
-        <DashboardHorizontalRail
+        <DashboardPaginatedList
           items={offers}
+          listClassName="space-y-4"
+          searchPlaceholder="Teklif ara (işletme, hizmet…)"
+          filterItem={(o, query) => {
+            const q = query.trim().toLowerCase();
+            if (!q) return true;
+            const hay = [
+              o.vendorName,
+              o.serviceTitle,
+              o.category,
+              o.status,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return hay.includes(q);
+          }}
           getItemKey={(o) => {
             const actionId = getCustomerOfferActionId(o);
             return String(o.id ?? actionId);
@@ -216,7 +232,6 @@ export function CustomerOfferRequestsPanel({
 
             return (
               <CustomerOfferListItem
-                as="div"
                 offer={o}
                 busy={busy}
                 showDemoConfirm={showDemoConfirm}

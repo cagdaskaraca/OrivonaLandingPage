@@ -26,7 +26,6 @@ type CustomerOfferListItemProps = {
   onReject: (offer: OfferRequest) => void;
   onCancel: (offer: OfferRequest) => void;
   onApplyCoupon: (offer: OfferRequest, couponCode: string) => Promise<void>;
-  as?: "li" | "div";
 };
 
 export function CustomerOfferListItem({
@@ -37,7 +36,6 @@ export function CustomerOfferListItem({
   onReject,
   onCancel,
   onApplyCoupon,
-  as: Tag = "li",
 }: CustomerOfferListItemProps) {
   const actionId = getCustomerOfferActionId(offer);
   const showActions = canCustomerRespondToOffer(offer);
@@ -56,8 +54,8 @@ export function CustomerOfferListItem({
   }, []);
 
   return (
-    <Tag className="flex h-full min-h-0 flex-col">
-      <OfferRequestCard offer={offer} variant="customer" as="div" className="flex-1" />
+    <div>
+      <OfferRequestCard offer={offer} variant="customer" as="div" />
       {cancelled ? (
         <p className="mt-2 text-xs text-zinc-500">
           Bu teklif iptal edildi; checklist ve bütçeye dahil değildir.
@@ -137,6 +135,6 @@ export function CustomerOfferListItem({
           </button>
         </div>
       ) : null}
-    </Tag>
+    </div>
   );
 }

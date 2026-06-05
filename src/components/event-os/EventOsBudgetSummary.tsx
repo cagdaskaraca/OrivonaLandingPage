@@ -7,7 +7,7 @@ import {
 } from "@/src/lib/customerAgreementsUi";
 import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
 import type { EventPlanBudgetSummary } from "@/src/lib/api/types";
-import { DashboardHorizontalRail } from "@/src/components/dashboard/DashboardHorizontalRail";
+import { DashboardPaginatedList } from "@/src/components/dashboard/DashboardPaginatedList";
 import { glassCard } from "@/src/lib/ui";
 
 type EventOsBudgetSummaryProps = {
@@ -79,19 +79,18 @@ export function EventOsBudgetSummary({
       <h3 className="text-sm font-semibold text-white">Tahmini bütçe özeti</h3>
       {lines.length > 0 ? (
         <div className="border-b border-white/10 pb-3">
-          <DashboardHorizontalRail
+          <DashboardPaginatedList
             items={lines}
+            listClassName="space-y-2"
             getItemKey={(line) =>
               String(line.id ?? formatBudgetLineLabel(line))
             }
-            hintThreshold={3}
-            showHint={lines.length > 3}
             renderItem={(line) => (
-              <div className="flex h-full flex-col justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3 text-sm">
                 <span className="min-w-0 text-zinc-300">
                   {formatBudgetLineLabel(line)}
                 </span>
-                <OfferPriceBreakdown pricing={line} size="sm" />
+                <OfferPriceBreakdown pricing={line} size="sm" className="text-right" />
               </div>
             )}
           />
