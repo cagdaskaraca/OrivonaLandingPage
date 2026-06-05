@@ -1,34 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { OfferRequestCard } from "@/src/components/offers/OfferRequestCard";
+import { CustomerOfferListItem } from "@/src/components/offers/CustomerOfferListItem";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { useToast } from "@/src/contexts/ToastContext";
 import {
   acceptCustomerOffer,
+  applyCustomerOfferCoupon,
   fetchMyOfferRequests,
   rejectCustomerOffer,
 } from "@/src/lib/api";
 import { cancelCustomerOfferFlow } from "@/src/lib/cancelCustomerOffer";
 import { ApiError, formatApiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
+import { clearOfferRequestCoupon } from "@/src/lib/offerCouponStorage";
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
   canCustomerCancelOffer,
-  canCustomerRespondToOffer,
   dedupeCustomerOfferList,
   getCustomerOfferActionId,
-  isAcceptedOfferStatus,
-  isCancelledOfferStatus,
 } from "@/src/lib/offerRequest";
-import { btnPrimary, btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
-
-const btnDanger =
-  "inline-flex items-center justify-center rounded-full border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-100 transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-red-500/18 disabled:opacity-50 disabled:pointer-events-none";
+import { resolveOfferCouponCode } from "@/src/lib/resolveOfferCouponCode";
+import { btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
 type CustomerOfferRequestsPanelProps = {
   embedded?: boolean;
-  /** Kabul veya iptal sonrası checklist / bütçe yenilemesi */
   onOfferChange?: () => void;
   /** @deprecated use onOfferChange */
   onAfterAccept?: () => void;
@@ -68,19 +64,22 @@ export function CustomerOfferRequestsPanel({
     load();
   }, [load]);
 
-  async function handleAccept(offer: OfferRequest) {
+  async function handleAccept(offer: OfferRequest, couponFromUi?: string) {
     const offerId = getCustomerOfferActionId(offer);
     if (offerId == null) {
       toast.error("Teklif kimliği bulunamadı.");
       return;
     }
+    const couponCode = resolveOfferCouponCode(offer, couponFromUi);
     setActionOfferId(offerId);
     try {
       await acceptCustomerOffer(offerId, {
         paymentMode: "Demo",
         note: "Demo ödeme ile kabul edildi",
-        couponCode: offer.couponCode,
+        eventPlanId: offer.eventPlanId ?? null,
+        couponCode,
       });
+      if (offer.id != null) clearOfferRequestCoupon(offer.id);
       toast.success("Teklif kabul edildi. Demo rezervasyon oluşturuldu.");
       setDemoConfirmationId(offer.id ?? offerId);
       await load();
@@ -93,13 +92,32 @@ export function CustomerOfferRequestsPanel({
     }
   }
 
+  async function handleApplyCoupon(offer: OfferRequest, couponCode: string) {
+    const offerId = getCustomerOfferActionId(offer);
+    if (offerId == null) {
+      toast.error("Teklif kimliği bulunamadı.");
+      return;
+    }
+    setActionOfferId(offerId);
+    try {
+      await applyCustomerOfferCoupon(offerId, { couponCode });
+      toast.success("Kupon teklife uygulandı.");
+      await load();
+      notifyOfferChange?.();
+    } catch (e) {
+      if (e instanceof ApiError) console.log("Apply coupon failed", e.body);
+      toast.error(formatApiErrorMessage(e, "Kupon uygulanamadı."));
+    } finally {
+      setActionOfferId(null);
+    }
+  }
+
   async function handleCancel(offer: OfferRequest) {
     if (!canCustomerCancelOffer(offer)) {
       toast.error("Bu teklif iptal edilemez.");
       return;
     }
-    const accepted = isAcceptedOfferStatus(offer.status);
-    const message = accepted
+    const message = offer.status?.toLowerCase().includes("accept")
       ? "Kabul ettiğiniz bu teklifi iptal etmek istiyor musunuz? Checklist ve bütçeden kaldırılır."
       : "Bu teklif talebini iptal etmek istiyor musunuz?";
     if (!window.confirm(message)) return;
@@ -108,11 +126,7 @@ export function CustomerOfferRequestsPanel({
     setActionOfferId(target ?? null);
     try {
       await cancelCustomerOfferFlow(offer);
-      toast.success(
-        accepted
-          ? "Teklif iptal edildi. Checklist ve bütçe güncellenecek."
-          : "Teklif talebi iptal edildi.",
-      );
+      toast.success("Teklif iptal edildi.");
       setDemoConfirmationId(null);
       await load();
       notifyOfferChange?.();
@@ -150,7 +164,8 @@ export function CustomerOfferRequestsPanel({
         <div>
           <h2 className="text-lg font-semibold text-white">Tekliflerim</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            İşletmelerden gelen teklifleri inceleyin; kabul, red veya iptal edin.
+            İşletmelerden gelen teklifleri inceleyin; kupon uygulayın, kabul edin
+            veya iptal edin.
           </p>
         </div>
         <button
@@ -189,68 +204,21 @@ export function CustomerOfferRequestsPanel({
           {offers.map((o) => {
             const actionId = getCustomerOfferActionId(o);
             const busy = actionId != null && actionOfferId === actionId;
-            const showActions = canCustomerRespondToOffer(o);
-            const showCancel = canCustomerCancelOffer(o);
-            const cancelled = isCancelledOfferStatus(o.status);
             const showDemoConfirm =
-              !cancelled &&
               demoConfirmationId != null &&
               (o.id === demoConfirmationId || actionId === demoConfirmationId);
 
             return (
-              <li key={String(o.id ?? actionId)}>
-                <OfferRequestCard offer={o} variant="customer" />
-                {cancelled ? (
-                  <p className="mt-2 text-xs text-zinc-500">
-                    Bu teklif iptal edildi; checklist ve bütçeye dahil değildir.
-                  </p>
-                ) : null}
-                {showDemoConfirm ? (
-                  <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
-                    <p className="font-medium">Demo rezervasyon onayı</p>
-                    <p className="mt-1 text-emerald-200/90">
-                      Teklif kabul edildi. Rezervasyon kaydınız oluşturuldu.
-                      Ödeme altyapısı yakında aktif edilecektir.
-                    </p>
-                  </div>
-                ) : null}
-                {showActions && actionId != null ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      className={`${btnPrimary} !px-4 !py-2 text-xs`}
-                      disabled={busy}
-                      onClick={() => handleAccept(o)}
-                    >
-                      {busy ? "İşleniyor…" : "Teklifi Kabul Et"}
-                    </button>
-                    <button
-                      type="button"
-                      className={btnDanger}
-                      disabled={busy}
-                      onClick={() => handleReject(o)}
-                    >
-                      Teklifi Reddet
-                    </button>
-                  </div>
-                ) : null}
-                {showCancel && !showActions ? (
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      className={btnDanger}
-                      disabled={busy}
-                      onClick={() => void handleCancel(o)}
-                    >
-                      {busy
-                        ? "İptal ediliyor…"
-                        : isAcceptedOfferStatus(o.status)
-                          ? "Kabulü İptal Et"
-                          : "Talebi İptal Et"}
-                    </button>
-                  </div>
-                ) : null}
-              </li>
+              <CustomerOfferListItem
+                key={String(o.id ?? actionId)}
+                offer={o}
+                busy={busy}
+                showDemoConfirm={showDemoConfirm}
+                onAccept={(offer, coupon) => void handleAccept(offer, coupon)}
+                onReject={(offer) => void handleReject(offer)}
+                onCancel={(offer) => void handleCancel(offer)}
+                onApplyCoupon={handleApplyCoupon}
+              />
             );
           })}
         </ul>

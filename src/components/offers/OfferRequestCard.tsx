@@ -9,12 +9,13 @@ import {
   isInvitationCategory,
 } from "@/src/lib/invitationDesign";
 import { isMusicCategory } from "@/src/lib/playlist";
-import { resolveOfferPricing } from "@/src/lib/offerPricing";
 import {
   formatOfferDate,
   offerResponseDescription,
   offerResponsePrice,
+  offerPricingInput,
 } from "@/src/lib/offerRequest";
+import { resolveOfferPricing } from "@/src/lib/offerPricing";
 
 type OfferRequestCardProps = {
   offer: OfferRequest;
@@ -29,10 +30,7 @@ export function OfferRequestCard({
   onUploadRevision,
   uploadingRevision,
 }: OfferRequestCardProps) {
-  const pricing = resolveOfferPricing({
-    ...offer,
-    price: offer.price ?? offerResponsePrice(offer),
-  });
+  const pricing = resolveOfferPricing(offerPricingInput(offer));
   const hasPricedOffer =
     pricing.finalPrice != null ||
     pricing.originalPrice != null ||

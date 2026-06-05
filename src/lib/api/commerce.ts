@@ -289,6 +289,7 @@ export type CouponValidation = {
   code?: string;
   discountType?: CouponDiscountType;
   value?: number;
+  originalPrice?: number;
   discountAmount?: number;
   finalPrice?: number;
   message?: string;
@@ -334,8 +335,11 @@ function normalizeCouponValidation(raw: unknown): CouponValidation {
     code: pickStr(data, "code", "Code") ?? pickStr(o, "code", "Code"),
     discountType: pickStr(data, "discountType", "DiscountType"),
     value: pickNum(data, "value", "Value", "discountValue"),
+    originalPrice: pickNum(data, "originalPrice", "OriginalPrice"),
     discountAmount: pickNum(data, "discountAmount", "DiscountAmount"),
-    finalPrice: pickNum(data, "finalPrice", "FinalPrice"),
+    finalPrice:
+      pickNum(data, "finalPrice", "FinalPrice") ??
+      pickNum(data, "discountedPrice", "DiscountedPrice"),
     message: pickStr(data, "message", "Message") ?? pickStr(o, "message", "Message"),
   };
 }

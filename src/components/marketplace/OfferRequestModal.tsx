@@ -9,6 +9,7 @@ import { attachInvitationDesignToEventRequest } from "@/src/lib/api/invitationDe
 import { attachPlaylistToEventRequest } from "@/src/lib/api/eventPlaylist";
 import { fetchMyEventPlans } from "@/src/lib/api/eventPlans";
 import { findActiveAgreementForCategory } from "@/src/lib/customerAgreementsUi";
+import { saveOfferRequestCoupon } from "@/src/lib/offerCouponStorage";
 import { ApiError, formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventPlan, MarketplaceItem } from "@/src/lib/api/types";
 import { VENDOR_CATEGORY_NAMES } from "@/src/lib/api/types";
@@ -79,6 +80,7 @@ export function OfferRequestModal({
   const [validatedCoupon, setValidatedCoupon] = useState<CouponValidation | null>(
     null,
   );
+  const [couponDraftUnapplied, setCouponDraftUnapplied] = useState(false);
   const [planAgreementsLoading, setPlanAgreementsLoading] = useState(false);
   const [blockingAgreement, setBlockingAgreement] = useState<{
     vendorName?: string;
@@ -117,6 +119,7 @@ export function OfferRequestModal({
     setInvitationDesignId("");
     setAttachPlaylist(false);
     setValidatedCoupon(null);
+    setCouponDraftUnapplied(false);
     setBlockingAgreement(null);
     lastAutofillPlanId.current = null;
   }, []);
@@ -207,6 +210,15 @@ export function OfferRequestModal({
       );
       return;
     }
+    if (couponDraftUnapplied) {
+      setError(
+        "Kupon kodunu «Uygula» ile doğrulayın veya kupon alanını boş bırakın.",
+      );
+      return;
+    }
+    const couponCode = validatedCoupon?.valid
+      ? validatedCoupon.code?.trim().toUpperCase()
+      : undefined;
     setLoading(true);
     setError(null);
     try {
@@ -226,9 +238,12 @@ export function OfferRequestModal({
         budgetMin: hasPlans && budgetMin > 0 ? budgetMin : undefined,
         budgetMax: hasPlans && budgetMax > 0 ? budgetMax : undefined,
         note: noteText || undefined,
-        couponCode: validatedCoupon?.valid ? validatedCoupon.code : undefined,
+        couponCode,
       });
       const requestId = created.eventRequestId ?? created.id;
+      if (requestId != null && couponCode) {
+        saveOfferRequestCoupon(requestId, couponCode);
+      }
       if (requestId != null && isInvitationDesignSelected(invitationDesignId)) {
         try {
           await attachInvitationDesignToEventRequest(
@@ -438,7 +453,11 @@ export function OfferRequestModal({
           <CouponCodeField
             serviceId={serviceId}
             basePrice={item?.price ?? item?.basePrice}
+            applyLabel="Uygula"
             onValidated={setValidatedCoupon}
+            onDraftChange={(_draft, unapplied) =>
+              setCouponDraftUnapplied(unapplied)
+            }
           />
         ) : null}
         <PaymentComingSoonNotice compact />

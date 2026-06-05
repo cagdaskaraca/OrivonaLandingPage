@@ -43,6 +43,7 @@ export {
   sendVendorOffer,
   rejectVendorOfferRequest,
   acceptCustomerOffer,
+  applyCustomerOfferCoupon,
   rejectCustomerOffer,
   cancelCustomerOffer,
   cancelCustomerOfferRequest,

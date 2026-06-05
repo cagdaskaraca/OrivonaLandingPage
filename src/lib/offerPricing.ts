@@ -130,13 +130,16 @@ export function formatOfferMoney(amount?: number): string {
 
 export function formatDiscountLine(pricing: ResolvedOfferPricing): string | null {
   if (!pricing.hasDiscount) return null;
-  const parts: string[] = [];
+  const detail: string[] = [];
   if (pricing.discountPercent != null && pricing.discountPercent > 0) {
-    parts.push(`%${pricing.discountPercent} indirim`);
+    detail.push(`%${pricing.discountPercent}`);
   }
   if (pricing.discountAmount != null && pricing.discountAmount > 0) {
-    parts.push(`−${formatOfferMoney(pricing.discountAmount)}`);
+    detail.push(`(${formatOfferMoney(pricing.discountAmount)})`);
   }
-  if (pricing.couponCode) parts.push(pricing.couponCode);
-  return parts.length > 0 ? parts.join(" · ") : null;
+  const core =
+    detail.length > 0
+      ? `Kupon indirimi ${detail.join(" ")}`
+      : "Kupon indirimi";
+  return pricing.couponCode ? `${core} · ${pricing.couponCode}` : core;
 }

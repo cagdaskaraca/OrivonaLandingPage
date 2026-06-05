@@ -3,6 +3,7 @@ import {
   offerPriceHasDiscount,
   resolveOfferDisplayPrice,
   resolveOfferPricing,
+  type OfferPricingFields,
 } from "@/src/lib/offerPricing";
 import {
   getStatusBadgeClassName,
@@ -105,8 +106,24 @@ export function offerResponsePrice(offer: OfferRequest): number | undefined {
   );
 }
 
-function offerPricingInput(offer: OfferRequest) {
-  return { ...offer, price: offer.price ?? offerResponsePrice(offer) };
+export function offerPricingInput(offer: OfferRequest): OfferPricingFields {
+  const hasDiscountData =
+    offer.hasDiscount === true ||
+    offer.finalPrice != null ||
+    offer.displayPrice != null ||
+    Boolean(offer.couponCode);
+  return {
+    originalPrice: offer.originalPrice,
+    finalPrice: offer.finalPrice ?? offer.discountedPrice,
+    displayPrice: offer.displayPrice,
+    hasDiscount: offer.hasDiscount,
+    discountAmount: offer.discountAmount,
+    discountPercent: offer.discountPercent,
+    couponCode: offer.couponCode ?? offer.appliedCouponCode,
+    price: hasDiscountData
+      ? undefined
+      : (offer.price ?? offerResponsePrice(offer)),
+  };
 }
 
 export function offerOriginalPrice(offer: OfferRequest): number | undefined {

@@ -94,7 +94,9 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
     discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
     discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
-    couponCode: recordStr(o, "couponCode", "CouponCode"),
+    couponCode:
+      recordStr(o, "couponCode", "CouponCode") ??
+      recordStr(o, "appliedCouponCode", "AppliedCouponCode"),
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
       recordStr(o, "agreedAt", "AgreedAt"),
@@ -129,7 +131,9 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
     hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
     discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
     discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
-    couponCode: recordStr(o, "couponCode", "CouponCode"),
+    couponCode:
+      recordStr(o, "couponCode", "CouponCode") ??
+      recordStr(o, "appliedCouponCode", "AppliedCouponCode"),
     agreementDate: recordStr(o, "agreementDate", "AgreementDate"),
     note: recordStr(o, "note", "Note"),
     amount: recordNum(o, "amount", "Amount"),

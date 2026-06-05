@@ -246,6 +246,7 @@ export type OfferRequest = {
   discountAmount?: number;
   discountPercent?: number;
   couponCode?: string;
+  appliedCouponCode?: string;
   invitationDesign?: InvitationDesign;
   invitationRevisions?: InvitationRevision[];
   playlist?: PlaylistItem[];
@@ -277,7 +278,12 @@ export type SendVendorOfferPayload = {
 export type AcceptCustomerOfferPayload = {
   paymentMode: string;
   note: string;
+  eventPlanId?: string | number | null;
   couponCode?: string;
+};
+
+export type ApplyCustomerOfferCouponPayload = {
+  couponCode: string;
 };
 
 export type RejectCustomerOfferPayload = {

@@ -30,6 +30,7 @@ import type {
   AiRecommendationItem,
   ApiEnvelope,
   AcceptCustomerOfferPayload,
+  ApplyCustomerOfferCouponPayload,
   CancelCustomerOfferPayload,
   AppNotification,
   ChatMessage,
@@ -330,7 +331,11 @@ function normalizeOffer(raw: unknown): OfferRequest {
       (nested ? recordNum(nested, "discountPercent", "DiscountPercent") : undefined),
     couponCode:
       recordStr(o, "couponCode", "CouponCode") ??
-      (nested ? recordStr(nested, "couponCode", "CouponCode") : undefined),
+      recordStr(o, "appliedCouponCode", "AppliedCouponCode") ??
+      (nested
+        ? recordStr(nested, "couponCode", "CouponCode") ??
+          recordStr(nested, "appliedCouponCode", "AppliedCouponCode")
+        : undefined),
     ...invitation,
     ...playlistFields,
   };
@@ -347,6 +352,7 @@ function toEventDateIso(value: string): string | null {
 export async function createOfferRequest(
   payload: CreateOfferRequestPayload,
 ): Promise<OfferRequest> {
+  const couponCode = payload.couponCode?.trim().toUpperCase();
   const body = await apiPostRaw<ApiEnvelope>("/offer-requests", {
     vendorServiceId: payload.vendorServiceId,
     message: payload.message,
@@ -359,7 +365,14 @@ export async function createOfferRequest(
     budgetMin: payload.budgetMin ?? null,
     budgetMax: payload.budgetMax ?? null,
     note: payload.note ?? payload.message ?? null,
-    couponCode: payload.couponCode?.trim().toUpperCase() || null,
+    ...(couponCode
+      ? {
+          couponCode,
+          coupon: couponCode,
+          promoCode: couponCode,
+          discountCode: couponCode,
+        }
+      : {}),
   });
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);
@@ -422,10 +435,32 @@ export async function acceptCustomerOffer(
     note: "Demo ödeme ile kabul edildi",
   },
 ): Promise<OfferRequest> {
+  const couponCode = payload.couponCode?.trim().toUpperCase();
   const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/accept`, {
     paymentMode: payload.paymentMode,
     note: payload.note,
-    couponCode: payload.couponCode?.trim().toUpperCase() || null,
+    eventPlanId: payload.eventPlanId ?? null,
+    ...(couponCode
+      ? {
+          couponCode,
+          coupon: couponCode,
+          promoCode: couponCode,
+        }
+      : {}),
+  });
+  assertSuccess(body);
+  return normalizeOffer(body.data);
+}
+
+export async function applyCustomerOfferCoupon(
+  offerId: string | number,
+  payload: ApplyCustomerOfferCouponPayload,
+): Promise<OfferRequest> {
+  const couponCode = payload.couponCode.trim().toUpperCase();
+  const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/apply-coupon`, {
+    couponCode,
+    coupon: couponCode,
+    promoCode: couponCode,
   });
   assertSuccess(body);
   return normalizeOffer(body.data);
