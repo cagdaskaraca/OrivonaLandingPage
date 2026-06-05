@@ -13,7 +13,16 @@ import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { AdminPaginatedList } from "@/src/components/admin/AdminPaginatedList";
 import { EmptyState } from "@/src/components/ui/EmptyState";
 import { OrivonaDatePicker } from "@/src/components/ui/OrivonaDatePicker";
+import { toDateKey } from "@/src/lib/availability";
 import { btnPrimary, btnSecondary, inputClass, selectClass } from "@/src/lib/ui";
+
+function dayAfterIso(iso: string): string | undefined {
+  const key = toDateKey(iso);
+  if (!key) return undefined;
+  const d = new Date(`${key}T12:00:00`);
+  d.setDate(d.getDate() + 1);
+  return toDateKey(d.toISOString()) ?? undefined;
+}
 
 function emptyCampaign(): Omit<Campaign, "id"> {
   return {
@@ -56,6 +65,17 @@ export function AdminCampaignsSection() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const start = form.startDate?.trim();
+    const end = form.endDate?.trim();
+    if (!start || !end) {
+      setError("Başlangıç ve bitiş tarihi zorunludur.");
+      return;
+    }
+    if (end <= start) {
+      setError("Bitiş tarihi, başlangıç tarihinden sonra olmalıdır.");
+      return;
+    }
+    setError(null);
     setSaving(true);
     try {
       if (editingId != null) await updateAdminCampaign(editingId, form);
@@ -155,14 +175,27 @@ export function AdminCampaignsSection() {
           </label>
           <OrivonaDatePicker
             label="Başlangıç"
+            required
             value={form.startDate ?? ""}
-            onChange={(startDate) => setForm((f) => ({ ...f, startDate }))}
+            onChange={(startDate) =>
+              setForm((f) => ({
+                ...f,
+                startDate,
+                endDate:
+                  f.endDate && startDate && f.endDate <= startDate
+                    ? ""
+                    : f.endDate,
+              }))
+            }
           />
           <OrivonaDatePicker
             label="Bitiş"
+            required
             value={form.endDate ?? ""}
             onChange={(endDate) => setForm((f) => ({ ...f, endDate }))}
-            min={form.startDate || undefined}
+            min={
+              form.startDate ? dayAfterIso(form.startDate) : undefined
+            }
           />
           <label className="block text-sm">
             <span className="mb-1 text-xs text-zinc-500">CTA metni</span>

@@ -62,7 +62,7 @@ export function AdminPaginatedList<T>({
       : "space-y-2";
 
   return (
-    <div className={className}>
+    <div className={className ? `space-y-3 ${className}` : "space-y-3"}>
       <AdminPaginationBar
         page={page}
         totalPages={totalPages}

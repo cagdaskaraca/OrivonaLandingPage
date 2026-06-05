@@ -465,8 +465,8 @@ function normalizeCampaign(raw: unknown): Campaign | null {
       pickStr(o, "bannerText", "BannerText", "headline") ?? title,
     targetType: pickStr(o, "targetType", "TargetType", "target"),
     targetId: pickId(o, "targetId", "TargetId", "categoryId", "vendorId"),
-    startDate: pickStr(o, "startDate", "StartDate"),
-    endDate: pickStr(o, "endDate", "EndDate"),
+    startDate: pickStr(o, "startDate", "StartDate", "startsAt", "StartsAt"),
+    endDate: pickStr(o, "endDate", "EndDate", "endsAt", "EndsAt"),
     isActive: pickBool(o, "isActive", "IsActive") ?? true,
     ctaLabel: pickStr(o, "ctaLabel", "CtaLabel"),
     ctaHref: pickStr(o, "ctaHref", "CtaHref", "linkUrl"),
@@ -493,10 +493,34 @@ export async function fetchAdminCampaigns(): Promise<Campaign[]> {
   );
 }
 
+function buildCampaignRequestBody(
+  payload: Partial<Omit<Campaign, "id">>,
+): Record<string, unknown> {
+  const startsAt = toApiDateOrNull(payload.startDate);
+  const endsAt = toApiDateOrNull(payload.endDate);
+  return {
+    title: payload.title?.trim() ?? "",
+    description: payload.description?.trim() || null,
+    bannerText: payload.bannerText?.trim() || payload.title?.trim() || null,
+    targetType: payload.targetType ?? "All",
+    targetId: payload.targetId ?? null,
+    startsAt,
+    endsAt,
+    startDate: startsAt,
+    endDate: endsAt,
+    isActive: payload.isActive ?? true,
+    ctaLabel: payload.ctaLabel?.trim() || null,
+    ctaHref: payload.ctaHref?.trim() || null,
+  };
+}
+
 export async function createAdminCampaign(
   payload: Omit<Campaign, "id">,
 ): Promise<Campaign> {
-  const raw = await apiPost<unknown>("/admin/campaigns", payload);
+  const raw = await apiPost<unknown>(
+    "/admin/campaigns",
+    buildCampaignRequestBody(payload),
+  );
   const normalized = normalizeCampaign(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kampanya yanıtı işlenemedi.");
   return normalized;
@@ -506,7 +530,10 @@ export async function updateAdminCampaign(
   id: string | number,
   payload: Partial<Campaign>,
 ): Promise<Campaign> {
-  const raw = await apiPutRaw<unknown>(`/admin/campaigns/${id}`, payload);
+  const raw = await apiPutRaw<unknown>(
+    `/admin/campaigns/${id}`,
+    buildCampaignRequestBody(payload),
+  );
   const normalized = normalizeCampaign(toRecord(raw).data ?? raw);
   if (!normalized) throw new Error("Kampanya yanıtı işlenemedi.");
   return normalized;
