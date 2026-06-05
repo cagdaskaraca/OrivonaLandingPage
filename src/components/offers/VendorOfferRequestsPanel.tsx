@@ -17,6 +17,7 @@ import { ApiError, formatApiErrorMessage } from "@/src/lib/api/client";
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
   canVendorActOnRequest,
+  isCancelledOfferStatus,
   isPendingVendorResponse,
 } from "@/src/lib/offerRequest";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
@@ -111,6 +112,7 @@ export function VendorOfferRequestsPanel() {
         <ul className="mt-2 space-y-4">
           {offers.map((o) => {
             const canAct = canVendorActOnRequest(o.status) && o.id != null;
+            const cancelled = isCancelledOfferStatus(o.status);
             const busy = rejectingId === o.id;
 
             const requestId = o.eventRequestId ?? o.id;
@@ -119,7 +121,14 @@ export function VendorOfferRequestsPanel() {
               isInvitationCategory(o.serviceTitle);
 
             return (
-              <li key={String(o.id)}>
+              <li
+                key={String(o.id)}
+                className={
+                  cancelled
+                    ? "rounded-xl border border-zinc-500/25 bg-zinc-500/[0.04] p-1 opacity-90"
+                    : undefined
+                }
+              >
                 <OfferRequestCard
                   offer={o}
                   variant="vendor"
@@ -129,6 +138,12 @@ export function VendorOfferRequestsPanel() {
                       : undefined
                   }
                 />
+                {cancelled ? (
+                  <p className="mt-2 px-1 text-xs text-zinc-500">
+                    Müşteri bu teklifi iptal etti. Anlaşma ve rezervasyon geçersiz
+                    sayılır.
+                  </p>
+                ) : null}
                 {canAct ? (
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button

@@ -36,6 +36,7 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Reddedildi",
   cancelled: "İptal edildi",
   canceled: "İptal edildi",
+  cancelledbycustomer: "İptal edildi",
   completed: "Tamamlandı",
   expired: "Süresi doldu",
 
@@ -91,6 +92,7 @@ const STATUS_VARIANTS: Record<string, StatusBadgeVariant> = {
   rejected: "danger",
   cancelled: "muted",
   canceled: "muted",
+  cancelledbycustomer: "muted",
   draft: "muted",
   expired: "muted",
   submitted: "info",
@@ -107,8 +109,15 @@ const CONTEXT_LABEL_OVERRIDES: Record<
     approved: "Müşteriye gönderildi",
     pendingvendorresponse: "Yanıt bekleniyor",
     offersent: "Teklif gönderildi",
+    cancelledbycustomer: "Müşteri iptal etti",
+    cancelled: "Müşteri iptal etti",
+    canceled: "Müşteri iptal etti",
   },
-  customer: {},
+  customer: {
+    cancelledbycustomer: "İptal ettiniz",
+    cancelled: "İptal ettiniz",
+    canceled: "İptal ettiniz",
+  },
   default: {},
 };
 

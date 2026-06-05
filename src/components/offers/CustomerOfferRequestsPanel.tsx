@@ -9,12 +9,17 @@ import {
   fetchMyOfferRequests,
   rejectCustomerOffer,
 } from "@/src/lib/api";
+import { cancelCustomerOfferFlow } from "@/src/lib/cancelCustomerOffer";
 import { ApiError, formatApiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { EMPTY_STATE_PRESETS } from "@/src/lib/helpContent";
 import type { OfferRequest } from "@/src/lib/api/types";
 import {
+  canCustomerCancelOffer,
   canCustomerRespondToOffer,
+  dedupeCustomerOfferList,
   getCustomerOfferActionId,
+  isAcceptedOfferStatus,
+  isCancelledOfferStatus,
 } from "@/src/lib/offerRequest";
 import { btnPrimary, btnSecondary, glassCard, skeletonClass } from "@/src/lib/ui";
 
@@ -23,14 +28,19 @@ const btnDanger =
 
 type CustomerOfferRequestsPanelProps = {
   embedded?: boolean;
+  /** Kabul veya iptal sonrası checklist / bütçe yenilemesi */
+  onOfferChange?: () => void;
+  /** @deprecated use onOfferChange */
   onAfterAccept?: () => void;
 };
 
 export function CustomerOfferRequestsPanel({
   embedded = false,
+  onOfferChange,
   onAfterAccept,
 }: CustomerOfferRequestsPanelProps) {
   const toast = useToast();
+  const notifyOfferChange = onOfferChange ?? onAfterAccept;
   const [offers, setOffers] = useState<OfferRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,14 +54,7 @@ export function CustomerOfferRequestsPanel({
     setError(null);
     try {
       const list = await fetchMyOfferRequests();
-      list.forEach((item) => {
-        console.log("Customer offer item", item);
-        console.log(
-          "Using offerId for accept/reject",
-          getCustomerOfferActionId(item),
-        );
-      });
-      setOffers(list);
+      setOffers(dedupeCustomerOfferList(list));
     } catch (e) {
       logApiError("My offer requests", e);
       setOffers([]);
@@ -73,14 +76,49 @@ export function CustomerOfferRequestsPanel({
     }
     setActionOfferId(offerId);
     try {
-      await acceptCustomerOffer(offerId);
+      await acceptCustomerOffer(offerId, {
+        paymentMode: "Demo",
+        note: "Demo ödeme ile kabul edildi",
+        couponCode: offer.couponCode,
+      });
       toast.success("Teklif kabul edildi. Demo rezervasyon oluşturuldu.");
       setDemoConfirmationId(offer.id ?? offerId);
       await load();
-      onAfterAccept?.();
+      notifyOfferChange?.();
     } catch (e) {
       if (e instanceof ApiError) console.log("Accept offer failed", e.body);
       toast.error(formatApiErrorMessage(e, "Teklif kabul edilemedi."));
+    } finally {
+      setActionOfferId(null);
+    }
+  }
+
+  async function handleCancel(offer: OfferRequest) {
+    if (!canCustomerCancelOffer(offer)) {
+      toast.error("Bu teklif iptal edilemez.");
+      return;
+    }
+    const accepted = isAcceptedOfferStatus(offer.status);
+    const message = accepted
+      ? "Kabul ettiğiniz bu teklifi iptal etmek istiyor musunuz? Checklist ve bütçeden kaldırılır."
+      : "Bu teklif talebini iptal etmek istiyor musunuz?";
+    if (!window.confirm(message)) return;
+
+    const target = getCustomerOfferActionId(offer) ?? offer.id;
+    setActionOfferId(target ?? null);
+    try {
+      await cancelCustomerOfferFlow(offer);
+      toast.success(
+        accepted
+          ? "Teklif iptal edildi. Checklist ve bütçe güncellenecek."
+          : "Teklif talebi iptal edildi.",
+      );
+      setDemoConfirmationId(null);
+      await load();
+      notifyOfferChange?.();
+    } catch (e) {
+      if (e instanceof ApiError) console.log("Cancel offer failed", e.body);
+      toast.error(formatApiErrorMessage(e, "Teklif iptal edilemedi."));
     } finally {
       setActionOfferId(null);
     }
@@ -112,7 +150,7 @@ export function CustomerOfferRequestsPanel({
         <div>
           <h2 className="text-lg font-semibold text-white">Tekliflerim</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            İşletmelerden gelen fiyatlı teklifleri inceleyin, kabul edin veya reddedin.
+            İşletmelerden gelen teklifleri inceleyin; kabul, red veya iptal edin.
           </p>
         </div>
         <button
@@ -152,13 +190,21 @@ export function CustomerOfferRequestsPanel({
             const actionId = getCustomerOfferActionId(o);
             const busy = actionId != null && actionOfferId === actionId;
             const showActions = canCustomerRespondToOffer(o);
+            const showCancel = canCustomerCancelOffer(o);
+            const cancelled = isCancelledOfferStatus(o.status);
             const showDemoConfirm =
+              !cancelled &&
               demoConfirmationId != null &&
               (o.id === demoConfirmationId || actionId === demoConfirmationId);
 
             return (
               <li key={String(o.id ?? actionId)}>
                 <OfferRequestCard offer={o} variant="customer" />
+                {cancelled ? (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Bu teklif iptal edildi; checklist ve bütçeye dahil değildir.
+                  </p>
+                ) : null}
                 {showDemoConfirm ? (
                   <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
                     <p className="font-medium">Demo rezervasyon onayı</p>
@@ -185,6 +231,22 @@ export function CustomerOfferRequestsPanel({
                       onClick={() => handleReject(o)}
                     >
                       Teklifi Reddet
+                    </button>
+                  </div>
+                ) : null}
+                {showCancel && !showActions ? (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      className={btnDanger}
+                      disabled={busy}
+                      onClick={() => void handleCancel(o)}
+                    >
+                      {busy
+                        ? "İptal ediliyor…"
+                        : isAcceptedOfferStatus(o.status)
+                          ? "Kabulü İptal Et"
+                          : "Talebi İptal Et"}
                     </button>
                   </div>
                 ) : null}

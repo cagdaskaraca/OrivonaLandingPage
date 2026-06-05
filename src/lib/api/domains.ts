@@ -30,6 +30,7 @@ import type {
   AiRecommendationItem,
   ApiEnvelope,
   AcceptCustomerOfferPayload,
+  CancelCustomerOfferPayload,
   AppNotification,
   ChatMessage,
   Conversation,
@@ -291,6 +292,16 @@ function normalizeOffer(raw: unknown): OfferRequest {
     description: vendorOfferDescription,
     validUntil,
     createdAt: recordStr(o, "createdAt", "CreatedAt"),
+    originalPrice:
+      recordNum(o, "originalPrice", "OriginalPrice") ?? vendorOfferPrice,
+    finalPrice:
+      recordNum(o, "finalPrice", "FinalPrice") ??
+      recordNum(o, "discountedPrice", "DiscountedPrice"),
+    discountedPrice:
+      recordNum(o, "discountedPrice", "DiscountedPrice") ??
+      recordNum(o, "finalPrice", "FinalPrice"),
+    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
+    couponCode: recordStr(o, "couponCode", "CouponCode"),
     ...invitation,
     ...playlistFields,
   };
@@ -319,6 +330,7 @@ export async function createOfferRequest(
     budgetMin: payload.budgetMin ?? null,
     budgetMax: payload.budgetMax ?? null,
     note: payload.note ?? payload.message ?? null,
+    couponCode: payload.couponCode?.trim().toUpperCase() || null,
   });
   assertSuccess(body);
   return normalizeOffer(body.data ?? payload);
@@ -384,6 +396,7 @@ export async function acceptCustomerOffer(
   const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/accept`, {
     paymentMode: payload.paymentMode,
     note: payload.note,
+    couponCode: payload.couponCode?.trim().toUpperCase() || null,
   });
   assertSuccess(body);
   return normalizeOffer(body.data);
@@ -398,6 +411,31 @@ export async function rejectCustomerOffer(
   const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/reject`, {
     reason: payload.reason,
   });
+  assertSuccess(body);
+  return normalizeOffer(body.data);
+}
+
+export async function cancelCustomerOffer(
+  offerId: string | number,
+  payload: CancelCustomerOfferPayload = {},
+): Promise<OfferRequest> {
+  const body = await apiPostRaw<ApiEnvelope>(`/offers/${offerId}/cancel`, {
+    reason: payload.reason?.trim() || "Müşteri tarafından iptal edildi",
+  });
+  assertSuccess(body);
+  return normalizeOffer(body.data);
+}
+
+export async function cancelCustomerOfferRequest(
+  requestId: string | number,
+  payload: CancelCustomerOfferPayload = {},
+): Promise<OfferRequest> {
+  const body = await apiPostRaw<ApiEnvelope>(
+    `/offer-requests/${requestId}/cancel`,
+    {
+      reason: payload.reason?.trim() || "Müşteri tarafından iptal edildi",
+    },
+  );
   assertSuccess(body);
   return normalizeOffer(body.data);
 }

@@ -238,6 +238,11 @@ export type OfferRequest = {
   description?: string;
   validUntil?: string;
   createdAt?: string;
+  originalPrice?: number;
+  finalPrice?: number;
+  discountedPrice?: number;
+  discountAmount?: number;
+  couponCode?: string;
   invitationDesign?: InvitationDesign;
   invitationRevisions?: InvitationRevision[];
   playlist?: PlaylistItem[];
@@ -257,6 +262,7 @@ export type CreateOfferRequestPayload = {
   budgetMax?: number;
   /** Backend field name for request note. */
   note?: string;
+  couponCode?: string;
 };
 
 export type SendVendorOfferPayload = {
@@ -268,10 +274,15 @@ export type SendVendorOfferPayload = {
 export type AcceptCustomerOfferPayload = {
   paymentMode: string;
   note: string;
+  couponCode?: string;
 };
 
 export type RejectCustomerOfferPayload = {
   reason: string;
+};
+
+export type CancelCustomerOfferPayload = {
+  reason?: string;
 };
 
 /** @deprecated Use sendVendorOffer */
@@ -963,6 +974,10 @@ export type CustomerAgreement = {
   vendorId?: string | number | null;
   vendorName?: string;
   agreedPrice?: number;
+  originalPrice?: number;
+  finalPrice?: number;
+  discountAmount?: number;
+  couponCode?: string;
   agreementDate?: string;
   note?: string;
   status?: string;

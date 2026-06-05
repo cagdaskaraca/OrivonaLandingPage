@@ -10,8 +10,10 @@ import {
 import { isMusicCategory } from "@/src/lib/playlist";
 import {
   formatOfferDate,
+  offerFinalPrice,
+  offerHasDiscount,
+  offerOriginalPrice,
   offerResponseDescription,
-  offerResponsePrice,
 } from "@/src/lib/offerRequest";
 
 type OfferRequestCardProps = {
@@ -27,7 +29,9 @@ export function OfferRequestCard({
   onUploadRevision,
   uploadingRevision,
 }: OfferRequestCardProps) {
-  const price = offerResponsePrice(offer);
+  const originalPrice = offerOriginalPrice(offer);
+  const finalPrice = offerFinalPrice(offer);
+  const hasDiscount = offerHasDiscount(offer);
   const responseText = offerResponseDescription(offer);
   const serviceHref =
     offer.vendorServiceId != null
@@ -102,15 +106,28 @@ export function OfferRequestCard({
         ) : null}
       </dl>
 
-      {price != null || responseText || offer.validUntil ? (
+      {finalPrice != null || responseText || offer.validUntil ? (
         <div className="mt-4 rounded-lg border border-violet-400/20 bg-violet-500/10 px-3 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
             İşletme teklifi
           </p>
-          {price != null ? (
-            <p className="mt-2 text-base font-semibold text-white">
-              {price.toLocaleString("tr-TR")} ₺
-            </p>
+          {finalPrice != null ? (
+            <div className="mt-2">
+              {hasDiscount && originalPrice != null ? (
+                <p className="text-sm text-zinc-500 line-through">
+                  {originalPrice.toLocaleString("tr-TR")} ₺
+                </p>
+              ) : null}
+              <p className="text-base font-semibold text-white">
+                {finalPrice.toLocaleString("tr-TR")} ₺
+              </p>
+              {hasDiscount && offer.discountAmount != null ? (
+                <p className="mt-1 text-xs text-emerald-300/90">
+                  İndirim: {offer.discountAmount.toLocaleString("tr-TR")} ₺
+                  {offer.couponCode ? ` · Kupon: ${offer.couponCode}` : ""}
+                </p>
+              ) : null}
+            </div>
           ) : null}
           {responseText ? (
             <p className="mt-1 text-zinc-300">{responseText}</p>

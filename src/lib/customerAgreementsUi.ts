@@ -1,8 +1,10 @@
 import type {
   CustomerAgreement,
   EventPlanBudgetLine,
+  EventPlanBudgetSummary,
   EventTask,
 } from "@/src/lib/api/types";
+import { normalizeStatusKey } from "@/src/lib/statusLabels";
 
 const tryCurrency = new Intl.NumberFormat("tr-TR", {
   style: "currency",
@@ -62,12 +64,164 @@ function categoryKeysForAgreement(agreement: CustomerAgreement): string[] {
   return [...keys];
 }
 
-function categoriesMatch(taskKey: string, agreementKey: string): boolean {
+export function categoriesMatch(taskKey: string, agreementKey: string): boolean {
   if (taskKey === agreementKey) return true;
   if (taskKey.length >= 3 && agreementKey.length >= 3) {
     return taskKey.includes(agreementKey) || agreementKey.includes(taskKey);
   }
   return false;
+}
+
+const ACTIVE_AGREEMENT_STATUSES = new Set([
+  "acceptedbycustomer",
+  "customeraccepted",
+  "accepted",
+  "active",
+  "confirmed",
+  "completed",
+]);
+
+const INACTIVE_AGREEMENT_STATUSES = new Set([
+  "cancelled",
+  "canceled",
+  "cancelledbycustomer",
+  "superseded",
+  "replaced",
+  "rejected",
+  "rejectedbycustomer",
+  "rejectedbyvendor",
+  "expired",
+]);
+
+export function isActiveAgreement(agreement: CustomerAgreement): boolean {
+  const status = normalizeStatusKey(agreement.status);
+  if (!status) return true;
+  if (INACTIVE_AGREEMENT_STATUSES.has(status)) return false;
+  return ACTIVE_AGREEMENT_STATUSES.has(status);
+}
+
+function agreementDedupeKey(agreement: CustomerAgreement): string {
+  const category =
+    normalizeCategoryKey(
+      agreement.category ?? agreement.categoryName ?? agreement.serviceType,
+    ) || "genel";
+  const vendor = normalizeCategoryKey(agreement.vendorName) || "isletme";
+  return `${category}::${vendor}`;
+}
+
+function budgetLineDedupeKey(line: EventPlanBudgetLine): string {
+  const category =
+    normalizeCategoryKey(line.category ?? line.categoryName ?? line.serviceType) ||
+    "genel";
+  const vendor = normalizeCategoryKey(line.vendorName) || "isletme";
+  return `${category}::${vendor}`;
+}
+
+function agreementRecency(agreement: CustomerAgreement): number {
+  const date = agreement.agreementDate?.trim();
+  if (date) {
+    const ts = Date.parse(date);
+    if (!Number.isNaN(ts)) return ts;
+  }
+  const id = agreement.id;
+  if (typeof id === "number") return id;
+  if (typeof id === "string" && /^\d+$/.test(id)) return Number(id);
+  return 0;
+}
+
+function budgetLineRecency(line: EventPlanBudgetLine): number {
+  const date = line.agreementDate?.trim();
+  if (date) {
+    const ts = Date.parse(date);
+    if (!Number.isNaN(ts)) return ts;
+  }
+  const id = line.id;
+  if (typeof id === "number") return id;
+  if (typeof id === "string" && /^\d+$/.test(id)) return Number(id);
+  return 0;
+}
+
+/** Aynı kategori+işletme için yalnızca en güncel aktif anlaşmayı tutar. */
+export function dedupeActiveAgreementsByCategory(
+  agreements: CustomerAgreement[],
+): CustomerAgreement[] {
+  const latest = new Map<string, CustomerAgreement>();
+  for (const agreement of agreements) {
+    if (!isActiveAgreement(agreement)) continue;
+    const key = agreementDedupeKey(agreement);
+    const existing = latest.get(key);
+    if (
+      !existing ||
+      agreementRecency(agreement) >= agreementRecency(existing)
+    ) {
+      latest.set(key, agreement);
+    }
+  }
+  return [...latest.values()].sort(
+    (a, b) => agreementRecency(b) - agreementRecency(a),
+  );
+}
+
+export function categoriesOverlap(
+  categoryA?: string | null,
+  categoryB?: string | null,
+): boolean {
+  const a = normalizeCategoryKey(categoryA);
+  const b = normalizeCategoryKey(categoryB);
+  if (!a || !b) return false;
+  return categoriesMatch(a, b);
+}
+
+/** Seçili kategori için etkinlikte aktif (kabul edilmiş) teklif var mı? */
+export function findActiveAgreementForCategory(
+  agreements: CustomerAgreement[],
+  category?: string | null,
+): CustomerAgreement | undefined {
+  const target = normalizeCategoryKey(category);
+  if (!target) return undefined;
+  return dedupeActiveAgreementsByCategory(agreements).find((agreement) => {
+    const keys = categoryKeysForAgreement(agreement);
+    return keys.some((key) => categoriesMatch(target, key));
+  });
+}
+
+export function hasActiveAgreementForCategory(
+  agreements: CustomerAgreement[],
+  category?: string | null,
+): boolean {
+  return findActiveAgreementForCategory(agreements, category) != null;
+}
+
+/** Bütçe özetinde çift sayımı önler; harcama toplamını yeniden hesaplar. */
+export function dedupeBudgetSummary(
+  summary: EventPlanBudgetSummary,
+): EventPlanBudgetSummary {
+  const lines = summary.items ?? summary.lines ?? [];
+  const latest = new Map<string, EventPlanBudgetLine>();
+  for (const line of lines) {
+    const key = budgetLineDedupeKey(line);
+    const existing = latest.get(key);
+    if (!existing || budgetLineRecency(line) >= budgetLineRecency(existing)) {
+      latest.set(key, line);
+    }
+  }
+  const deduped = [...latest.values()].sort(
+    (a, b) => budgetLineRecency(b) - budgetLineRecency(a),
+  );
+  const spent = deduped.reduce(
+    (sum, line) => sum + (line.agreedPrice ?? line.amount ?? 0),
+    0,
+  );
+  const totalBudget = summary.totalBudget;
+  return {
+    ...summary,
+    items: deduped,
+    lines: deduped,
+    spentBudget: spent,
+    totalSpent: spent,
+    remainingBudget:
+      totalBudget != null ? Math.max(0, totalBudget - spent) : summary.remainingBudget,
+  };
 }
 
 /** Checklist maddesini category / serviceType ile kabul edilmiş teklife bağlar. */

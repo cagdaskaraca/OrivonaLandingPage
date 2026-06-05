@@ -89,7 +89,8 @@ export function CouponCodeField({
       ) : null}
       {error ? <p className="text-xs text-red-300/90">{error}</p> : null}
       <p className="text-[11px] text-zinc-600">
-        Kupon teklif sürecinde önizlenir; ödeme altyapısı aktif değildir.
+        Doğrulanan kupon teklif talebine eklenir. Nihai indirim teklif kabulünde
+        uygulanır.
       </p>
     </div>
   );

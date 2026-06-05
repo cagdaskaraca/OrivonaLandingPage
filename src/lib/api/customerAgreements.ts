@@ -84,7 +84,16 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
     serviceType: recordStr(o, "serviceType", "ServiceType"),
     vendorId: recordId(o, "vendorId", "VendorId") ?? null,
     vendorName: recordStr(o, "vendorName", "VendorName"),
-    agreedPrice: recordNum(o, "agreedPrice", "AgreedPrice"),
+    agreedPrice:
+      recordNum(o, "finalPrice", "FinalPrice") ??
+      recordNum(o, "discountedPrice", "DiscountedPrice") ??
+      recordNum(o, "agreedPrice", "AgreedPrice"),
+    originalPrice: recordNum(o, "originalPrice", "OriginalPrice"),
+    finalPrice:
+      recordNum(o, "finalPrice", "FinalPrice") ??
+      recordNum(o, "discountedPrice", "DiscountedPrice"),
+    discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
+    couponCode: recordStr(o, "couponCode", "CouponCode"),
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
       recordStr(o, "agreedAt", "AgreedAt"),

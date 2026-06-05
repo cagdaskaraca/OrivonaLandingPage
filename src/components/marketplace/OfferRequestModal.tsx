@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import { createOfferRequest } from "@/src/lib/api";
+import type { CouponValidation } from "@/src/lib/api/commerce";
+import { getEventPlanAgreements } from "@/src/lib/api/customerAgreements";
 import { attachInvitationDesignToEventRequest } from "@/src/lib/api/invitationDesigns";
 import { attachPlaylistToEventRequest } from "@/src/lib/api/eventPlaylist";
 import { fetchMyEventPlans } from "@/src/lib/api/eventPlans";
+import { findActiveAgreementForCategory } from "@/src/lib/customerAgreementsUi";
 import { ApiError, formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import type { EventPlan, MarketplaceItem } from "@/src/lib/api/types";
 import { VENDOR_CATEGORY_NAMES } from "@/src/lib/api/types";
@@ -73,6 +76,14 @@ export function OfferRequestModal({
   const [category, setCategory] = useState("");
   const [invitationDesignId, setInvitationDesignId] = useState("");
   const [attachPlaylist, setAttachPlaylist] = useState(false);
+  const [validatedCoupon, setValidatedCoupon] = useState<CouponValidation | null>(
+    null,
+  );
+  const [planAgreementsLoading, setPlanAgreementsLoading] = useState(false);
+  const [blockingAgreement, setBlockingAgreement] = useState<{
+    vendorName?: string;
+    category?: string;
+  } | null>(null);
   const lastAutofillPlanId = useRef<string | null>(null);
 
   const hasPlans = plans.length > 0;
@@ -105,6 +116,8 @@ export function OfferRequestModal({
     setSelectedPlanId(PLAN_PLACEHOLDER);
     setInvitationDesignId("");
     setAttachPlaylist(false);
+    setValidatedCoupon(null);
+    setBlockingAgreement(null);
     lastAutofillPlanId.current = null;
   }, []);
 
@@ -141,7 +154,42 @@ export function OfferRequestModal({
     setInvitationDesignId("");
   }, [selectedPlanId, plans, hasLinkedPlan]);
 
+  useEffect(() => {
+    if (!hasLinkedPlan) {
+      setBlockingAgreement(null);
+      return;
+    }
+    let cancelled = false;
+    setPlanAgreementsLoading(true);
+    void (async () => {
+      try {
+        const result = await getEventPlanAgreements(selectedPlanId);
+        if (cancelled) return;
+        const existing = findActiveAgreementForCategory(
+          result.items,
+          category,
+        );
+        setBlockingAgreement(
+          existing
+            ? {
+                vendorName: existing.vendorName,
+                category: existing.category ?? existing.categoryName,
+              }
+            : null,
+        );
+      } catch {
+        if (!cancelled) setBlockingAgreement(null);
+      } finally {
+        if (!cancelled) setPlanAgreementsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPlanId, category, hasLinkedPlan]);
+
   const serviceId = item?.vendorServiceId ?? item?.id;
+  const offerBlocked = hasLinkedPlan && blockingAgreement != null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -151,6 +199,12 @@ export function OfferRequestModal({
     }
     if (hasPlans && selectedPlanId === PLAN_PLACEHOLDER) {
       setError("Lütfen bir etkinlik planı seçin veya etkinliksiz teklif alın.");
+      return;
+    }
+    if (offerBlocked) {
+      setError(
+        "Bu etkinlik için seçili kategoride zaten kabul edilmiş bir teklif var. Yeni teklif alınamaz.",
+      );
       return;
     }
     setLoading(true);
@@ -172,6 +226,7 @@ export function OfferRequestModal({
         budgetMin: hasPlans && budgetMin > 0 ? budgetMin : undefined,
         budgetMax: hasPlans && budgetMax > 0 ? budgetMax : undefined,
         note: noteText || undefined,
+        couponCode: validatedCoupon?.valid ? validatedCoupon.code : undefined,
       });
       const requestId = created.eventRequestId ?? created.id;
       if (requestId != null && isInvitationDesignSelected(invitationDesignId)) {
@@ -359,10 +414,31 @@ export function OfferRequestModal({
           value={eventDate}
           onChange={setEventDate}
         />
+        {offerBlocked ? (
+          <div
+            role="alert"
+            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+          >
+            Bu etkinlikte{" "}
+            <span className="font-medium">
+              {blockingAgreement?.category ?? category}
+            </span>{" "}
+            kategorisinde{" "}
+            {blockingAgreement?.vendorName
+              ? `${blockingAgreement.vendorName} ile `
+              : ""}
+            kabul edilmiş bir teklif bulunuyor. Aynı kategori için yeni teklif
+            alınamaz.
+          </div>
+        ) : null}
+        {hasLinkedPlan && planAgreementsLoading ? (
+          <p className="text-xs text-zinc-500">Etkinlik teklifleri kontrol ediliyor…</p>
+        ) : null}
         {serviceId != null ? (
           <CouponCodeField
             serviceId={serviceId}
             basePrice={item?.price ?? item?.basePrice}
+            onValidated={setValidatedCoupon}
           />
         ) : null}
         <PaymentComingSoonNotice compact />
@@ -374,7 +450,11 @@ export function OfferRequestModal({
             {error}
           </div>
         ) : null}
-        <button type="submit" className={`${btnPrimary} w-full`} disabled={loading}>
+        <button
+          type="submit"
+          className={`${btnPrimary} w-full`}
+          disabled={loading || offerBlocked || planAgreementsLoading}
+        >
           {loading ? "Gönderiliyor…" : "Teklif Gönder"}
         </button>
       </form>

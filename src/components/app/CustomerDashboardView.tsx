@@ -567,7 +567,7 @@ function DashboardContentInner() {
 
       <section id="dashboard-offers" className={`${orivonaDashboardAnchor} mb-8`}>
         <CustomerOfferRequestsPanel
-          onAfterAccept={() => {
+          onOfferChange={() => {
             setReservationsKey((k) => k + 1);
             bumpDataRefresh();
           }}

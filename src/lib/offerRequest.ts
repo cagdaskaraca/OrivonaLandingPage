@@ -100,6 +100,117 @@ export function offerResponsePrice(offer: OfferRequest): number | undefined {
   );
 }
 
+export function offerOriginalPrice(offer: OfferRequest): number | undefined {
+  const listed = offerResponsePrice(offer);
+  return offer.originalPrice ?? listed;
+}
+
+export function offerFinalPrice(offer: OfferRequest): number | undefined {
+  return (
+    offer.finalPrice ??
+    offer.discountedPrice ??
+    offerResponsePrice(offer)
+  );
+}
+
+export function offerHasDiscount(offer: OfferRequest): boolean {
+  const original = offerOriginalPrice(offer);
+  const final = offerFinalPrice(offer);
+  return (
+    original != null &&
+    final != null &&
+    final < original
+  );
+}
+
+export function isAcceptedOfferStatus(status?: string | null): boolean {
+  const s = normalizeOfferStatusKey(status);
+  return (
+    s === "acceptedbycustomer" ||
+    s === "customeraccepted" ||
+    s === "accepted"
+  );
+}
+
+export function isCancelledOfferStatus(status?: string | null): boolean {
+  const s = normalizeOfferStatusKey(status);
+  return (
+    s === "cancelled" ||
+    s === "canceled" ||
+    s === "cancelledbycustomer"
+  );
+}
+
+export function getCustomerCancelTarget(
+  offer: OfferRequest,
+):
+  | { kind: "offer"; id: string | number }
+  | { kind: "request"; id: string | number }
+  | null {
+  if (isCancelledOfferStatus(offer.status)) return null;
+  if (isAcceptedOfferStatus(offer.status) || isOfferSentToCustomer(offer.status)) {
+    const offerId = getCustomerOfferActionId(offer);
+    if (offerId != null) return { kind: "offer", id: offerId };
+  }
+  if (isPendingVendorResponse(offer.status) && offer.id != null) {
+    return { kind: "request", id: offer.id };
+  }
+  return null;
+}
+
+export function canCustomerCancelOffer(offer: OfferRequest): boolean {
+  return getCustomerCancelTarget(offer) != null;
+}
+
+function offerListRecency(offer: OfferRequest): number {
+  const date = offer.createdAt?.trim();
+  if (date) {
+    const ts = Date.parse(date);
+    if (!Number.isNaN(ts)) return ts;
+  }
+  const id = offer.id;
+  if (typeof id === "number") return id;
+  if (typeof id === "string" && /^\d+$/.test(id)) return Number(id);
+  return 0;
+}
+
+function offerCategoryVendorKey(offer: OfferRequest): string | null {
+  if (offer.eventPlanId == null) return null;
+  const category = (offer.category ?? "genel").trim().toLocaleLowerCase("tr-TR");
+  const vendor = (offer.vendorName ?? offer.serviceTitle ?? "isletme")
+    .trim()
+    .toLocaleLowerCase("tr-TR");
+  return `${offer.eventPlanId}::${category}::${vendor}`;
+}
+
+/** Aynı etkinlik+kategori+işletme için yalnızca en güncel kabul edilmiş teklifi gösterir. */
+export function dedupeCustomerOfferList(offers: OfferRequest[]): OfferRequest[] {
+  const acceptedLatest = new Map<string, OfferRequest>();
+
+  for (const offer of offers) {
+    if (!isAcceptedOfferStatus(offer.status)) continue;
+    const key = offerCategoryVendorKey(offer);
+    if (!key) continue;
+    const existing = acceptedLatest.get(key);
+    if (!existing || offerListRecency(offer) >= offerListRecency(existing)) {
+      acceptedLatest.set(key, offer);
+    }
+  }
+
+  const latestAcceptedIds = new Set(
+    [...acceptedLatest.values()].map((offer) => String(offer.id)),
+  );
+
+  return offers
+    .filter((offer) => {
+      if (!isAcceptedOfferStatus(offer.status)) return true;
+      const key = offerCategoryVendorKey(offer);
+      if (!key) return true;
+      return latestAcceptedIds.has(String(offer.id));
+    })
+    .sort((a, b) => offerListRecency(b) - offerListRecency(a));
+}
+
 export function offerResponseDescription(
   offer: OfferRequest,
 ): string | undefined {

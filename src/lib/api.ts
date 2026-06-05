@@ -44,6 +44,8 @@ export {
   rejectVendorOfferRequest,
   acceptCustomerOffer,
   rejectCustomerOffer,
+  cancelCustomerOffer,
+  cancelCustomerOfferRequest,
   createReservation,
   fetchMyReservations,
   fetchVendorReservations,

@@ -31,7 +31,11 @@ import type {
   EventTask,
   EventTaskStatus,
 } from "@/src/lib/api/types";
-import { agreementForTaskCategory } from "@/src/lib/customerAgreementsUi";
+import {
+  agreementForTaskCategory,
+  dedupeActiveAgreementsByCategory,
+  dedupeBudgetSummary,
+} from "@/src/lib/customerAgreementsUi";
 import {
   EVENT_TASK_STATUSES,
   normalizeTaskStatus,
@@ -175,7 +179,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function setStatus(task: EventTask, status: EventTaskStatus) {
     if (task.id == null) return;
-    if (agreementForTaskCategory(agreements, task)) {
+    if (agreementForTaskCategory(activeAgreements, task)) {
       setTasksError(
         "Bu kategori için kabul edilmiş teklif var; durum teklif üzerinden yönetilir.",
       );
@@ -210,7 +214,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
 
   async function handleDelete(task: EventTask) {
     if (task.id == null) return;
-    if (agreementForTaskCategory(agreements, task)) {
+    if (agreementForTaskCategory(activeAgreements, task)) {
       setTasksError(
         "Kabul edilmiş teklif bağlı görev silinemez. Teklifi «Tekliflerim» bölümünden yönetin.",
       );
@@ -225,18 +229,28 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
     }
   }
 
+  const activeAgreements = useMemo(
+    () => dedupeActiveAgreementsByCategory(agreements),
+    [agreements],
+  );
+
+  const displayBudget = useMemo(
+    () => (budget ? dedupeBudgetSummary(budget) : null),
+    [budget],
+  );
+
   const progress = useMemo(
-    () => checklistProgressPercent(tasks, agreements),
-    [tasks, agreements],
+    () => checklistProgressPercent(tasks, activeAgreements),
+    [tasks, activeAgreements],
   );
 
   const tasksWithOffer = useMemo(
     () =>
       tasks.map((task) => ({
         task,
-        acceptedOffer: agreementForTaskCategory(agreements, task),
+        acceptedOffer: agreementForTaskCategory(activeAgreements, task),
       })),
-    [tasks, agreements],
+    [tasks, activeAgreements],
   );
 
   const listLoading = loadingTasks || loadingOffers;
@@ -246,7 +260,7 @@ function ChecklistPanel({ planId }: { planId: string | number }) {
       <EventOsChecklistPlanDropdown />
       <EventOsProgressBar percent={progress} />
       <EventOsBudgetSummary
-        summary={budget}
+        summary={displayBudget}
         loading={budgetLoading}
         error={budgetError}
         onRetry={() => void refreshAll()}
