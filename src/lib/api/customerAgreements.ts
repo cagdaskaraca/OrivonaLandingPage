@@ -3,7 +3,7 @@ import {
   getEventPlanBoard as fetchEventPlanBoardCore,
 } from "@/src/lib/api/eventPlans";
 import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
-import { recordId, recordNum, recordStr } from "@/src/lib/normalize";
+import { recordBool, recordId, recordNum, recordStr } from "@/src/lib/normalize";
 import type {
   ApiEnvelope,
   CustomerAgreement,
@@ -91,7 +91,9 @@ export function normalizeCustomerAgreement(raw: unknown): CustomerAgreement {
       recordNum(o, "discountedPrice", "DiscountedPrice"),
     displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
     price: recordNum(o, "price", "Price"),
+    hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
     discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
+    discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
     couponCode: recordStr(o, "couponCode", "CouponCode"),
     agreementDate:
       recordStr(o, "agreementDate", "AgreementDate") ??
@@ -124,7 +126,9 @@ function normalizeBudgetLine(raw: unknown): EventPlanBudgetLine {
     displayPrice: recordNum(o, "displayPrice", "DisplayPrice"),
     price: recordNum(o, "price", "Price"),
     agreedPrice: recordNum(o, "agreedPrice", "AgreedPrice"),
+    hasDiscount: recordBool(o, "hasDiscount", "HasDiscount"),
     discountAmount: recordNum(o, "discountAmount", "DiscountAmount"),
+    discountPercent: recordNum(o, "discountPercent", "DiscountPercent"),
     couponCode: recordStr(o, "couponCode", "CouponCode"),
     agreementDate: recordStr(o, "agreementDate", "AgreementDate"),
     note: recordStr(o, "note", "Note"),

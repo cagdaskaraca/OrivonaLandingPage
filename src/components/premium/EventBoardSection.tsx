@@ -15,13 +15,9 @@ import {
   boardColumnHeading,
   boardItemStatusBadge,
   formatBoardDate,
-  formatBoardPrice,
 } from "@/src/lib/eventBoardUi";
-import {
-  offerPriceHasDiscount,
-  resolveOfferDisplayPrice,
-  resolveOfferOriginalPrice,
-} from "@/src/lib/offerPricing";
+import { OfferPriceBreakdown } from "@/src/components/offers/OfferPriceBreakdown";
+import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
 import { formatUiErrorMessage, logApiError } from "@/src/lib/api/client";
 import { badgeClass, glassCard } from "@/src/lib/ui";
 
@@ -50,17 +46,10 @@ function BoardItemCard({ item }: { item: EventPlanBoardItem }) {
         </p>
       ) : null}
       {resolveOfferDisplayPrice(item) > 0 ? (
-        <p className="mt-1 text-xs font-medium text-violet-200">
-          <span className="font-normal text-zinc-500">Teklif:</span>{" "}
-          {offerPriceHasDiscount(item) ? (
-            <>
-              <span className="text-zinc-500 line-through">
-                {formatBoardPrice(resolveOfferOriginalPrice(item) ?? 0)}
-              </span>{" "}
-            </>
-          ) : null}
-          {formatBoardPrice(resolveOfferDisplayPrice(item))}
-        </p>
+        <div className="mt-1">
+          <p className="text-[10px] text-zinc-500">Teklif</p>
+          <OfferPriceBreakdown pricing={item} size="sm" />
+        </div>
       ) : null}
       {item.status ? (
         <p className="mt-2">

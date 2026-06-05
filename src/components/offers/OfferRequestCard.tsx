@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OfferPriceBreakdown } from "@/src/components/offers/OfferPriceBreakdown";
 import { InvitationDesignDetailPanel } from "@/src/components/invitation-design/InvitationDesignDetailPanel";
 import { PlaylistDetailPanel } from "@/src/components/playlist/PlaylistDetailPanel";
 import { OfferStatusBadge } from "@/src/components/offers/OfferStatusBadge";
@@ -8,12 +9,11 @@ import {
   isInvitationCategory,
 } from "@/src/lib/invitationDesign";
 import { isMusicCategory } from "@/src/lib/playlist";
+import { resolveOfferPricing } from "@/src/lib/offerPricing";
 import {
   formatOfferDate,
-  offerFinalPrice,
-  offerHasDiscount,
-  offerOriginalPrice,
   offerResponseDescription,
+  offerResponsePrice,
 } from "@/src/lib/offerRequest";
 
 type OfferRequestCardProps = {
@@ -29,9 +29,14 @@ export function OfferRequestCard({
   onUploadRevision,
   uploadingRevision,
 }: OfferRequestCardProps) {
-  const originalPrice = offerOriginalPrice(offer);
-  const finalPrice = offerFinalPrice(offer);
-  const hasDiscount = offerHasDiscount(offer);
+  const pricing = resolveOfferPricing({
+    ...offer,
+    price: offer.price ?? offerResponsePrice(offer),
+  });
+  const hasPricedOffer =
+    pricing.finalPrice != null ||
+    pricing.originalPrice != null ||
+    offerResponsePrice(offer) != null;
   const responseText = offerResponseDescription(offer);
   const serviceHref =
     offer.vendorServiceId != null
@@ -106,31 +111,18 @@ export function OfferRequestCard({
         ) : null}
       </dl>
 
-      {finalPrice != null || responseText || offer.validUntil ? (
+      {hasPricedOffer || responseText || offer.validUntil ? (
         <div className="mt-4 rounded-lg border border-violet-400/20 bg-violet-500/10 px-3 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-200/90">
             İşletme teklifi
           </p>
-          {finalPrice != null ? (
+          {hasPricedOffer ? (
             <div className="mt-2">
-              {hasDiscount && originalPrice != null ? (
-                <p className="text-sm text-zinc-500 line-through">
-                  {originalPrice.toLocaleString("tr-TR")} ₺
-                </p>
-              ) : null}
-              <p className="text-base font-semibold text-white">
-                {finalPrice.toLocaleString("tr-TR")} ₺
-              </p>
-              {hasDiscount && offer.discountAmount != null ? (
-                <p className="mt-1 text-xs text-emerald-300/90">
-                  İndirim: {offer.discountAmount.toLocaleString("tr-TR")} ₺
-                  {offer.couponCode ? ` · Kupon: ${offer.couponCode}` : ""}
-                </p>
-              ) : null}
+              <OfferPriceBreakdown pricing={pricing} size="md" />
             </div>
           ) : null}
           {responseText ? (
-            <p className="mt-1 text-zinc-300">{responseText}</p>
+            <p className="mt-2 text-zinc-300">{responseText}</p>
           ) : null}
           {offer.validUntil ? (
             <p className="mt-2 text-xs text-zinc-400">

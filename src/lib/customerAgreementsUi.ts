@@ -5,9 +5,9 @@ import type {
   EventTask,
 } from "@/src/lib/api/types";
 import {
-  offerPriceHasDiscount,
+  formatOfferMoney,
   resolveOfferDisplayPrice,
-  resolveOfferOriginalPrice,
+  resolveOfferPricing,
 } from "@/src/lib/offerPricing";
 import { normalizeStatusKey } from "@/src/lib/statusLabels";
 
@@ -253,13 +253,12 @@ export function formatBudgetLineLabel(line: EventPlanBudgetLine): string {
 }
 
 export function formatBudgetLineDisplay(line: EventPlanBudgetLine): string {
-  const amount = resolveOfferDisplayPrice(line);
   const label = formatBudgetLineLabel(line);
-  if (offerPriceHasDiscount(line)) {
-    const original = resolveOfferOriginalPrice(line);
-    return `${label}: ${formatTryCurrency(original)} → ${formatTryCurrency(amount)}`;
+  const pricing = resolveOfferPricing(line);
+  if (pricing.hasDiscount && pricing.originalPrice != null && pricing.finalPrice != null) {
+    return `${label}: ${formatOfferMoney(pricing.originalPrice)} → ${formatOfferMoney(pricing.finalPrice)}`;
   }
-  return `${label}: ${formatTryCurrency(amount)}`;
+  return `${label}: ${formatTryCurrency(resolveOfferDisplayPrice(line))}`;
 }
 
 export function formatPlanOptionLabel(

@@ -242,7 +242,9 @@ export type OfferRequest = {
   finalPrice?: number;
   discountedPrice?: number;
   displayPrice?: number;
+  hasDiscount?: boolean;
   discountAmount?: number;
+  discountPercent?: number;
   couponCode?: string;
   invitationDesign?: InvitationDesign;
   invitationRevisions?: InvitationRevision[];
@@ -979,7 +981,9 @@ export type CustomerAgreement = {
   finalPrice?: number;
   displayPrice?: number;
   price?: number;
+  hasDiscount?: boolean;
   discountAmount?: number;
+  discountPercent?: number;
   couponCode?: string;
   agreementDate?: string;
   note?: string;
@@ -997,7 +1001,9 @@ export type EventPlanBudgetLine = {
   finalPrice?: number;
   displayPrice?: number;
   price?: number;
+  hasDiscount?: boolean;
   discountAmount?: number;
+  discountPercent?: number;
   couponCode?: string;
   amount?: number;
   agreementDate?: string;
@@ -1192,7 +1198,9 @@ export type EventPlanBoardItem = {
   originalPrice?: number | null;
   finalPrice?: number | null;
   displayPrice?: number | null;
+  hasDiscount?: boolean | null;
   discountAmount?: number | null;
+  discountPercent?: number | null;
   couponCode?: string | null;
   status?: string;
   createdAt?: string;

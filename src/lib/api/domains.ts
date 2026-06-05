@@ -319,9 +319,15 @@ function normalizeOffer(raw: unknown): OfferRequest {
       nestedFinal,
     displayPrice:
       recordNum(o, "displayPrice", "DisplayPrice") ?? nestedDisplay,
+    hasDiscount:
+      recordBool(o, "hasDiscount", "HasDiscount") ??
+      (nested ? recordBool(nested, "hasDiscount", "HasDiscount") : undefined),
     discountAmount:
       recordNum(o, "discountAmount", "DiscountAmount") ??
       (nested ? recordNum(nested, "discountAmount", "DiscountAmount") : undefined),
+    discountPercent:
+      recordNum(o, "discountPercent", "DiscountPercent") ??
+      (nested ? recordNum(nested, "discountPercent", "DiscountPercent") : undefined),
     couponCode:
       recordStr(o, "couponCode", "CouponCode") ??
       (nested ? recordStr(nested, "couponCode", "CouponCode") : undefined),

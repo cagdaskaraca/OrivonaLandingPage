@@ -1,7 +1,8 @@
 "use client";
 
+import { OfferPriceBreakdown } from "@/src/components/offers/OfferPriceBreakdown";
 import {
-  formatBudgetLineDisplay,
+  formatBudgetLineLabel,
   formatTryCurrency,
 } from "@/src/lib/customerAgreementsUi";
 import { resolveOfferDisplayPrice } from "@/src/lib/offerPricing";
@@ -80,9 +81,12 @@ export function EventOsBudgetSummary({
           {lines.map((line, index) => (
             <li
               key={String(line.id ?? index)}
-              className="flex flex-wrap items-center justify-between gap-2 text-sm"
+              className="flex flex-wrap items-start justify-between gap-3 text-sm"
             >
-              <span className="text-zinc-300">{formatBudgetLineDisplay(line)}</span>
+              <span className="min-w-0 text-zinc-300">
+                {formatBudgetLineLabel(line)}
+              </span>
+              <OfferPriceBreakdown pricing={line} size="sm" className="text-right" />
             </li>
           ))}
         </ul>
